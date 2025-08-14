@@ -1,8 +1,8 @@
-import { getPurchaseListByPage } from "@/services/order";
+import { getPurchaseListByPage, purchaseInitiate } from "@/services/order";
 import { PlusOutlined } from "@ant-design/icons";
 import type { ActionType, ProColumns } from "@ant-design/pro-components";
 import { PageContainer, ProTable } from "@ant-design/pro-components";
-import { Button, Pagination, message } from "antd";
+import { Button, Pagination, Table, message } from "antd";
 import React, { useEffect, useRef, useState } from "react";
 
 type OrderProductRow = {
@@ -20,6 +20,7 @@ type OrderProductRow = {
   productTitle: string;
   sku: any;
   picUrl: any;
+  purchaseCode?: any;
 };
 
 const flattenOrders = (orders: any[]): OrderProductRow[] => {
@@ -55,12 +56,15 @@ const TableList: React.FC = () => {
   const [pageSize, setPageSize] = useState(10);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [selectedRowsState, setSelectedRows] = useState<any>([]);
 
   const fetchData = async () => {
     setLoading(true);
     try {
       const res: any = await getPurchaseListByPage({ page, pageSize });
-      setDataSource(flattenOrders(res.data.records));
+      setDataSource(res.data.records);
+      console.log(dataSource);
+
       setTotal(res.data.total);
     } catch (e) {
       message.error("加载失败");
@@ -75,110 +79,85 @@ const TableList: React.FC = () => {
 
   const columns: ProColumns<OrderProductRow>[] = [
     {
-      title: "订单号",
+      title: "采购编号",
+      dataIndex: "purchaseCode",
+    },
+    {
+      title: "订单编号",
       dataIndex: "orderCode",
-      render: (text, row) => ({
-        children: text,
-        props: { rowSpan: row.orderRowSpan },
-      }),
     },
     {
-      title: "用户名",
-      dataIndex: "customerName",
-      render: (text, row) => ({
-        children: text,
-        props: { rowSpan: row.orderRowSpan },
-      }),
+      title: "支付状态",
+      dataIndex: "payStatus",
+      width: 80,
     },
     {
-      title: "商家",
-      dataIndex: "callNo",
-      render: (text, row) => ({
-        children: text,
-        props: { rowSpan: row.orderRowSpan },
-      }),
+      title: "采购状态",
+      dataIndex: "status",
+      width: 80,
     },
+
     {
-      title: "订单总金额",
-      dataIndex: "totalFee",
-      render: (text, row) => ({
-        children: text,
-        props: { rowSpan: row.orderRowSpan },
-      }),
+      title: "采购员",
+      dataIndex: "dispatchUserName",
     },
-    {
-      title: "商品金额",
-      dataIndex: "price",
-    },
-    { title: "运费", dataIndex: "postFee" },
-    { title: "服务费", dataIndex: "discountFee" },
+
     {
       title: "商品信息",
-      dataIndex: "productTitle",
-      render: (_, row) => {
+      dataIndex: "products",
+      render: (products: any) => {
+        console.log("products", products);
         return (
-          <div
-            style={{
-              display: "flex",
-              alignItems: "flex-start",
-              gap: 8,
-              maxWidth: 200,
-            }}
-          >
-            {/* 商品图片 */}
-            <img
-              src={row.picUrl}
-              alt="商品图片"
-              style={{
-                width: 60,
-                height: 60,
-                objectFit: "cover",
-                borderRadius: 4,
-                flexShrink: 0,
-              }}
+          <div className="purchase-table">
+            <Table
+              bordered
+              dataSource={products}
+              columns={[
+                {
+                  title: "商品图片",
+                  dataIndex: "picUrl",
+                  key: "picUrl",
+                  width: 100,
+                  render: (picUrl: string, row) => {
+                    return <img src={row?.skuPicUrl} alt="" width={100} />;
+                  },
+                },
+                {
+                  title: "sku",
+                  dataIndex: "sku",
+                  key: "sku",
+                  width: 200,
+                  render: (sku) => {
+                    return sku.propName_valueName;
+                  },
+                },
+                {
+                  title: "数量",
+                  dataIndex: "quantity",
+                  key: "quantity",
+                },
+                {
+                  title: "价格",
+                  dataIndex: "price",
+                  key: "price",
+                },
+              ]}
+              pagination={false}
             />
-
-            {/* 文字信息区域 */}
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div
-                style={{
-                  fontWeight: 500,
-                  whiteSpace: "nowrap",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                }}
-                title={row.productTitle}
-              >
-                {row.productTitle}
-              </div>
-
-              {/* SKU 信息 */}
-              {row?.sku?.propName_valueName && (
-                <div style={{ fontSize: 12, color: "#888" }}>
-                  {row.sku.propName_valueName}
-                </div>
-              )}
-            </div>
           </div>
         );
       },
     },
     {
-      title: "状态",
-      dataIndex: "customerPayStatusCode",
-      valueEnum: {
-        201: { text: "待付款", status: "Default" },
-        203: { text: "已付款", status: "Success" },
-      },
+      title: "创建时间",
+      dataIndex: "createTime",
     },
-    { title: "下单时间", dataIndex: "createTime" },
-    { title: "备注", dataIndex: "remark" },
   ];
 
   return (
     <PageContainer>
-      <ProTable<OrderProductRow>
-        headerTitle="订单列表"
+      <ProTable
+        headerTitle="采购列表"
         bordered
         actionRef={actionRef}
         rowKey="id"
@@ -189,11 +168,26 @@ const TableList: React.FC = () => {
         columns={columns}
         rowSelection={{
           onChange: (_, selectedRows) => {
-            // setSelectedRows(selectedRows);
+            setSelectedRows(selectedRows);
           },
         }}
         toolBarRender={() => [
-          <Button type="primary" icon={<PlusOutlined />}>
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={async () => {
+              console.log(
+                "点击了采购按钮",
+                selectedRowsState.map((item) => item.id)
+              );
+              const res = await purchaseInitiate({
+                ids: selectedRowsState.map((item) => Number(item.id)),
+                remark: "",
+              });
+              actionRef?.current?.reload();
+              console.log(res);
+            }}
+          >
             采购
           </Button>,
         ]}

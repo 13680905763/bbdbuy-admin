@@ -8,7 +8,7 @@ import defaultSettings from "../config/defaultSettings";
 import { errorConfig } from "./requestErrorConfig";
 import { getUserInfo } from "./services";
 const isDev = process.env.NODE_ENV === "development";
-const loginPath = "/admin/login";
+const loginPath = "/login";
 
 /**
  * @see https://umijs.org/docs/api/runtime-config#getinitialstate
@@ -29,13 +29,13 @@ export async function getInitialState(): Promise<{
     return undefined;
   };
   const currentUser = await fetchUserInfo();
-  console.log(
-    "currentUser",
-    currentUser,
-    location.pathname,
-    loginPath,
-    location.pathname === loginPath
-  );
+  // console.log(
+  //   "currentUser",
+  //   currentUser,
+  //   location.pathname,
+  //   loginPath,
+  //   location.pathname === loginPath
+  // );
 
   // ✅ 如果已经登录但仍在登录页，跳转首页
   if (location.pathname === loginPath && currentUser) {
@@ -102,7 +102,6 @@ export const layout: RunTimeLayoutConfig = ({
     ...initialState?.settings,
   };
 };
-console.log("isDev", isDev, process.env, process, process.env.BASE_API);
 
 /**
  * @name request 配置，可以配置错误处理
@@ -115,5 +114,6 @@ export const request: RequestConfig = {
     : "https://demo.bbdbuy.com/admin-api",
   // baseURL: process.env.UMI_APP_BASE_API,
   withCredentials: true,
+  timeout: 10000,
   ...errorConfig,
 };

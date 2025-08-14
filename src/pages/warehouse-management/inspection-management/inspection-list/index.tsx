@@ -1,7 +1,7 @@
-import { getOrderListByPage } from "@/services/order"; // 你自己的接口路径
+import { getInspectionListByPage } from "@/services/order"; // 你自己的接口路径
 import type { ActionType, ProColumns } from "@ant-design/pro-components";
 import { PageContainer, ProTable } from "@ant-design/pro-components";
-import { Pagination, Table, message } from "antd";
+import { Pagination, message } from "antd";
 import React, { useEffect, useRef, useState } from "react";
 
 type OrderProductRow = {
@@ -32,7 +32,7 @@ const TableList: React.FC = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const res: any = await getOrderListByPage({ page, pageSize });
+      const res: any = await getInspectionListByPage({ page, pageSize });
       setDataSource(res.data.records);
       setTotal(res.data.total);
     } catch (e) {
@@ -50,77 +50,46 @@ const TableList: React.FC = () => {
     {
       title: "订单号",
       dataIndex: "orderCode",
+      width: 200,
     },
     {
       title: "用户名",
       dataIndex: "customerName",
-    },
-
-    {
-      title: "商品金额",
-      dataIndex: "productFee",
+      width: 100,
     },
     {
-      title: "订单总金额",
-      dataIndex: "totalFee",
+      title: "快递单号",
+      dataIndex: "logisticsCode",
+      width: 200,
     },
     {
-      title: "商品信息",
-      dataIndex: "products",
-      render: (products: any) => {
-        console.log("products", products);
+      title: "商品图片",
+      dataIndex: "product",
+      width: 100,
+      render: (product: any) => <img src={product?.picUrl} width={100} />,
+    },
+    {
+      title: "商品名称",
+      dataIndex: "product",
+      width: 300,
+      render: (product: any) => {
         return (
-          <div className="purchase-table">
-            <Table
-              bordered
-              dataSource={products}
-              columns={[
-                {
-                  title: "商品图片",
-                  dataIndex: "picUrl",
-                  key: "picUrl",
-                  width: 100,
-                  render: (picUrl: string, row) => {
-                    return <img src={row?.skuPicUrl} alt="" width={100} />;
-                  },
-                },
-                {
-                  title: "sku",
-                  dataIndex: "sku",
-                  key: "sku",
-                  width: 200,
-                  render: (sku) => {
-                    return sku.propName_valueName;
-                  },
-                },
-                {
-                  title: "数量",
-                  dataIndex: "quantity",
-                  key: "quantity",
-                },
-                {
-                  title: "价格",
-                  dataIndex: "price",
-                  key: "price",
-                },
-              ]}
-              pagination={false}
-            />
+          <div>
+            <div>{product.productTitle}</div>
+            <div style={{ color: "red" }}>{product.sku.propName_valueName}</div>
+            <div>
+              ￥{product.price} * {product.quantity}
+            </div>
           </div>
         );
       },
     },
 
     {
-      title: "状态",
-      dataIndex: "customerPayStatusCode",
-      valueEnum: {
-        201: { text: "待付款", status: "Default" },
-        203: { text: "已付款", status: "Success" },
-      },
+      title: "验货状态",
+      dataIndex: "inspectionStatus",
+      width: 100,
     },
-    { title: "下单时间", dataIndex: "createTime" },
-    { title: "备注", dataIndex: "remark" },
   ];
 
   return (

@@ -1,7 +1,7 @@
-import { getOrderListByPage } from "@/services/order"; // 你自己的接口路径
+import { getOutboundPutawayListByPage } from "@/services";
 import type { ActionType, ProColumns } from "@ant-design/pro-components";
 import { PageContainer, ProTable } from "@ant-design/pro-components";
-import { Pagination, Table, message } from "antd";
+import { Pagination, message } from "antd";
 import React, { useEffect, useRef, useState } from "react";
 
 type OrderProductRow = {
@@ -28,11 +28,12 @@ const TableList: React.FC = () => {
   const [pageSize, setPageSize] = useState(10);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [selectedRows, setSelectedRows] = useState<OrderProductRow[]>([]);
 
   const fetchData = async () => {
     setLoading(true);
     try {
-      const res: any = await getOrderListByPage({ page, pageSize });
+      const res: any = await getOutboundPutawayListByPage({ page, pageSize });
       setDataSource(res.data.records);
       setTotal(res.data.total);
     } catch (e) {
@@ -48,85 +49,35 @@ const TableList: React.FC = () => {
 
   const columns: ProColumns<OrderProductRow>[] = [
     {
-      title: "订单号",
-      dataIndex: "orderCode",
+      title: "出库单号",
+      dataIndex: "outboundCode",
     },
     {
-      title: "用户名",
-      dataIndex: "customerName",
-    },
-
-    {
-      title: "商品金额",
-      dataIndex: "productFee",
+      title: "包裹编号",
+      dataIndex: "packingPackageCode",
     },
     {
-      title: "订单总金额",
+      title: "货位",
       dataIndex: "totalFee",
-    },
-    {
-      title: "商品信息",
-      dataIndex: "products",
-      render: (products: any) => {
-        console.log("products", products);
-        return (
-          <div className="purchase-table">
-            <Table
-              bordered
-              dataSource={products}
-              columns={[
-                {
-                  title: "商品图片",
-                  dataIndex: "picUrl",
-                  key: "picUrl",
-                  width: 100,
-                  render: (picUrl: string, row) => {
-                    return <img src={row?.skuPicUrl} alt="" width={100} />;
-                  },
-                },
-                {
-                  title: "sku",
-                  dataIndex: "sku",
-                  key: "sku",
-                  width: 200,
-                  render: (sku) => {
-                    return sku.propName_valueName;
-                  },
-                },
-                {
-                  title: "数量",
-                  dataIndex: "quantity",
-                  key: "quantity",
-                },
-                {
-                  title: "价格",
-                  dataIndex: "price",
-                  key: "price",
-                },
-              ]}
-              pagination={false}
-            />
-          </div>
-        );
-      },
     },
 
     {
       title: "状态",
-      dataIndex: "customerPayStatusCode",
-      valueEnum: {
-        201: { text: "待付款", status: "Default" },
-        203: { text: "已付款", status: "Success" },
-      },
+      dataIndex: "putawayStatus",
+      key: "putawayStatus",
     },
-    { title: "下单时间", dataIndex: "createTime" },
-    { title: "备注", dataIndex: "remark" },
+    // {
+    //   title: "打包人员",
+    //   dataIndex: "updateUserName",
+    //   key: "updateUserName",
+    // },
+    // { title: "下单时间", dataIndex: "createTime" },
+    // { title: "备注", dataIndex: "remark" },
   ];
 
   return (
     <PageContainer>
       <ProTable<OrderProductRow>
-        headerTitle="订单列表"
         bordered
         actionRef={actionRef}
         rowKey="id"
@@ -137,7 +88,7 @@ const TableList: React.FC = () => {
         columns={columns}
         // rowSelection={{
         //   onChange: (_, selectedRows) => {
-        //     // setSelectedRows(selectedRows);
+        //     setSelectedRows(selectedRows);
         //   },
         // }}
       />

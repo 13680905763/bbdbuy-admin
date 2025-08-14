@@ -1,7 +1,7 @@
-import { getOrderListByPage } from "@/services/order"; // 你自己的接口路径
+import { getDeliveryListByPage } from "@/services/order";
 import type { ActionType, ProColumns } from "@ant-design/pro-components";
 import { PageContainer, ProTable } from "@ant-design/pro-components";
-import { Pagination, Table, message } from "antd";
+import { Pagination, message } from "antd";
 import React, { useEffect, useRef, useState } from "react";
 
 type OrderProductRow = {
@@ -32,7 +32,7 @@ const TableList: React.FC = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const res: any = await getOrderListByPage({ page, pageSize });
+      const res: any = await getDeliveryListByPage({ page, pageSize });
       setDataSource(res.data.records);
       setTotal(res.data.total);
     } catch (e) {
@@ -48,89 +48,38 @@ const TableList: React.FC = () => {
 
   const columns: ProColumns<OrderProductRow>[] = [
     {
-      title: "订单号",
-      dataIndex: "orderCode",
-    },
-    {
-      title: "用户名",
-      dataIndex: "customerName",
+      title: "采购编号",
+      dataIndex: "purchaseCode",
     },
 
     {
-      title: "商品金额",
-      dataIndex: "productFee",
+      title: "入库编号",
+      dataIndex: "inboundCode",
     },
     {
-      title: "订单总金额",
-      dataIndex: "totalFee",
+      title: "快递公司",
+      dataIndex: "logisticsCompany",
     },
     {
-      title: "商品信息",
-      dataIndex: "products",
-      render: (products: any) => {
-        console.log("products", products);
-        return (
-          <div className="purchase-table">
-            <Table
-              bordered
-              dataSource={products}
-              columns={[
-                {
-                  title: "商品图片",
-                  dataIndex: "picUrl",
-                  key: "picUrl",
-                  width: 100,
-                  render: (picUrl: string, row) => {
-                    return <img src={row?.skuPicUrl} alt="" width={100} />;
-                  },
-                },
-                {
-                  title: "sku",
-                  dataIndex: "sku",
-                  key: "sku",
-                  width: 200,
-                  render: (sku) => {
-                    return sku.propName_valueName;
-                  },
-                },
-                {
-                  title: "数量",
-                  dataIndex: "quantity",
-                  key: "quantity",
-                },
-                {
-                  title: "价格",
-                  dataIndex: "price",
-                  key: "price",
-                },
-              ]}
-              pagination={false}
-            />
-          </div>
-        );
-      },
+      title: "快递单号",
+      dataIndex: "logisticsCode",
     },
-
     {
-      title: "状态",
-      dataIndex: "customerPayStatusCode",
-      valueEnum: {
-        201: { text: "待付款", status: "Default" },
-        203: { text: "已付款", status: "Success" },
-      },
+      title: "收货状态",
+      dataIndex: "receiveStatus",
     },
-    { title: "下单时间", dataIndex: "createTime" },
-    { title: "备注", dataIndex: "remark" },
+    {
+      title: "创建时间",
+      dataIndex: "createTime",
+    },
   ];
 
   return (
     <PageContainer>
-      <ProTable<OrderProductRow>
-        headerTitle="订单列表"
+      <ProTable
         bordered
         actionRef={actionRef}
         rowKey="id"
-        // search={false}
         pagination={false} // ❗️我们自己控制分页
         dataSource={dataSource}
         loading={loading}

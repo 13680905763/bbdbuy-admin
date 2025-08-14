@@ -1,5 +1,9 @@
 export default [
   {
+    path: "/",
+    redirect: "/dashboard",
+  },
+  {
     path: "/login",
     routes: [{ name: "登录", path: "/login", component: "./login" }],
     layout: false,
@@ -47,7 +51,7 @@ export default [
   },
   {
     path: "/purchase-list",
-    name: "采购单",
+    name: "采购列表",
     icon: "table",
     component: "./purchase-list",
   },
@@ -59,74 +63,99 @@ export default [
     routes: [
       {
         path: "/warehouse-management",
-        redirect: "/warehouse-management/delivery-note",
+        redirect: "/warehouse-management/delivery-list",
       },
       {
-        path: "/warehouse-management/delivery-note",
-        name: "收货单",
-        // component: "./warehouse-management/delivery-note",
-        component: "./developing",
+        path: "/warehouse-management/delivery-list",
+        name: "收货列表",
+        component: "./warehouse-management/delivery-list",
       },
       {
-        path: "/warehouse-management/particular-paper",
-        name: "验货单",
-        component: "./warehouse-management/particular-paper",
+        path: "/warehouse-management/inspection-management",
+        name: "验货管理",
+        routes: [
+          {
+            name: "验货列表",
+            path: "/warehouse-management/inspection-management/inspection-list",
+            component:
+              "./warehouse-management/inspection-management/inspection-list",
+          },
+          {
+            name: "验货",
+            path: "/warehouse-management/inspection-management/inspection-scan",
+            component:
+              "./warehouse-management/inspection-management/inspection-scan",
+          },
+        ],
       },
-      {
-        path: "/warehouse-management/c",
-        name: "拍照",
-        component: "./warehouse-management/photo-capture",
-      },
-      {
-        path: "/warehouse-management/d",
-        name: "上架管理",
-        component: "./developing",
-      },
+      // {
+      //   path: "/warehouse-management/c",
+      //   name: "拍照单",
+      //   component: "./developing",
+      // },
+      // {
+      //   path: "/warehouse-management/d",
+      //   name: "上架单",
+      //   component: "./developing",
+      // },
     ],
   },
+
   {
-    path: "/waybill-management",
-    name: "运单管理",
-    icon: "table",
-    component: "./developing",
-  },
-  {
-    path: "/outbound-order",
-    name: "出库单",
+    path: "/outbound-management",
+    name: "出库管理",
     icon: "table",
     access: "canAdmin",
     routes: [
       {
-        path: "/outbound-order",
-        redirect: "/developing",
+        path: "/outbound-management",
+        redirect: "/outbound-management/outbound-list",
       },
       {
-        path: "/outbound-order/a",
-        name: "拣货",
-        component: "./developing",
+        path: "/outbound-management/outbound-list",
+        name: "出库列表",
+        component: "./outbound-management/outbound-list",
       },
       {
-        path: "/outbound-order/b",
-        name: "打包",
-        component: "./developing",
+        path: "/outbound-management/outbound-picking-list",
+        name: "拣货列表",
+        component: "./outbound-management/outbound-picking-list",
       },
       {
-        path: "/outbound-order/c",
-        name: "配货",
-        component: "./developing",
+        path: "/outbound-management/pack-management",
+        name: "打包管理",
+        routes: [
+          {
+            name: "打包列表",
+            path: "/outbound-management/pack-management/pack-list",
+            component: "./outbound-management/pack-management/pack-list",
+          },
+          {
+            name: "打包",
+            path: "/outbound-management/pack-management/pack",
+            component: "./outbound-management/pack-management/pack",
+          },
+        ],
       },
       {
-        path: "/outbound-order/d",
-        name: "上架",
-        component: "./developing",
+        path: "/outbound-management/putaway-list",
+        name: "上架列表",
+        component: "./outbound-management/putaway-list",
       },
       {
-        path: "/outbound-order/e",
-        name: "发货",
-        component: "./developing",
+        path: "/outbound-management/send-list",
+        name: "发货列表",
+        component: "./outbound-management/send-list",
       },
     ],
   },
+  {
+    path: "/mock-list",
+    name: "测试数据模拟",
+    icon: "ShoppingCartOutlined",
+    component: "./mock-list",
+  },
+
   { path: "/", redirect: "/dashboard" },
   { path: "*", layout: false, component: "./404" },
 ];

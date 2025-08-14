@@ -32,3 +32,64 @@ export async function getPurchaseListByPage(params: {
     },
   });
 }
+/** 获取收货单列表 POST /orders/page */
+export async function getDeliveryListByPage(params: {
+  /** 当前的页码 */
+  page?: number;
+  /** 页面的容量 */
+  pageSize?: number;
+}) {
+  return request<API.RuleList>("/inbound-receive/page", {
+    method: "POST",
+    data: {
+      current: params.page,
+      /** 页面的容量 */
+      size: params.pageSize,
+    },
+  });
+}
+
+export async function purchaseInitiate(data: {
+  ids: string[];
+  remark?: string;
+}) {
+  return request<any>("/purchase/initiate", {
+    method: "POST",
+    data,
+  });
+}
+
+/** 获取验货单列表 POST /orders/page */
+export async function getInspectionListByPage(params: {
+  /** 当前的页码 */
+  page?: number;
+  /** 页面的容量 */
+  pageSize?: number;
+}) {
+  return request<API.RuleList>("/inbound-inspection/page", {
+    method: "POST",
+    data: {
+      current: params.page,
+      /** 页面的容量 */
+      size: params.pageSize,
+    },
+  });
+}
+/** 获取验货单（包裹）信息 */
+export async function getInspectionScan(logisticsCode: string) {
+  return request<API.RuleList>(
+    `/inbound-inspection/scan?logisticsCode=${logisticsCode}`,
+    {
+      method: "GET",
+    }
+  );
+}
+/** 提交验货单（包裹）信息 */
+export async function InspectionSubmit(data: string[]) {
+  return request<API.RuleList>("/inbound-inspection/checked", {
+    method: "POST",
+    data: {
+      checkList: data,
+    },
+  });
+}

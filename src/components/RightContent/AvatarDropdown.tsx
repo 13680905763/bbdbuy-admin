@@ -95,14 +95,14 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({
     </span>
   );
 
-  console.log("initialState", initialState);
+  // console.log("initialState", initialState);
 
   if (!initialState) {
     return loading;
   }
 
   const { currentUser } = initialState;
-  console.log("currentUser", currentUser, currentUser?.nickName);
+  // console.log("currentUser", currentUser, currentUser?.nickName);
 
   if (!currentUser || !currentUser.nickName) {
     return loading;
