@@ -9,7 +9,7 @@ const ParticularPaper: React.FC = () => {
   const [scanValue, setScanValue] = useState("");
   const [tableData, setTableData] = useState<any[]>([]);
   const inputRef = useRef(null);
-
+  const [submitting, setSubmitting] = useState(false);
   const handleScan = async () => {
     if (!scanValue.trim()) {
       message.warning("请输入条码");
@@ -117,74 +117,69 @@ const ParticularPaper: React.FC = () => {
   };
 
   const handleSubmit = async () => {
-    const data: any = tableData.map((item) => {
-      return {
-        id: item.id,
-        weight: item.weight,
-        length: item.length,
-        width: item.width,
-        height: item.height,
-        quantity: item.quantity,
-        logisticsCode: item.logisticsCode,
-        inspectionStatusCode: item.inspectionStatusCode,
-        abnormalCode: item.abnormalCode || "",
-      };
-    });
-    console.log("tableData", data);
-    for (let i = 0; i < data.length; i++) {
-      const item = data[i];
+    if (!tableData.length) {
+      message.warning("暂无数据可提交");
+      return;
+    }
 
-      // 校验字段是否缺失
-      const requiredFields = [
-        "weight",
-        "length",
-        "width",
-        "height",
-        "quantity",
-        "inspectionStatusCode",
-      ];
-      const reqObj: any = {
-        length: "长度",
-        width: "宽度",
-        height: "高度",
-        weight: "重量",
-        quantity: "数量",
-        inspectionStatusCode: "检测状态",
-      };
-      for (const field of requiredFields) {
-        if (
-          item[field] === undefined ||
-          item[field] === null ||
-          item[field] === ""
-        ) {
-          message.warning(`第 ${i + 1} 行的 ${reqObj[field]} 未填写`);
+    setSubmitting(true); // 开始 loading
+    try {
+      const data: any = tableData.map((item) => {
+        return {
+          id: item.id,
+          weight: item.weight,
+          length: item.length,
+          width: item.width,
+          height: item.height,
+          quantity: item.quantity,
+          logisticsCode: item.logisticsCode,
+          inspectionStatusCode: item.inspectionStatusCode,
+          abnormalCode: item.abnormalCode || "",
+        };
+      });
+
+      // 校验
+      for (let i = 0; i < data.length; i++) {
+        const item = data[i];
+        const requiredFields = [
+          "weight",
+          "length",
+          "width",
+          "height",
+          "quantity",
+          "inspectionStatusCode",
+        ];
+        const reqObj: any = {
+          length: "长度",
+          width: "宽度",
+          height: "高度",
+          weight: "重量",
+          quantity: "数量",
+          inspectionStatusCode: "检测状态",
+        };
+        for (const field of requiredFields) {
+          if (!item[field]) {
+            message.warning(`第 ${i + 1} 行的 ${reqObj[field]} 未填写`);
+            setSubmitting(false);
+            return;
+          }
+        }
+        if (item.inspectionStatusCode !== "1032" && !item.abnormalCode) {
+          message.warning(`第 ${i + 1} 行状态异常，需填写异常类型`);
+          setSubmitting(false);
           return;
         }
       }
 
-      // inspectionStatusCode 为 ABNORMAL 时，abnormalCode 也必须填
-      if (item.inspectionStatusCode !== "NORMAL" && item.abnormalCode === "") {
-        message.warning(`第 ${i + 1} 状态异常`);
-        return;
+      const res = await InspectionSubmit(data);
+      if (res.success) {
+        message.success("提交成功");
+        setTableData([]);
+        setScanValue("");
       }
+    } finally {
+      setSubmitting(false); // 无论成功失败都关闭 loading
     }
-
-    const res = await InspectionSubmit(data);
-    console.log("res", res);
-    if (res.success) {
-      message.success("提交成功");
-      setTableData([]);
-      setScanValue("");
-    }
-    // try {
-    //   await request("/api/inventory/submit", {
-    //     method: "POST",
-    //     data: tableData,
-    //   });
-    //   message.success("提交成功！");
-    // } catch (error) {
-    //   message.error("提交失败，请重试！");
-    // }
   };
   const columns: ProColumns<any>[] = [
     { title: "入库单号", dataIndex: "inboundId" },
@@ -338,7 +333,7 @@ const ParticularPaper: React.FC = () => {
             onChange={(v) => {
               console.log(v);
 
-              if (v === "NORMAL") {
+              if (v === "1032") {
                 setTableData((prev) => {
                   const updated = [...prev];
                   updated[index].inspectionStatusCode = v;
@@ -348,22 +343,22 @@ const ParticularPaper: React.FC = () => {
               } else {
                 setTableData((prev) => {
                   const updated = [...prev];
-                  updated[index].inspectionStatusCode = "ABNORMAL";
+                  updated[index].inspectionStatusCode = "1033";
                   updated[index].abnormalCode = v;
                   return updated;
                 });
               }
             }}
             options={[
-              { value: "NORMAL", label: "正常" },
-              { value: "DAMAGED", label: "破损" },
-              { value: "QUALITY ISSUES", label: "质量问题" },
-              { value: "LESS SEND", label: "少发" },
-              { value: "WRONG POST", label: "错发" },
-              { value: "BUY LESS", label: "少买" },
-              { value: "BUY WRONG", label: "错买" },
-              { value: "SEND MORE", label: "多发" },
-              { value: "BUY MORE", label: "多买" },
+              { value: "1032", label: "正常" },
+              { value: "10331", label: "破损" },
+              { value: "10332", label: "质量问题" },
+              { value: "10333", label: "少发" },
+              { value: "10334", label: "错发" },
+              { value: "10335", label: "少买" },
+              { value: "10336", label: "错买" },
+              { value: "10337", label: "多发" },
+              { value: "10338", label: "多买" },
             ]}
           />
         );
@@ -377,7 +372,7 @@ const ParticularPaper: React.FC = () => {
         bordered={false}
         extra={
           <Button type="primary" onClick={handleBatchPrint}>
-            批量打印条形码
+            打印条形码
           </Button>
         }
       >
@@ -427,7 +422,13 @@ const ParticularPaper: React.FC = () => {
           bordered
         />
         <div style={{ textAlign: "right", marginTop: 16 }}>
-          <Button type="primary" onClick={handleSubmit} size="large">
+          <Button
+            type="primary"
+            onClick={handleSubmit}
+            size="large"
+            loading={submitting}
+            disabled={!tableData.length}
+          >
             提交入库信息
           </Button>
         </div>

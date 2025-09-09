@@ -2,7 +2,7 @@ import { getPurchaseListByPage, purchaseInitiate } from "@/services/order";
 import { PlusOutlined } from "@ant-design/icons";
 import type { ActionType, ProColumns } from "@ant-design/pro-components";
 import { PageContainer, ProTable } from "@ant-design/pro-components";
-import { Button, Pagination, Table, message } from "antd";
+import { Button, Pagination, Table, Tag, message } from "antd";
 import React, { useEffect, useRef, useState } from "react";
 
 type OrderProductRow = {
@@ -75,9 +75,27 @@ const TableList: React.FC = () => {
   useEffect(() => {
     fetchData();
   }, [page, pageSize]);
-  console.log("dataSource", dataSource);
 
   const columns: ProColumns<OrderProductRow>[] = [
+    {
+      title: "采购订单号",
+      dataIndex: "sourceOrderId",
+    },
+    {
+      title: "快递单号",
+      dataIndex: "packages",
+      width: 180,
+      render: (dom, record: any) => {
+        const packages = record.packages;
+        return packages?.map((item: any) => {
+          return (
+            <div>
+              {item.logisticsCompany}-{item.logisticsCode}
+            </div>
+          );
+        });
+      },
+    },
     {
       title: "采购编号",
       dataIndex: "purchaseCode",
@@ -86,17 +104,37 @@ const TableList: React.FC = () => {
       title: "订单编号",
       dataIndex: "orderCode",
     },
-    {
-      title: "支付状态",
-      dataIndex: "payStatus",
-      width: 80,
-    },
+
     {
       title: "采购状态",
       dataIndex: "status",
       width: 80,
+      render: (dom, record: any) => {
+        const status = record.status;
+        let color = "black";
+        if (status === "待采购") {
+          color = "red";
+        } else if (status === "已采购") {
+          color = "green";
+        }
+        return <Tag color={color}>{status}</Tag>;
+      },
     },
-
+    {
+      title: "支付状态",
+      dataIndex: "payStatus",
+      width: 80,
+      render: (dom, record: any) => {
+        const payStatus = record.payStatus;
+        let color = "black";
+        if (payStatus === "已付款") {
+          color = "green";
+        } else {
+          color = "red";
+        }
+        return <Tag color={color}>{payStatus}</Tag>;
+      },
+    },
     {
       title: "采购员",
       dataIndex: "dispatchUserName",
@@ -118,28 +156,45 @@ const TableList: React.FC = () => {
                   dataIndex: "picUrl",
                   key: "picUrl",
                   width: 100,
-                  render: (picUrl: string, row) => {
-                    return <img src={row?.skuPicUrl} alt="" width={100} />;
+                  render: (picUrl: string, record: any) => {
+                    return <img src={record?.skuPicUrl} alt="" width={100} />;
                   },
                 },
                 {
                   title: "sku",
                   dataIndex: "sku",
                   key: "sku",
-                  width: 200,
-                  render: (sku) => {
-                    return sku.propName_valueName;
+                  width: 150,
+                  render: (sku, record: any) => {
+                    return (
+                      <div>
+                        <p>{sku.propName_valueName}</p>
+                        <p>
+                          <a href={record?.productUrl} target="_blank">
+                            原链接
+                          </a>
+                        </p>
+                      </div>
+                    );
                   },
                 },
                 {
                   title: "数量",
                   dataIndex: "quantity",
                   key: "quantity",
+                  width: 50,
                 },
                 {
                   title: "价格",
                   dataIndex: "price",
                   key: "price",
+                  width: 50,
+                },
+                {
+                  title: "备注",
+                  dataIndex: "remark",
+                  key: "remark",
+                  width: 100,
                 },
               ]}
               pagination={false}
@@ -157,7 +212,6 @@ const TableList: React.FC = () => {
   return (
     <PageContainer>
       <ProTable
-        headerTitle="采购列表"
         bordered
         actionRef={actionRef}
         rowKey="id"

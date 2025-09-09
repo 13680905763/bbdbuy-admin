@@ -1,7 +1,7 @@
 import { getInspectionListByPage } from "@/services/order"; // 你自己的接口路径
 import type { ActionType, ProColumns } from "@ant-design/pro-components";
 import { PageContainer, ProTable } from "@ant-design/pro-components";
-import { Pagination, message } from "antd";
+import { Pagination, Tag, message } from "antd";
 import React, { useEffect, useRef, useState } from "react";
 
 type OrderProductRow = {
@@ -64,9 +64,13 @@ const TableList: React.FC = () => {
     },
     {
       title: "商品图片",
-      dataIndex: "product",
+      dataIndex: "product.picUrl",
       width: 100,
-      render: (product: any) => <img src={product?.picUrl} width={100} />,
+      render: (dom, record: any) => {
+        console.log("record", record);
+
+        return <img src={record?.product?.picUrl} width={100} />;
+      },
     },
     {
       title: "商品名称",
@@ -88,6 +92,23 @@ const TableList: React.FC = () => {
     {
       title: "验货状态",
       dataIndex: "inspectionStatus",
+      width: 30,
+      render: (dom, record: any) => {
+        const inspectionStatus = record.inspectionStatus;
+        let color = "black";
+        if (inspectionStatus === "验货正常") {
+          color = "green";
+        } else if (inspectionStatus === "验货异常") {
+          color = "red";
+        } else {
+          color = "black";
+        }
+        return <Tag color={color}>{inspectionStatus}</Tag>;
+      },
+    },
+    {
+      title: "异常原因",
+      dataIndex: "abnormalMsg",
       width: 100,
     },
   ];
@@ -95,7 +116,6 @@ const TableList: React.FC = () => {
   return (
     <PageContainer>
       <ProTable<OrderProductRow>
-        headerTitle="订单列表"
         bordered
         actionRef={actionRef}
         rowKey="id"

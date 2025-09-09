@@ -3,7 +3,7 @@
 import { getOutboundPickingListByPage } from "@/services";
 import type { ActionType, ProColumns } from "@ant-design/pro-components";
 import { PageContainer, ProTable } from "@ant-design/pro-components";
-import { Pagination, message } from "antd";
+import { Pagination, Tag, message } from "antd";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 
 // ✅ 定义数据类型
@@ -95,6 +95,16 @@ const TableList: React.FC = () => {
     {
       title: "拣货状态",
       dataIndex: "pickStatus",
+      render: (dom, record: any) => {
+        const pickStatus = record.pickStatus;
+        let color = "black";
+        if (pickStatus === "已拣货") {
+          color = "green";
+        } else {
+          color = "red";
+        }
+        return <Tag color={color}>{pickStatus}</Tag>;
+      },
     },
     {
       title: "下单时间",
@@ -118,7 +128,7 @@ const TableList: React.FC = () => {
         // }}
         search={false}
       />
-      <div className="p-4 text-right">
+      <div style={{ padding: 16, textAlign: "right" }}>
         <Pagination
           current={pagination.current}
           pageSize={pagination.pageSize}

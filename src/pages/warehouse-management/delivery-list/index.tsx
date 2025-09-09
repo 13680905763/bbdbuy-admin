@@ -1,7 +1,7 @@
 import { getDeliveryListByPage } from "@/services/order";
 import type { ActionType, ProColumns } from "@ant-design/pro-components";
 import { PageContainer, ProTable } from "@ant-design/pro-components";
-import { Pagination, message } from "antd";
+import { Pagination, Tag, message } from "antd";
 import React, { useEffect, useRef, useState } from "react";
 
 type OrderProductRow = {
@@ -67,6 +67,16 @@ const TableList: React.FC = () => {
     {
       title: "收货状态",
       dataIndex: "receiveStatus",
+      render: (dom, record: any) => {
+        const receiveStatus = record.receiveStatus;
+        let color = "black";
+        if (receiveStatus === "正常") {
+          color = "green";
+        } else {
+          color = "red";
+        }
+        return <Tag color={color}>{receiveStatus}</Tag>;
+      },
     },
     {
       title: "创建时间",

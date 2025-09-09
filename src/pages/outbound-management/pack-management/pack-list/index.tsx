@@ -3,8 +3,10 @@
 import { getOutboundPackListByPage } from "@/services";
 import type { ActionType, ProColumns } from "@ant-design/pro-components";
 import { PageContainer, ProTable } from "@ant-design/pro-components";
-import { Pagination, message } from "antd";
+import { Button, message, Pagination, Tag } from "antd";
 import React, { useCallback, useEffect, useRef, useState } from "react";
+
+import { PackageSplitModal } from "./PackageSplitModal";
 
 // ✅ 定义数据类型
 type OrderProductRow = {
@@ -29,6 +31,20 @@ const TableList: React.FC = () => {
     total: 0,
   });
 
+  // 弹窗状态
+  const [splitModalVisible, setSplitModalVisible] = useState(false);
+  const [currentRow, setCurrentRow] = useState<OrderProductRow | null>(null);
+  console.log(
+    "123",
+    currentRow?.items?.map((item) => {
+      return {
+        id: item.id,
+        code: item.packageCode,
+        weight: item.weight,
+      };
+    })
+  );
+
   // ✅ 请求数据封装
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -49,6 +65,11 @@ const TableList: React.FC = () => {
     }
   }, [pagination.current, pagination.pageSize]);
 
+  const handleSplitPackage = (record: OrderProductRow) => {
+    setCurrentRow(record);
+    setSplitModalVisible(true);
+  };
+
   useEffect(() => {
     fetchData();
   }, [fetchData]);
@@ -56,33 +77,47 @@ const TableList: React.FC = () => {
   // ✅ 表头配置
   const columns: ProColumns<OrderProductRow>[] = [
     {
-      title: "拣库单号",
-      dataIndex: "outboundCode",
+      title: "包裹编号",
+      dataIndex: "packingPackageCode",
     },
     {
       title: "包裹信息",
-      dataIndex: "itemAndLocations",
-      render: (itemAndLocations: any) => {
-        console.log("itemAndLocations", itemAndLocations);
-        return itemAndLocations.map((item) => {
-          return (
-            item.location.packageCode + "--" + item.location.locationStatus
-          );
-        });
+      dataIndex: "items",
+      render: (items: any) => {
+        return items?.map((item: any) => (
+          <p key={item.location.packageCode}>
+            {item.location.packageCode} -- {item.location.locationStatus}
+          </p>
+        ));
       },
     },
     {
-      title: "附加服务",
-      dataIndex: "locationCode",
+      title: "状态",
+      dataIndex: "status",
+      render: (_, record: any) => {
+        const status = record.status;
+        const color = status === "已打包" ? "green" : "red";
+        return <Tag color={color}>{status}</Tag>;
+      },
     },
     {
-      title: "打包状态",
-      dataIndex: "packingStatus",
+      title: "下单时间",
+      dataIndex: "createTime",
     },
-    // {
-    //   title: "下单时间",
-    //   dataIndex: "createTime",
-    // },
+    {
+      title: "操作",
+      key: "canSplit",
+      render: (_: any, record: OrderProductRow) => {
+        if (record?.canSplit) {
+          return (
+            <Button type="primary" onClick={() => handleSplitPackage(record)}>
+              拆分包裹
+            </Button>
+          );
+        }
+        return null; // 没有按钮时必须返回 null，否则 Table 渲染会报错
+      },
+    },
   ];
 
   return (
@@ -95,13 +130,10 @@ const TableList: React.FC = () => {
         loading={loading}
         actionRef={actionRef}
         pagination={false}
-        // rowSelection={{
-        //   selectedRowKeys: selectedRows.map((row) => row.id),
-        //   onChange: (_, rows) => setSelectedRows(rows),
-        // }}
         search={false}
       />
-      <div className="p-4 text-right">
+
+      <div style={{ padding: 16, textAlign: "right" }}>
         <Pagination
           current={pagination.current}
           pageSize={pagination.pageSize}
@@ -112,6 +144,21 @@ const TableList: React.FC = () => {
           }
         />
       </div>
+
+      <PackageSplitModal
+        open={splitModalVisible} // 控制弹窗显示
+        onClose={() => setSplitModalVisible(false)}
+        initialPackages={
+          currentRow?.items?.map((item) => {
+            return {
+              id: item.id,
+              code: item.packageCode,
+              weight: item.weight,
+            };
+          }) || undefined
+        } // 当前行包裹数据
+        outboundId={currentRow?.outboundId}
+      />
     </PageContainer>
   );
 };

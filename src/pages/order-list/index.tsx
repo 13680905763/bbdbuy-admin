@@ -1,7 +1,7 @@
 import { getOrderListByPage } from "@/services/order"; // 你自己的接口路径
 import type { ActionType, ProColumns } from "@ant-design/pro-components";
 import { PageContainer, ProTable } from "@ant-design/pro-components";
-import { Pagination, Table, message } from "antd";
+import { Pagination, Table, Tag, message } from "antd";
 import React, { useEffect, useRef, useState } from "react";
 
 type OrderProductRow = {
@@ -113,10 +113,16 @@ const TableList: React.FC = () => {
 
     {
       title: "状态",
-      dataIndex: "customerPayStatusCode",
-      valueEnum: {
-        201: { text: "待付款", status: "Default" },
-        203: { text: "已付款", status: "Success" },
+      dataIndex: "customerPayStatus",
+      render: (dom, record: any) => {
+        const customerPayStatus = record.customerPayStatus;
+        let color = "black";
+        if (customerPayStatus === "已付款") {
+          color = "green";
+        } else {
+          color = "red";
+        }
+        return <Tag color={color}>{customerPayStatus}</Tag>;
       },
     },
     { title: "下单时间", dataIndex: "createTime" },
@@ -126,7 +132,6 @@ const TableList: React.FC = () => {
   return (
     <PageContainer>
       <ProTable<OrderProductRow>
-        headerTitle="订单列表"
         bordered
         actionRef={actionRef}
         rowKey="id"

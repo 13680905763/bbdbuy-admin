@@ -8,6 +8,7 @@ import React, { useRef, useState } from "react";
 const ParticularPaper: React.FC = () => {
   const [scanValue, setScanValue] = useState("");
   const [tableData, setTableData] = useState<any[]>([]);
+  const [submitting, setSubmitting] = useState(false);
   const inputRef = useRef(null);
 
   const handleScan = async () => {
@@ -23,25 +24,30 @@ const ParticularPaper: React.FC = () => {
   };
 
   const handleSubmit = async () => {
-    const data: any = {
-      finishList: tableData.map((item) => {
-        return {
+    if (!tableData.length) {
+      message.warning("没有数据可提交");
+      return;
+    }
+    setSubmitting(true); // 开始 loading
+    try {
+      const data: any = {
+        finishList: tableData.map((item) => ({
           id: Number(item.id),
           weight: item.weight,
           length: item.length,
           width: item.width,
           height: item.height,
-        };
-      }),
-    };
-    console.log("tableData", data);
+        })),
+      };
 
-    const res = await PackSubmit(data);
-    console.log("res", res);
-    if (res.success) {
-      message.success("提交成功");
-      setTableData([]);
-      setScanValue("");
+      const res = await PackSubmit(data);
+      if (res.success) {
+        message.success("提交成功");
+        setTableData([]);
+        setScanValue("");
+      }
+    } finally {
+      setSubmitting(false); // 无论成功失败都关闭 loading
     }
   };
   const columns: ProColumns<any>[] = [
@@ -49,10 +55,10 @@ const ParticularPaper: React.FC = () => {
 
     {
       title: "包裹信息",
-      dataIndex: "itemAndLocations",
-      render: (itemAndLocations: any) => {
-        return itemAndLocations.map((itemAndLocations) => {
-          return <p>{itemAndLocations.location.packageCode}</p>;
+      dataIndex: "items",
+      render: (items: any) => {
+        return items.map((items: any) => {
+          return <p>{items.location.packageCode}</p>;
         });
       },
     },
@@ -195,7 +201,13 @@ const ParticularPaper: React.FC = () => {
           bordered
         />
         <div style={{ textAlign: "right", marginTop: 16 }}>
-          <Button type="primary" onClick={handleSubmit} size="large">
+          <Button
+            type="primary"
+            onClick={handleSubmit}
+            size="large"
+            loading={submitting}
+            disabled={!tableData.length}
+          >
             打包完成
           </Button>
         </div>

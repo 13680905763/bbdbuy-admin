@@ -100,7 +100,7 @@ const Login: React.FC = () => {
             maxWidth: "75vw",
           }}
           initialValues={{
-            mobile: "19245683654",
+            mobile: "admin",
             password: "123456",
           }}
           title={

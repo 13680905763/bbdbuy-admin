@@ -2,7 +2,7 @@ import { getOutboundListByPage } from "@/services";
 import { PlusOutlined } from "@ant-design/icons";
 import type { ActionType, ProColumns } from "@ant-design/pro-components";
 import { PageContainer, ProTable } from "@ant-design/pro-components";
-import { Button, Pagination, Table, message } from "antd";
+import { Button, Pagination, Table, Tag, message } from "antd";
 import React, { useEffect, useRef, useState } from "react";
 import { printPickingList } from "./pre";
 
@@ -64,28 +64,34 @@ const TableList: React.FC = () => {
     },
     {
       title: "包裹信息",
-      dataIndex: "packageItemList",
-      render: (packageItemList: any) => {
-        console.log("packageItemList", packageItemList);
+      dataIndex: "packing",
+      render: (packing: any) => {
+        console.log("packing", packing);
         return (
           <div className="purchase-table">
             <Table
               bordered
               rowKey="id"
-              dataSource={packageItemList}
+              dataSource={packing}
               columns={[
                 {
                   title: "包裹编号",
-                  dataIndex: "packageCode",
-                  key: "packageCode",
+                  dataIndex: "packingPackageCode",
+                  key: "packingPackageCode",
                 },
-
                 {
-                  title: "数量",
-                  dataIndex: "logisticsCode",
-                  key: "logisticsCode",
-                  render: (picUrl, row: any) => {
-                    return <p>{row?.orderProduct?.quantity}</p>;
+                  title: "状态",
+                  dataIndex: "status",
+                  key: "status",
+                  render: (dom, record: any) => {
+                    const status = record.status;
+                    let color = "black";
+                    if (status === "已收货") {
+                      color = "green";
+                    } else {
+                      color = "red";
+                    }
+                    return <Tag color={color}>{status}</Tag>;
                   },
                 },
               ]}
@@ -95,41 +101,37 @@ const TableList: React.FC = () => {
         );
       },
     },
-    {
-      title: "附加服务",
-      dataIndex: "serviceList",
-      key: "serviceList",
-      render: (serviceList: any) => {
-        console.log("serviceList", serviceList);
-        return (
-          <div className="purchase-table">
-            <Table
-              bordered
-              rowKey="serviceId"
-              dataSource={serviceList}
-              columns={[
-                {
-                  title: "服务名",
-                  dataIndex: "serviceName",
-                  key: "serviceName",
-                },
-                {
-                  title: "备注",
-                  dataIndex: "remark",
-                  key: "remark",
-                },
-              ]}
-              pagination={false}
-            />
-          </div>
-        );
-      },
-    },
-    {
-      title: "状态",
-      dataIndex: "status",
-      key: "status",
-    },
+    // {
+    //   title: "附加服务",
+    //   dataIndex: "services",
+    //   key: "services",
+    //   render: (services: any) => {
+    //     console.log("services", services);
+    //     return (
+    //       <div className="purchase-table">
+    //         <Table
+    //           bordered
+    //           rowKey="serviceId"
+    //           dataSource={services}
+    //           columns={[
+    //             {
+    //               title: "服务名",
+    //               dataIndex: "serviceName",
+    //               key: "serviceName",
+    //             },
+    //             {
+    //               title: "备注",
+    //               dataIndex: "remark",
+    //               key: "remark",
+    //             },
+    //           ]}
+    //           pagination={false}
+    //         />
+    //       </div>
+    //     );
+    //   },
+    // },
+
     { title: "下单时间", dataIndex: "createTime" },
     { title: "备注", dataIndex: "remark" },
   ];
@@ -159,29 +161,31 @@ const TableList: React.FC = () => {
                 message.info("请先勾选打印数据");
                 return;
               }
-              console.log("点击了打印拣货单按钮666", selectedRows);
-              const printData = selectedRows.map((item: any) => {
-                return {
-                  outboundCode: item?.outboundCode,
-                  userName: item?.customerName,
-                  methodName: item?.shipping?.methodName,
-                  remark: item?.remark,
-                  serviceName: item?.serviceList.map((services: any) => {
-                    return services?.serviceName;
-                  }),
-                  items: item.packageItemList.map((pag: any) => {
+              console.log("点击了打印拣货单按钮", selectedRows);
+              const printData = selectedRows
+                .map((packing: any) => {
+                  return packing.packing.map((item: any) => {
                     return {
-                      packageCode: pag?.packageCode,
-                      locationCode: pag?.location?.locationCode,
-                      quantity: pag?.quantity,
+                      packingPackageCode: item?.packingPackageCode,
+                      customerName: item?.customerName,
+                      methodName: item?.shipping?.methodName,
+                      remark: packing?.remark,
+                      services: item?.services.map((service: any) => {
+                        return service?.serviceName;
+                      }),
+                      items: item.items.map((pag: any) => {
+                        return {
+                          packageCode: pag?.packageCode,
+                          locationCode: pag?.location?.locationCode,
+                          quantity: pag.quantity,
+                        };
+                      }),
                     };
-                  }),
-                };
-              });
+                  });
+                })
+                .flat();
               console.log("printData", printData);
-              printData.forEach((i) => {
-                printPickingList(i);
-              });
+              printPickingList(printData);
             }}
           >
             打印拣货单

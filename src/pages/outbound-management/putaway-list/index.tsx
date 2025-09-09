@@ -1,7 +1,7 @@
 import { getOutboundPutawayListByPage } from "@/services";
 import type { ActionType, ProColumns } from "@ant-design/pro-components";
 import { PageContainer, ProTable } from "@ant-design/pro-components";
-import { Pagination, message } from "antd";
+import { Pagination, Tag, message } from "antd";
 import React, { useEffect, useRef, useState } from "react";
 
 type OrderProductRow = {
@@ -58,13 +58,26 @@ const TableList: React.FC = () => {
     },
     {
       title: "货位",
-      dataIndex: "totalFee",
+      dataIndex: "location",
+      render: (row) => {
+        return row?.locationCode;
+      },
     },
 
     {
       title: "状态",
       dataIndex: "putawayStatus",
       key: "putawayStatus",
+      render: (dom, record: any) => {
+        const putawayStatus = record.putawayStatus;
+        let color = "black";
+        if (putawayStatus === "已上架") {
+          color = "green";
+        } else {
+          color = "red";
+        }
+        return <Tag color={color}>{putawayStatus}</Tag>;
+      },
     },
     // {
     //   title: "打包人员",

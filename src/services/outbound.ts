@@ -110,27 +110,10 @@ export async function getShippingFeeTemplate(id: string) {
 }
 
 export async function getOutboundSend(data: any) {
-  console.log("paramsdata", data);
-
-  // 返回 Blob 类型
-  const res = await request("/outbound-send/export", {
+  return request("/outbound-send/export", {
     method: "POST",
     data,
-    responseType: "blob", // 关键
   });
-
-  // 创建下载链接
-  const blob = new Blob([res], { type: "application/vnd.ms-excel" });
-  const url = window.URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-
-  // 可以指定下载文件名
-  // a.download = `出库单_${new Date().toISOString()}.xlsx`;
-  a.click();
-
-  // 释放 URL
-  window.URL.revokeObjectURL(url);
 }
 
 export async function uploadOutboundSend(file: File) {
@@ -141,5 +124,12 @@ export async function uploadOutboundSend(file: File) {
     method: "POST",
     data: formData,
     requestType: "form", // umi request 会自动处理 multipart/form-data
+  });
+}
+
+export async function rebuildOutboundPacking(data: any) {
+  return request("/outbound-packing/rebuild", {
+    method: "POST",
+    data,
   });
 }

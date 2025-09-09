@@ -1,20 +1,28 @@
 import { mkpurchase, mktaobaopy, mktaobaosd } from "@/services/mock";
 import { PageContainer } from "@ant-design/pro-components";
-import { Button, Card, Form, Input, Space, message } from "antd";
-import React from "react";
+import { Button, Card, Form, Input, message, Space } from "antd";
+import React, { useState } from "react";
 
 const { TextArea } = Input;
 
 const TestDataGenerator: React.FC = () => {
-  // 每个层的提交方法
-  const handleSubmit = async (values: any, apiUrl: any) => {
+  // 每个按钮的 loading 独立控制
+  const [loading, setLoading] = useState<{ [key: string]: boolean }>({});
+
+  // 提交方法
+  const handleSubmit = async (values: any, apiUrl: any, key: string) => {
     try {
+      setLoading((prev) => ({ ...prev, [key]: true }));
       console.log("提交数据:", values);
       const res = await apiUrl(values);
-      console.log("返回数据:", res.data);
+      if (res.success) {
+        message.success(res.msg);
+      }
     } catch (error) {
       console.error(error);
-      message.error("请求失败");
+      // message.error("请求失败");
+    } finally {
+      setLoading((prev) => ({ ...prev, [key]: false }));
     }
   };
 
@@ -34,7 +42,8 @@ const TestDataGenerator: React.FC = () => {
                     .filter((v: string) => v),
                   remark: values.remark,
                 },
-                mkpurchase
+                mkpurchase,
+                "purchase"
               )
             }
           >
@@ -43,19 +52,20 @@ const TestDataGenerator: React.FC = () => {
               rules={[{ required: true, message: "请输入采购ID集合" }]}
             >
               <TextArea
-                placeholder="请输入采购ID集合（每行一个或用逗号隔开）"
+                placeholder="请输入订单编号（每行一个或用逗号隔开）"
                 rows={3}
                 style={{ width: 300 }}
               />
             </Form.Item>
-            <Form.Item
-              name="remark"
-              rules={[{ required: true, message: "请输入备注" }]}
-            >
+            <Form.Item name="remark">
               <Input placeholder="备注" style={{ width: 200 }} />
             </Form.Item>
             <Form.Item>
-              <Button type="primary" htmlType="submit">
+              <Button
+                type="primary"
+                htmlType="submit"
+                loading={loading.purchase}
+              >
                 采购
               </Button>
             </Form.Item>
@@ -67,18 +77,18 @@ const TestDataGenerator: React.FC = () => {
           <Form
             layout="inline"
             onFinish={(values) =>
-              handleSubmit({ msgCode: "pay", ...values }, mktaobaopy)
+              handleSubmit({ msgCode: "pay", ...values }, mktaobaopy, "pay")
             }
           >
             <Form.Item
               name="orderCode"
-              rules={[{ required: true, message: "请输入orderCode" }]}
+              rules={[{ required: true, message: "订单编号" }]}
             >
-              <Input placeholder="orderCode" />
+              <Input placeholder="请输入订单编号" />
             </Form.Item>
 
             <Form.Item>
-              <Button type="primary" htmlType="submit">
+              <Button type="primary" htmlType="submit" loading={loading.pay}>
                 付款
               </Button>
             </Form.Item>
@@ -90,18 +100,18 @@ const TestDataGenerator: React.FC = () => {
           <Form
             layout="inline"
             onFinish={(values) =>
-              handleSubmit({ msgCode: "send", ...values }, mktaobaosd)
+              handleSubmit({ msgCode: "send", ...values }, mktaobaosd, "send")
             }
           >
             <Form.Item
               name="orderCode"
-              rules={[{ required: true, message: "请输入orderCode" }]}
+              rules={[{ required: true, message: "订单编号" }]}
             >
-              <Input placeholder="orderCode" />
+              <Input placeholder="请输入订单编号" />
             </Form.Item>
 
             <Form.Item>
-              <Button type="primary" htmlType="submit">
+              <Button type="primary" htmlType="submit" loading={loading.send}>
                 发货
               </Button>
             </Form.Item>
