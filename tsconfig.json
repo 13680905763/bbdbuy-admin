@@ -3,6 +3,7 @@
     "baseUrl": "./",
     "target": "esnext",
     "moduleResolution": "node",
+    "module": "esnext", // ⚡ 改这里
     "jsx": "react-jsx",
     "esModuleInterop": true,
     "experimentalDecorators": true,

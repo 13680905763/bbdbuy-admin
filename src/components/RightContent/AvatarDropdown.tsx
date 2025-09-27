@@ -1,4 +1,5 @@
 import { outLogin } from "@/services";
+import { closeWS } from "@/utils/ws";
 import {
   LogoutOutlined,
   SettingOutlined,
@@ -52,6 +53,8 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({
 
   const loginOut = async () => {
     await outLogin();
+    closeWS();
+
     const { search, pathname } = window.location;
     const urlParams = new URL(window.location.href).searchParams;
     const searchParams = new URLSearchParams({

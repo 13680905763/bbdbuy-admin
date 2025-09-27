@@ -113,16 +113,38 @@ const TableList: React.FC = () => {
 
     {
       title: "状态",
-      dataIndex: "customerPayStatus",
+      dataIndex: "status",
       render: (dom, record: any) => {
-        const customerPayStatus = record.customerPayStatus;
-        let color = "black";
-        if (customerPayStatus === "已付款") {
-          color = "green";
-        } else {
-          color = "red";
+        const status = record.status;
+        const statusCode = record.statusCode;
+        let color = "default";
+
+        switch (statusCode) {
+          case 100: // 已取消
+            color = "gray";
+            break;
+          case 101: // 待付款
+            color = "orange";
+            break;
+          case 102: // 待采购
+            color = "blue";
+            break;
+          case 103: // 待商家发货
+            color = "cyan";
+            break;
+          case 104: // 待入库
+            color = "purple";
+            break;
+          case 105: // 入库中
+            color = "geekblue";
+            break;
+          case 106: // 已入库
+            color = "green";
+            break;
+          default:
+            color = "default";
         }
-        return <Tag color={color}>{customerPayStatus}</Tag>;
+        return <Tag color={color}>{status}</Tag>;
       },
     },
     { title: "下单时间", dataIndex: "createTime" },

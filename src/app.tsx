@@ -4,9 +4,11 @@ import { SettingDrawer } from "@ant-design/pro-components";
 import "@ant-design/v5-patch-for-react-19";
 import type { RequestConfig, RunTimeLayoutConfig } from "@umijs/max";
 import { history } from "@umijs/max";
+import { useEffect } from "react";
 import defaultSettings from "../config/defaultSettings";
 import { errorConfig } from "./requestErrorConfig";
 import { getUserInfo } from "./services";
+import { closeWS, connectWS } from "./utils/ws";
 const isDev = process.env.NODE_ENV === "development";
 const loginPath = "/login";
 
@@ -59,6 +61,22 @@ export const layout: RunTimeLayoutConfig = ({
   initialState,
   setInitialState,
 }) => {
+  console.log("initialState", initialState);
+
+  useEffect(() => {
+    if (initialState?.currentUser?.id) {
+      // 建立 WebSocket 连接
+      connectWS();
+    } else {
+      // 未登录时，关闭 WebSocket
+      closeWS();
+    }
+
+    return () => {
+      // 页面卸载时关闭
+      closeWS();
+    };
+  }, [initialState?.currentUser?.id]);
   return {
     // actionsRender: () => [<Question key="doc" />],
     avatarProps: {
@@ -71,7 +89,14 @@ export const layout: RunTimeLayoutConfig = ({
     waterMarkProps: {
       content: initialState?.currentUser?.nickName,
     },
-    footerRender: () => <Footer />,
+    footerRender: () => {
+      console.log("location.pathname", location.pathname);
+
+      if (location.pathname === "/admin/message/list") {
+        return null; // 消息页面不显示 footer
+      }
+      return <Footer />; // 其它页面显示
+    },
 
     menuHeaderRender: false,
     // 自定义 403 页面

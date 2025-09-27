@@ -3,6 +3,7 @@
 
 declare namespace API {
   type CurrentUser = {
+    id?: string;
     name?: string;
     avatar?: string;
     userid?: string;

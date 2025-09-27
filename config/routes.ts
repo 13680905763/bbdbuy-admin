@@ -150,6 +150,86 @@ export default [
     ],
   },
   {
+    path: "/config",
+    name: "配置管理",
+    icon: "BankOutlined",
+    access: "canAdmin",
+    routes: [
+      {
+        path: "/config",
+        redirect: "/config/rate",
+      },
+      {
+        path: "/config/rate",
+        name: "汇率配置",
+        component: "./config/rate",
+      },
+      {
+        path: "/config/promotion",
+        name: "推广配置",
+        component: "./config/promotion",
+      },
+      {
+        path: "/config/coupon",
+        name: "优惠券配置",
+        component: "./config/coupon",
+      },
+      {
+        path: "/config/shipping",
+        name: "路线配置",
+        routes: [
+          {
+            name: "服务商配置",
+            path: "/config/shipping/servers",
+            component: "./config/shipping/servers",
+          },
+          {
+            name: "运输公司配置",
+            path: "/config/shipping/company",
+            component: "./config/shipping/company",
+          },
+          {
+            name: "路线配置",
+            path: "/config/shipping/line",
+            component: "./config/shipping/line",
+          },
+          {
+            name: "运费模板配置",
+            path: "/config/shipping/lineTemplate",
+            component: "./config/shipping/lineTemplate",
+          },
+        ],
+      },
+      {
+        path: "/config/sys",
+        name: "系统配置",
+        component: "./config/sys",
+      },
+    ],
+  },
+  {
+    path: "/message",
+    name: "消息管理",
+    icon: "BankOutlined",
+    access: "canAdmin",
+    routes: [
+      {
+        path: "/message",
+        redirect: "/message/list",
+      },
+      {
+        path: "/message/list",
+        name: "消息",
+        component: "./message/list",
+      },
+      {
+        path: "/message/management",
+        name: "消息管理",
+        component: "./message/management",
+      },
+    ],
+  },
+  {
     path: "/mock-list",
     name: "测试数据模拟",
     icon: "ShoppingCartOutlined",
