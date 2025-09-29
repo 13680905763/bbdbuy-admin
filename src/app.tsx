@@ -61,7 +61,7 @@ export const layout: RunTimeLayoutConfig = ({
   initialState,
   setInitialState,
 }) => {
-  console.log("initialState", initialState);
+  // console.log("initialState", initialState);
 
   useEffect(() => {
     if (initialState?.currentUser?.id) {
@@ -90,7 +90,7 @@ export const layout: RunTimeLayoutConfig = ({
       content: initialState?.currentUser?.nickName,
     },
     footerRender: () => {
-      console.log("location.pathname", location.pathname);
+      // console.log("location.pathname", location.pathname);
 
       if (location.pathname === "/admin/message/list") {
         return null; // 消息页面不显示 footer

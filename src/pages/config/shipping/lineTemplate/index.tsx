@@ -188,6 +188,20 @@ const ConfigList: React.FC = () => {
             </div>
           );
         }
+        if (record.billTypeCode === "VOLUME_WEIGHT") {
+          return (
+            <div>
+              <div>
+                首重: {record.firstWeight} g / ￥{record.firstWeightFee}
+              </div>
+              <div>
+                续重: {record.additionalWeight} g / ￥
+                {record.additionalWeightFee}
+              </div>
+              <div>体积重: {record.volumeWeightScale} kg</div>
+            </div>
+          );
+        }
         return <span>-</span>;
       },
     },
@@ -241,7 +255,11 @@ const ConfigList: React.FC = () => {
       <Modal
         title={currentRow ? "修改" : "新增"}
         open={editModalVisible}
-        onCancel={() => setEditModalVisible(false)}
+        onCancel={() => {
+          setEditModalVisible(false);
+          setBillType(undefined); // 关闭时清空收费类型
+          setLogoUrl(""); // 如果需要也可以清掉 logo
+        }}
         onOk={handleSave}
         confirmLoading={loading}
         width={500}
@@ -330,6 +348,7 @@ const ConfigList: React.FC = () => {
             <Select placeholder="请选择收费类型">
               <Select.Option value="WEIGHT">重量</Select.Option>
               <Select.Option value="VOLUME">体积</Select.Option>
+              <Select.Option value="VOLUME_WEIGHT">体积重</Select.Option>
             </Select>
           </Form.Item>
 
@@ -396,6 +415,51 @@ const ConfigList: React.FC = () => {
                 rules={[{ required: true, message: "请输入续体积费用" }]}
               >
                 <Input type="number" placeholder="请输入续体积费用" />
+              </Form.Item>
+            </>
+          )}
+          {billType === "VOLUME_WEIGHT" && (
+            <>
+              {/* 重量部分 */}
+              <Form.Item
+                name="firstWeight"
+                label="首重 (g)"
+                rules={[{ required: true, message: "请输入首重" }]}
+              >
+                <Input type="number" placeholder="请输入首重" />
+              </Form.Item>
+              <Form.Item
+                name="firstWeightFee"
+                label="首重费用 (¥)"
+                rules={[{ required: true, message: "请输入首重费用" }]}
+              >
+                <Input type="number" placeholder="请输入首重费用" />
+              </Form.Item>
+              <Form.Item
+                name="additionalWeight"
+                label="续重 (g)"
+                rules={[{ required: true, message: "请输入续重" }]}
+              >
+                <Input type="number" placeholder="请输入续重" />
+              </Form.Item>
+              <Form.Item
+                name="additionalWeightFee"
+                label="续重费用 (¥)"
+                rules={[{ required: true, message: "请输入续重费用" }]}
+              >
+                <Input type="number" placeholder="请输入续重费用" />
+              </Form.Item>
+
+              {/* 新增体积重换算比例 */}
+              <Form.Item
+                name="volumeWeightScale"
+                label="体积重换算比例 (cm³/kg)"
+                rules={[{ required: true, message: "请输入体积重换算比例" }]}
+              >
+                <Input
+                  type="number"
+                  placeholder="例如 6000 (表示 6000 cm³ 按 1kg 计)"
+                />
               </Form.Item>
             </>
           )}

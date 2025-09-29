@@ -109,7 +109,7 @@ export default function useChatModel() {
         const lastPage: number = res.data.pages; // 接口返回的最后一页
         console.log("page < lastPage", page < lastPage, page, lastPage);
 
-        const converted: ChatMessage[] = records.map((it) => ({
+        const converted: ChatMessage[] = records.reverse().map((it) => ({
           id: it.id ?? `srv-${Math.random()}`,
           sender: it.sender,
           text: it.content ?? it.text ?? "",
@@ -126,6 +126,7 @@ export default function useChatModel() {
           const deduped: ChatMessage[] = merged.filter(
             (v, i, a) => a.findIndex((x) => x.id === v.id) === i
           );
+          console.log("deduped", deduped);
 
           return {
             ...prev,

@@ -28,8 +28,6 @@ const MessageList: React.FC = () => {
   } = useModel("chat");
   const { initialState } = useModel("@@initialState");
   const { currentUser } = initialState || {};
-  console.log("currentUser", currentUser);
-
   const [inputValue, setInputValue] = useState("");
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [initialLoadDone, setInitialLoadDone] = useState(false);
@@ -41,11 +39,16 @@ const MessageList: React.FC = () => {
   const loadingHistoryRef = useRef(false);
   const firstLoadRef = useRef(true); // 是否首次加载用户历史
 
+  const isInitialScrollRef = useRef(false);
+  useEffect(() => {
+    console.log("messages变化");
+  }, [messages]);
   /** 初次激活用户，加载第一页历史 */
   useEffect(() => {
     if (!firstLoadRef.current) return;
     if (!activeUser) return;
     const key = String(activeUser.id);
+    console.log("首次加载");
 
     const loadFirstPage = async () => {
       if (!messagesMap[key]) {
@@ -53,30 +56,27 @@ const MessageList: React.FC = () => {
       }
       setInitialLoadDone(true);
 
-      // 首次加载滚到底部
-      requestAnimationFrame(() => {
-        chatEndRef.current?.scrollIntoView({ behavior: "auto" });
-        firstLoadRef.current = false;
-      });
+      // 这里不直接滚动，只打个标记
+      isInitialScrollRef.current = true;
+      firstLoadRef.current = false;
+      console.log("加载完成");
     };
 
     loadFirstPage();
   }, [activeUser, messagesMap, loadHistory]);
 
-  /** 新消息时滚动到底部（加载历史不触发） */
+  /** 等消息真正渲染出来再滚动 */
   useEffect(() => {
-    console.log(
-      "底部",
-      !loadingHistoryRef.current && firstLoadRef.current,
-      firstLoadRef.current
-    );
-
-    if (!messages.length) return;
-
-    if (!loadingHistoryRef.current && firstLoadRef.current) {
-      // chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (
+      isInitialScrollRef.current &&
+      messagesMap[String(activeUser?.id)]?.list?.length > 0
+    ) {
+      requestAnimationFrame(() => {
+        chatEndRef.current?.scrollIntoView({ behavior: "auto" });
+        isInitialScrollRef.current = false; // 用完清掉
+      });
     }
-  }, [messages]);
+  }, [messagesMap, activeUser]);
 
   /** 发送消息 */
   const handleSend = () => {
@@ -85,6 +85,9 @@ const MessageList: React.FC = () => {
     sendMessage(inputValue);
     setInputValue("");
   };
+
+  // 用 ref 标记是切换用户触发的滚动
+  const scrollOnUserChangeRef = useRef(false);
 
   /** 接待/切换用户 */
   const handleAcceptUser = async (user: any) => {
@@ -95,11 +98,24 @@ const MessageList: React.FC = () => {
         if (prev.find((u) => u.id === user.id)) return prev;
         return [user, ...prev];
       });
+
+      // 切换用户后标记要滚动
+      scrollOnUserChangeRef.current = true;
     } catch (err) {
       console.error("接待用户失败", err);
       AntMessage.error("接待用户失败");
     }
   };
+
+  /** 等消息渲染完成再滚动到底部（切换用户） */
+  useEffect(() => {
+    if (scrollOnUserChangeRef.current && activeUser) {
+      requestAnimationFrame(() => {
+        chatEndRef.current?.scrollIntoView({ behavior: "auto" });
+        scrollOnUserChangeRef.current = false;
+      });
+    }
+  }, [messages, activeUser]);
 
   // 上拉加载历史
   const handleScroll = async (e: React.UIEvent<HTMLDivElement>) => {
@@ -152,7 +168,10 @@ const MessageList: React.FC = () => {
               dataSource={repliedUsers}
               renderItem={(item) => (
                 <List.Item
-                  onClick={() => handleAcceptUser(item)}
+                  onClick={() => {
+                    handleAcceptUser(item);
+                    // firstLoadRef.current = true;
+                  }}
                   style={{
                     cursor: "pointer",
                     background:
@@ -160,7 +179,7 @@ const MessageList: React.FC = () => {
                   }}
                 >
                   <List.Item.Meta
-                    avatar={<Avatar src={item.avatar} />}
+                    avatar={<Avatar src={item.avatar || null} />}
                     title={
                       <div
                         style={{
@@ -305,7 +324,7 @@ const MessageList: React.FC = () => {
                   gap: 8,
                 }}
               >
-                {isCustomer && <Avatar src={activeUser?.avatar} />}
+                {isCustomer && <Avatar src={activeUser?.avatar || null} />}
 
                 <div
                   style={{
@@ -318,7 +337,7 @@ const MessageList: React.FC = () => {
                 >
                   {isImage ? (
                     <img
-                      src={msg.text} // 图片地址存放在 msg.text
+                      src={msg.text || undefined} // 图片地址存放在 msg.text
                       alt="图片消息"
                       style={{
                         width: "200px",
@@ -332,7 +351,9 @@ const MessageList: React.FC = () => {
                   )}
                 </div>
 
-                {isServer && <Avatar src={currentUser?.avatarFilePath} />}
+                {isServer && (
+                  <Avatar src={currentUser?.avatarFilePath || null} />
+                )}
               </div>
             );
           })}
