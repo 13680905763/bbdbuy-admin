@@ -8,7 +8,7 @@ export function connectWS() {
   const url =
     process.env.NODE_ENV === "development"
       ? "ws://api.bbdtest.local:8080/ws"
-      : "wss://demo.bbdbuy.com/admin-api/ws";
+      : "wss://www.bbdbuy1.com/admin-api/ws";
 
   ws = new WebSocket(url);
 

@@ -136,7 +136,7 @@ export const layout: RunTimeLayoutConfig = ({
 export const request: RequestConfig = {
   baseURL: isDev
     ? "http://api.bbdtest.local:8080"
-    : "https://demo.bbdbuy.com/admin-api",
+    : "https://www.bbdbuy1.com/admin-api",
   // baseURL: process.env.UMI_APP_BASE_API,
   withCredentials: true,
   timeout: 10000,
