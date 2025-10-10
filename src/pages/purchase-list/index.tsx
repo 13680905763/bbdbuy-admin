@@ -232,10 +232,10 @@ const TableList: React.FC = () => {
             onClick={async () => {
               console.log(
                 "点击了采购按钮",
-                selectedRowsState.map((item) => item.id)
+                selectedRowsState.map((item: any) => item.id)
               );
               const res = await purchaseInitiate({
-                ids: selectedRowsState.map((item) => Number(item.id)),
+                ids: selectedRowsState.map((item: any) => Number(item.id)),
                 remark: "",
               });
               actionRef?.current?.reload();

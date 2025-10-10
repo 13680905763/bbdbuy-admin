@@ -230,6 +230,28 @@ export default [
     ],
   },
   {
+    path: "/refund",
+    name: "退款管理",
+    icon: "BankOutlined",
+    access: "canAdmin",
+    routes: [
+      {
+        path: "/refund",
+        redirect: "/refund/orderList",
+      },
+      {
+        path: "/refund/orderList",
+        name: "订单退款",
+        component: "./refund/orderList",
+      },
+      // {
+      //   path: "/refund/waybillList",
+      //   name: "运单退款",
+      //   component: "./refund/waybillList",
+      // },
+    ],
+  },
+  {
     path: "/mock-list",
     name: "测试数据模拟",
     icon: "ShoppingCartOutlined",

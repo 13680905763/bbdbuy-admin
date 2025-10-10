@@ -150,95 +150,77 @@ const ConfigList: React.FC = () => {
         dataSource={dataSource}
         loading={loading}
         columns={columns}
-        // toolBarRender={() => [
-        //   <Button
-        //     type="primary"
-        //     icon={<PlusOutlined />}
-        //     onClick={() => {
-        //       message.info("TODO: 新建汇率");
-        //     }}
-        //   >
-        //     新建汇率
-        //   </Button>,
-        // ]}
       />
 
-      {/* 修改弹窗 */}
+      {/* 修改弹窗 ✅ 保留一个 Modal 就行 */}
       <Modal
         title="修改汇率"
         open={editModalVisible}
         onCancel={() => setEditModalVisible(false)}
         onOk={handleSave}
-        width={500} // 🔹稍微加宽
+        width={500}
         destroyOnClose
       >
-        <Modal
-          title="修改汇率"
-          open={editModalVisible}
-          onCancel={() => setEditModalVisible(false)}
-          onOk={handleSave}
+        <Form
+          form={form}
+          layout="vertical"
+          initialValues={{
+            convertType: 2, // 默认固定值
+            rate: currentRow?.rate,
+            ratio: currentRow?.ratio,
+          }}
         >
-          <Form
-            form={form}
-            layout="vertical"
-            initialValues={{
-              convertType: 2, // 默认固定值
-              rate: currentRow?.rate,
-              ratio: currentRow?.ratio,
-            }}
+          <Form.Item label="货币代码" name="currency">
+            <Input disabled />
+          </Form.Item>
+
+          <Form.Item label="符号" name="symbol">
+            <Input disabled />
+          </Form.Item>
+
+          <Form.Item
+            label="汇率类型"
+            name="convertType"
+            rules={[{ required: true, message: "请选择汇率类型" }]}
           >
-            <Form.Item label="货币代码" name="currency">
-              <Input disabled />
-            </Form.Item>
+            <Select
+              options={[
+                { label: "百分比", value: 1 },
+                { label: "固定值", value: 2 },
+              ]}
+              value={convertType}
+              onChange={(value) => {
+                setConvertType(value);
+                form.setFieldsValue({ rate: undefined, ratio: undefined });
+              }}
+            />
+          </Form.Item>
 
-            <Form.Item label="符号" name="symbol">
-              <Input disabled />
-            </Form.Item>
-
+          {convertType === 2 && (
             <Form.Item
-              label="汇率类型"
-              name="convertType"
-              rules={[{ required: true, message: "请选择汇率类型" }]}
+              label="汇率值"
+              name="rate"
+              rules={[{ required: true, message: "请输入汇率值" }]}
             >
-              <Select
-                options={[
-                  { label: "百分比", value: 1 },
-                  { label: "固定值", value: 2 },
-                ]}
-                value={convertType}
-                onChange={(value) => {
-                  setConvertType(value);
-                  form.setFieldsValue({ rate: undefined, ratio: undefined });
-                }}
+              <InputNumber style={{ width: "100%" }} min={0} />
+            </Form.Item>
+          )}
+
+          {convertType === 1 && (
+            <Form.Item
+              label="百分比值"
+              name="ratio"
+              rules={[{ required: true, message: "请输入百分比值" }]}
+            >
+              <InputNumber
+                style={{ width: "100%" }}
+                min={0}
+                max={1}
+                step={0.0001}
               />
             </Form.Item>
-
-            {convertType === 2 && (
-              <Form.Item
-                label="汇率值"
-                name="rate"
-                rules={[{ required: true, message: "请输入汇率值" }]}
-              >
-                <InputNumber style={{ width: "100%" }} min={0} />
-              </Form.Item>
-            )}
-
-            {convertType === 1 && (
-              <Form.Item
-                label="百分比值"
-                name="ratio"
-                rules={[{ required: true, message: "请输入百分比值" }]}
-              >
-                <InputNumber
-                  style={{ width: "100%" }}
-                  min={0}
-                  max={1}
-                  step={0.0001}
-                />
-              </Form.Item>
-            )}
-          </Form>
-        </Modal>
+          )}
+        </Form>
       </Modal>
     </PageContainer>
   );
