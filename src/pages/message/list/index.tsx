@@ -1,4 +1,6 @@
-import { finishWorkOrder } from "@/services";
+import { finishWorkOrder, uploadChatImage } from "@/services";
+import data from "@emoji-mart/data";
+import Picker from "@emoji-mart/react";
 import { useModel } from "@umijs/max";
 import {
   message as AntMessage,
@@ -31,7 +33,7 @@ const MessageList: React.FC = () => {
   const [inputValue, setInputValue] = useState("");
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [initialLoadDone, setInitialLoadDone] = useState(false);
-
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const chatListRef = useRef<HTMLDivElement>(null);
 
@@ -193,7 +195,11 @@ const MessageList: React.FC = () => {
                         ) : null}
                       </div>
                     }
-                    description={item.lastMessage || item.email || ""}
+                    description={
+                      item?.msgtype === "IMAGE"
+                        ? "[图片]"
+                        : item.lastMessage || item.email || ""
+                    }
                   />
                 </List.Item>
               )}
@@ -367,20 +373,135 @@ const MessageList: React.FC = () => {
             style={{
               borderTop: "1px solid #f0f0f0",
               padding: 8,
-              display: "flex",
-              gap: 8,
               background: "#fff",
+              display: "flex",
+              flexDirection: "column",
+              gap: 8,
             }}
           >
+            {/* 输入框 */}
             <Input.TextArea
-              rows={2}
+              rows={3}
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               placeholder="请输入回复内容..."
             />
-            <Button type="primary" onClick={handleSend}>
-              发送
-            </Button>
+
+            {/* 下方工具栏 */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+              }}
+            >
+              {/* 左侧：表情 + 图片 */}
+              <div style={{ display: "flex", gap: 8 }}>
+                <Button
+                  icon={
+                    <span role="img" aria-label="emoji">
+                      😊
+                    </span>
+                  }
+                  onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                >
+                  表情
+                </Button>
+                {/* 表情选择器弹出层 */}
+                {showEmojiPicker && (
+                  <div
+                    style={{
+                      position: "absolute",
+                      bottom: "45px",
+                      left: 0,
+                      zIndex: 1000,
+                    }}
+                  >
+                    <Picker
+                      data={data}
+                      onEmojiSelect={(emoji: any) => {
+                        setInputValue((prev) => prev + emoji.native);
+                        setShowEmojiPicker(false);
+                      }}
+                    />
+                  </div>
+                )}
+                <Button
+                  icon={
+                    <span role="img" aria-label="image">
+                      🖼️
+                    </span>
+                  }
+                  onClick={() => {
+                    document.getElementById("uploadInput")?.click();
+                  }}
+                >
+                  图片
+                </Button>
+
+                <input
+                  id="uploadInput"
+                  type="file"
+                  accept="image/*"
+                  style={{ display: "none" }}
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      console.log("选中图片：", file);
+                      try {
+                        const url: any = await uploadChatImage(file);
+
+                        if (url.data) {
+                          console.log("url", url.data);
+                          sendMessage(url.data, "IMAGE");
+                          // const socket = socketRef.current;
+                          // if (socket && socket.readyState === WebSocket.OPEN) {
+                          //   const payload: any = {
+                          //     sender: "CUSTOMER",
+                          //     type: "IMAGE",
+                          //     content: url,
+                          //     sendTime: new Date().toISOString(),
+                          //   };
+                          //   if (receiverIdRef.current)
+                          //     payload.receiverId = receiverIdRef.current;
+                          //   socket.send(JSON.stringify(payload));
+                          // }
+                          // setMessages((prev) =>
+                          //   prev.map((msg) =>
+                          //     msg.id === tempId
+                          //       ? { ...msg, sending: false, text: url }
+                          //       : msg
+                          //   )
+                          // );
+                        }
+                      } catch (err) {
+                        console.error("图片上传失败", err);
+                        // setMessages((prev) =>
+                        //   prev.map((msg) =>
+                        //     msg.id === tempId
+                        //       ? {
+                        //           ...msg,
+                        //           sending: false,
+                        //           text: "[图片发送失败]",
+                        //         }
+                        //       : msg
+                        //   )
+                        // );
+                      } finally {
+                        // URL.revokeObjectURL(tempUrl);
+                        // if (fileInputRef.current)
+                        //   fileInputRef.current.value = "";
+                      }
+                    }
+                  }}
+                />
+              </div>
+
+              {/* 右侧：发送按钮 */}
+              <Button type="primary" onClick={handleSend}>
+                发送
+              </Button>
+            </div>
           </div>
         )}
       </div>

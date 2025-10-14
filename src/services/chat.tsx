@@ -28,3 +28,29 @@ export async function finishWorkOrder(user: any) {
     data: user,
   });
 }
+
+/**
+ * 上传聊天图片
+ * @param file 要上传的文件
+ * @returns 上传结果
+ */
+export async function uploadChatImage(file: File) {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  try {
+    const response = await request("/service-chat/upload", {
+      method: "POST",
+      data: formData,
+      requestType: "form", // ✅ umi-request 处理 multipart/form-data
+      headers: {
+        // 不要手动写 Content-Type，否则会丢失 boundary
+      },
+    });
+
+    return response;
+  } catch (error) {
+    console.error("聊天图片上传失败:", error);
+    throw error;
+  }
+}

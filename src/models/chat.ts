@@ -12,6 +12,7 @@ export interface ChatUser {
   avatar?: string;
   lastMessage?: string;
   unread?: number;
+  msgtype?: string;
 }
 
 export interface ChatMessage {
@@ -235,6 +236,7 @@ export default function useChatModel() {
               ? {
                   ...u,
                   lastMessage: chatMsg.text,
+                  msgtype: chatMsg.type,
                   unread:
                     String(activeUser?.id) !== uid ? (u.unread ?? 0) + 1 : 0,
                 }
