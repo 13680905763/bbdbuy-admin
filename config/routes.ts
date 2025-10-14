@@ -201,6 +201,11 @@ export default [
         ],
       },
       {
+        path: "/config/servers",
+        name: "附加服务配置",
+        component: "./config/servers",
+      },
+      {
         path: "/config/sys",
         name: "系统配置",
         component: "./config/sys",

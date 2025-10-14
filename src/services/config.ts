@@ -183,3 +183,27 @@ export async function getSystemPurchase() {
     method: "get",
   });
 }
+/** 获取附加服务配置 */
+export async function getServicesList(data?: any) {
+  return request("/services/page", {
+    method: "post",
+    data,
+  });
+}
+export async function createServicesList(data: any) {
+  return request("/services/add", {
+    method: "post",
+    data,
+  });
+}
+export async function putServicesList(data: any) {
+  return request("/services/update", {
+    method: "post",
+    data,
+  });
+}
+export async function delServices(id: string | number) {
+  return request(`/services/${id}`, {
+    method: "DELETE",
+  });
+}

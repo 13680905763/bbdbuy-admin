@@ -55,7 +55,7 @@ const ConfigList: React.FC = () => {
 
   const handleUpload = async ({ file }: any) => {
     try {
-      const res = await uploadShippingLineLogo(file as File);
+      const res: any = await uploadShippingLineLogo(file as File);
       setLogoUrl(res.data); // 保存到 state
       form.setFieldsValue({ logoUrl: res.data }); // 同步到表单字段
       message.success("上传成功");
