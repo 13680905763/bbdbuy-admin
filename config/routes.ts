@@ -206,6 +206,11 @@ export default [
         component: "./config/servers",
       },
       {
+        path: "/config/goodsType",
+        name: "货物类别配置",
+        component: "./config/goodsType",
+      },
+      {
         path: "/config/sys",
         name: "系统配置",
         component: "./config/sys",

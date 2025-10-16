@@ -207,3 +207,26 @@ export async function delServices(id: string | number) {
     method: "DELETE",
   });
 }
+/** 获取货物类别配置 */
+export async function getGoodsType() {
+  return request("/cargo-category", {
+    method: "GET",
+  });
+}
+export async function putGoodsType(data: any) {
+  return request("/cargo-category", {
+    method: "put",
+    data,
+  });
+}
+export async function createGoodsType(data: any) {
+  return request("/cargo-category", {
+    method: "post",
+    data,
+  });
+}
+export async function delGoodsType(id: string | number) {
+  return request(`/cargo-category/${id}`, {
+    method: "DELETE",
+  });
+}

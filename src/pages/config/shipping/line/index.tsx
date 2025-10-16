@@ -2,6 +2,7 @@ import {
   createShippingLine,
   delShippingLine,
   getCountries,
+  getGoodsType,
   getShippingCompanyList,
   getShippingLineList,
   getShippingServersList,
@@ -29,6 +30,7 @@ const ConfigList: React.FC = () => {
   const [serverOptions, setServerOptions] = useState<any[]>([]);
   const [companyOptions, setCompanyOptions] = useState<any[]>([]);
   const [countryOptions, setCountryOptions] = useState<any[]>([]);
+  const [cargoCategoryOptions, setCargoCategoryOptions] = useState<any[]>([]);
   // 弹窗状态
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [currentRow, setCurrentRow] = useState<any>(null);
@@ -47,12 +49,14 @@ const ConfigList: React.FC = () => {
       const res1: any = await getShippingServersList();
       const res2: any = await getShippingCompanyList();
       const res3: any = await getCountries();
+      const res4: any = await getGoodsType();
       console.log("res3", res3);
 
       setDataSource(res.data);
       setServerOptions(res1.data);
       setCompanyOptions(res2.data);
       setCountryOptions(res3.data);
+      setCargoCategoryOptions(res4.data);
     } catch (e) {
       message.error("加载失败");
     } finally {
@@ -129,7 +133,7 @@ const ConfigList: React.FC = () => {
   };
 
   const columns = [
-    { title: "服务商名称", dataIndex: "serverName" },
+    { title: "服务商名称", dataIndex: "serverName", width: 90 },
     { title: "服务商代码", dataIndex: "serverCode" },
     { title: "公司名", dataIndex: "companyName" },
     { title: "路线名", dataIndex: "lineName" },
@@ -142,6 +146,26 @@ const ConfigList: React.FC = () => {
           <>
             {countries.map((c) => (
               <Tag key={c.countryId}>{c.countryName}</Tag>
+            ))}
+          </>
+        );
+      },
+    },
+    {
+      title: "货物类型",
+      dataIndex: "cargoCategories",
+      render: (cargoCategories: any) => {
+        if (
+          !cargoCategories ||
+          cargoCategories.length === 0 ||
+          cargoCategories == "-"
+        ) {
+          return "-";
+        }
+        return (
+          <>
+            {cargoCategories?.map((c: any) => (
+              <Tag key={c.id}>{c.categoryName}</Tag>
             ))}
           </>
         );
@@ -169,7 +193,7 @@ const ConfigList: React.FC = () => {
             修改
           </Button>
           <Popconfirm
-            title="确认删除该服务商吗？"
+            title="确认删除该路线吗？"
             onConfirm={() => handleDelete(record)}
             okText="确认"
             cancelText="取消"
@@ -263,7 +287,24 @@ const ConfigList: React.FC = () => {
               showSearch
             />
           </Form.Item>
-
+          <Form.Item
+            name="cargoCategoryIds"
+            label="货物类型"
+            rules={[{ required: true, message: "请选择支持的货物类型" }]}
+            // initialValue={currentRow?.countries?.map((c: any) => c.countryId)}
+          >
+            <Select
+              mode="multiple"
+              placeholder="请选择支持的货物类型"
+              allowClear
+              options={cargoCategoryOptions.map((item: any) => ({
+                label: item.categoryName,
+                value: item.id,
+              }))}
+              optionFilterProp="label"
+              showSearch
+            />
+          </Form.Item>
           <Form.Item name="minDays" label="最快天数">
             <Input type="number" placeholder="请输入最快天数" />
           </Form.Item>
