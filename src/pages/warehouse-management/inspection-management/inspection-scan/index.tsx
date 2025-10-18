@@ -1,27 +1,64 @@
 // src/pages/inventory/ScanIn/index.tsx
+import { getGoodsType } from "@/services";
 import { getInspectionScan, InspectionSubmit } from "@/services/order";
 import { PageContainer } from "@ant-design/pro-components";
 import ProTable, { ProColumns } from "@ant-design/pro-table";
-import { Button, Card, Input, message, Select } from "antd";
-import React, { useRef, useState } from "react";
-
+import { Button, Card, Image, Input, message, Select } from "antd";
+import React, { useEffect, useRef, useState } from "react";
+const inspectionStatusCode: any = [
+  { value: "1032", label: "正常" },
+  { value: "10331", label: "破损" },
+  { value: "10332", label: "质量问题" },
+  { value: "10333", label: "少发" },
+  { value: "10334", label: "错发" },
+  { value: "10335", label: "少买" },
+  { value: "10336", label: "错买" },
+  { value: "10337", label: "多发" },
+  { value: "10338", label: "多买" },
+];
 const ParticularPaper: React.FC = () => {
   const [scanValue, setScanValue] = useState("");
   const [tableData, setTableData] = useState<any[]>([]);
   const inputRef = useRef(null);
   const [submitting, setSubmitting] = useState(false);
+  const [categoryOptions, setCategoryOptions] = useState<
+    { label: string; value: string | number }[]
+  >([]);
+  // 1️⃣ 初始化商品类型
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const res: any = await getGoodsType();
+        const options = res.data.map((item: any) => ({
+          label: item.categoryName,
+          value: item.id,
+          isDefault: item.defaultCategory === 1 ? true : false, // 标记是否默认
+        }));
+        setCategoryOptions(options);
+      } catch (err) {
+        message.error("加载商品类型失败");
+      }
+    };
+
+    fetchCategories();
+  }, []);
   const handleScan = async () => {
     if (!scanValue.trim()) {
       message.warning("请输入条码");
       return;
     }
-    const res = await getInspectionScan(scanValue);
+    const res: any = await getInspectionScan(scanValue);
     console.log(res.data);
     if (res.success) {
-      setTableData(res?.data?.inspectionList);
+      setTableData(
+        res?.data?.inspectionList.map((row: any) => ({
+          ...row,
+          categoryId: categoryOptions.find((opt: any) => opt.isDefault)?.value,
+          inspectionStatusCode: 1032,
+        }))
+      );
     }
   };
-
   const handleBatchPrint = () => {
     if (tableData.length === 0) {
       message.warning("暂无条码可打印");
@@ -115,7 +152,6 @@ const ParticularPaper: React.FC = () => {
 
     printWindow.document.close();
   };
-
   const handleSubmit = async () => {
     if (!tableData.length) {
       message.warning("暂无数据可提交");
@@ -135,6 +171,7 @@ const ParticularPaper: React.FC = () => {
           logisticsCode: item.logisticsCode,
           inspectionStatusCode: item.inspectionStatusCode,
           abnormalCode: item.abnormalCode || "",
+          categoryId: item.categoryId,
         };
       });
 
@@ -182,53 +219,95 @@ const ParticularPaper: React.FC = () => {
     }
   };
   const columns: ProColumns<any>[] = [
-    { title: "入库单号", dataIndex: "inboundId" },
-    { title: "用户名", dataIndex: "customerName" },
+    { title: "入库单号", dataIndex: "inboundId", width: 100 },
     {
-      title: "商品图片",
+      title: "商品详情",
       dataIndex: "product",
-      render: (product: any) => <img src={product?.picUrl} width={100} />,
-    },
-    {
-      title: "商品名称",
-      dataIndex: "product",
-      width: 300,
+      width: 350,
       render: (product: any) => {
         return (
-          <div>
-            <div>{product.productTitle}</div>
-            <div style={{ color: "red" }}>{product.sku.propName_valueName}</div>
-            <div>
-              {product.price} * {product.quantity}
+          <div style={{ display: "flex", gap: 12, padding: "8px 0" }}>
+            {/* 左侧图片 */}
+            <Image
+              width={90}
+              height={90}
+              src={product?.picUrl}
+              alt={product?.productTitle || "商品图片"}
+              preview={product?.picUrl}
+              style={{ objectFit: "cover", borderRadius: 4 }}
+            />
+            {/* 右侧内容 */}
+            <div
+              style={{
+                flex: 1,
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "space-between",
+              }}
+            >
+              {/* 商品标题 */}
+              <div
+                style={{
+                  fontWeight: 500,
+                  fontSize: 14,
+                  color: "#333",
+                  lineHeight: 1.4,
+                  display: "-webkit-box",
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: "vertical",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                }}
+              >
+                {product.productTitle}
+              </div>
+
+              {/* 属性 */}
+              {product.sku?.propName_valueName && (
+                <div
+                  style={{
+                    fontSize: 12,
+                    color: "#999",
+                    marginTop: 2,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {product.sku.propName_valueName}
+                </div>
+              )}
+
+              {/* 价格与数量 */}
+              <div style={{ fontSize: 14, color: "#e60012", marginTop: 2 }}>
+                ￥{product.price} × {product.quantity}
+              </div>
             </div>
           </div>
         );
       },
     },
-    { title: "商品数量", dataIndex: "quantity" },
     {
       title: "条形码",
       dataIndex: "packageCode",
-      render: (packageCode: string) => (
+      render: (packageCode: any) => (
         <div style={{ textAlign: "center" }}>
           <img
             src={`https://bwipjs-api.metafloor.com/?bcid=code128&text=${encodeURIComponent(
               packageCode
             )}`}
             alt="barcode"
-            style={{ height: 77, width: 268 }}
+            style={{ height: 70, width: 200 }}
           />
           <div style={{ fontSize: 18, fontWeight: 600 }}>{packageCode}</div>
         </div>
       ),
     },
-    { title: "快递单号", dataIndex: "logisticsCode" },
     {
       title: "长（cm）",
       dataIndex: "length",
-      width: 80,
-
-      render: (text, record, index) => (
+      width: 120,
+      render: (_, __, index) => (
         <Input
           min={1}
           type="number"
@@ -246,9 +325,9 @@ const ParticularPaper: React.FC = () => {
     {
       title: "宽（cm）",
       dataIndex: "width",
-      width: 80,
+      width: 120,
 
-      render: (text, record, index) => (
+      render: (_, __, index) => (
         <Input
           min={1}
           type="number"
@@ -266,8 +345,8 @@ const ParticularPaper: React.FC = () => {
     {
       title: "高（cm）",
       dataIndex: "height",
-      width: 80,
-      render: (text, record, index) => (
+      width: 120,
+      render: (_, __, index) => (
         <Input
           min={1}
           type="number"
@@ -286,8 +365,8 @@ const ParticularPaper: React.FC = () => {
       title: "重量（g）",
 
       dataIndex: "weight",
-      width: 80,
-      render: (text, record, index) => (
+      width: 120,
+      render: (_, __, index) => (
         <Input
           type="number"
           min={1}
@@ -306,11 +385,9 @@ const ParticularPaper: React.FC = () => {
       title: "数量",
       dataIndex: "quantity",
       width: 80,
-
-      render: (text, record, index) => (
+      render: (_, __, index) => (
         <Input
           type="number"
-          value={text}
           min={1}
           onChange={(e) => {
             const newValue = e.target.value;
@@ -324,15 +401,36 @@ const ParticularPaper: React.FC = () => {
       ),
     },
     {
+      title: "商品类型",
+      dataIndex: "categoryId",
+      width: 150,
+      render: (text, record, index) => {
+        return (
+          <Select
+            value={record.categoryId}
+            style={{ width: 120 }}
+            onChange={(newValue) => {
+              setTableData((prev) => {
+                const updated = [...prev];
+                updated[index].categoryId = newValue;
+                return updated;
+              });
+            }}
+            options={categoryOptions}
+          />
+        );
+      },
+    },
+    {
       title: "状态",
       dataIndex: "inspectionStatusCode",
       render: (text, record, index) => {
         return (
           <Select
+            value={record.inspectionStatusCode}
             style={{ width: 120 }}
             onChange={(v) => {
               console.log(v);
-
               if (v === "1032") {
                 setTableData((prev) => {
                   const updated = [...prev];
@@ -349,17 +447,7 @@ const ParticularPaper: React.FC = () => {
                 });
               }
             }}
-            options={[
-              { value: "1032", label: "正常" },
-              { value: "10331", label: "破损" },
-              { value: "10332", label: "质量问题" },
-              { value: "10333", label: "少发" },
-              { value: "10334", label: "错发" },
-              { value: "10335", label: "少买" },
-              { value: "10336", label: "错买" },
-              { value: "10337", label: "多发" },
-              { value: "10338", label: "多买" },
-            ]}
+            options={inspectionStatusCode}
           />
         );
       },
@@ -369,7 +457,6 @@ const ParticularPaper: React.FC = () => {
   return (
     <PageContainer>
       <Card
-        bordered={false}
         extra={
           <Button type="primary" onClick={handleBatchPrint}>
             打印条形码

@@ -1,4 +1,5 @@
-import { getDeliveryListByPage } from "@/services/order";
+import MediaPreviewGroup from "@/components/MediaPreviewGroup";
+import { getPhotoList } from "@/services";
 import type {
   ActionType,
   ProColumns,
@@ -8,14 +9,15 @@ import { PageContainer, ProTable } from "@ant-design/pro-components";
 import { DatePicker, Pagination, Select, Tag, message } from "antd";
 import moment from "moment";
 import React, { useEffect, useRef, useState } from "react";
+
 const { RangePicker } = DatePicker;
 
 const TableList: React.FC = () => {
   const actionRef = useRef<ActionType | null>(null);
   const formRef = useRef<ProFormInstance | undefined>(undefined);
   const [dataSource, setDataSource] = useState<any[]>([]);
-  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [total, setTotal] = useState(0);
   const [current, setCurrent] = useState(1);
   const [size, setSize] = useState(10);
   const [filters, setFilters] = useState<Record<string, any>>({});
@@ -25,13 +27,14 @@ const TableList: React.FC = () => {
     const query = {
       current,
       size,
+      // ...filters,目前 搜索跟分页自己带上
       ...params,
     };
     console.log("fetchData -> query", query);
 
     setLoading(true);
     try {
-      const res: any = await getDeliveryListByPage(query);
+      const res: any = await getPhotoList(query);
       setDataSource(res.data.records || []);
       setTotal(res.data.total || 0);
     } catch (e) {
@@ -43,9 +46,8 @@ const TableList: React.FC = () => {
 
   /** ✅ 状态列渲染 */
   const statusMap: Record<string, string> = {
-    待收货: "orange",
-    已收货: "green",
-    收货异常: "red",
+    待拍照: "orange",
+    已拍照: "green",
   };
 
   const renderStatusTag = (text: string) => {
@@ -58,67 +60,60 @@ const TableList: React.FC = () => {
       dataIndex: "orderCode",
     },
     {
-      title: "采购编号",
-      dataIndex: "purchaseCode",
+      title: "包裹单号",
+      dataIndex: "packageCode",
     },
-
     {
-      title: "快递公司",
-      dataIndex: "logisticsCompany",
+      title: "服务名",
+      dataIndex: "serviceName",
       hideInSearch: true,
     },
     {
-      title: "快递单号",
-      dataIndex: "logisticsCode",
-    },
-    {
-      title: "收货人",
-      dataIndex: "userName",
+      title: "拍照/视频",
+      dataIndex: "fileList",
       hideInSearch: true,
+      minWidth: 400,
+      render: (_, record) => {
+        if (!record.fileList || record.fileList.length === 0) return null;
+        return (
+          <MediaPreviewGroup fileList={record.fileList} thumbnailSize={40} />
+        );
+      },
     },
     {
-      title: "收货状态",
-      dataIndex: "receiveStatus",
+      title: "拍照状态",
+      dataIndex: "serviceStatus",
       render: (text: any) => renderStatusTag(text),
       renderFormItem: (_, { type, defaultRender, ...rest }, form) => {
         return (
           <Select
-            placeholder="请选择收货状态"
+            placeholder="请选择拍照状态"
             allowClear
             style={{ width: "100%" }}
             options={[
-              { label: "待收货", value: 1011 },
-              { label: "已收货", value: 1012 },
-              { label: "收货异常", value: 1013 },
+              { label: "待拍照", value: 1051 },
+              { label: "已拍照", value: 1052 },
             ]}
           />
         );
       },
     },
     {
-      title: "发货时间",
-      dataIndex: "createTime",
-      valueType: "dateTimeRange",
-      render: (_, record) => record?.createTime,
-      renderFormItem: () => (
-        <RangePicker
-          showTime
-          format="YYYY-MM-DD HH:mm:ss"
-          style={{ width: "100%" }}
-        />
-      ),
+      title: "拍照人",
+      dataIndex: "userName",
+      hideInSearch: true,
     },
     {
-      title: "收货时间",
+      title: "拍照时间",
       dataIndex: "updateTime",
       valueType: "dateTimeRange",
       render: (_, records: any) => {
-        if (records?.receiveStatus === "已收货") {
+        if (records?.serviceStatus === "已拍照") {
           return records?.updateTime;
         }
         return "-";
       },
-      renderFormItem: () => (
+      renderFormItem: (_, { type, defaultRender, ...rest }, form) => (
         <RangePicker
           showTime
           format="YYYY-MM-DD HH:mm:ss"
@@ -127,26 +122,21 @@ const TableList: React.FC = () => {
       ),
     },
   ];
+
   /** ✅ 搜索提交 */
   const onSubmitSearch = (values: any) => {
-    const [createStartTime, createEndTime] = values.createTime || [];
-    const [updateStartTime, updateEndTime] = values.updateTime || [];
+    console.log("values", values);
+
+    const [startTime, endTime] = values.updateTime || [];
     const filterParams = {
       orderCode: values.orderCode,
-      purchaseCode: values.purchaseCode,
-      logisticsCode: values.logisticsCode,
-      receiveStatusCode: values.receiveStatus,
-      createTimeFrom: createStartTime
-        ? moment(createStartTime).format("YYYY-MM-DD HH:mm:ss")
+      packageCode: values.packageCode,
+      serviceStatusCode: values.serviceStatus,
+      updateTimeFrom: startTime
+        ? moment(startTime).format("YYYY-MM-DD HH:mm:ss")
         : undefined,
-      createTimeTo: createEndTime
-        ? moment(createEndTime).format("YYYY-MM-DD HH:mm:ss")
-        : undefined,
-      updateTimeFrom: updateStartTime
-        ? moment(updateStartTime).format("YYYY-MM-DD HH:mm:ss")
-        : undefined,
-      updateTimeTo: updateEndTime
-        ? moment(updateEndTime).format("YYYY-MM-DD HH:mm:ss")
+      updateTimeTo: endTime
+        ? moment(endTime).format("YYYY-MM-DD HH:mm:ss")
         : undefined,
     };
     setFilters(filterParams);
@@ -173,6 +163,7 @@ const TableList: React.FC = () => {
   useEffect(() => {
     fetchData();
   }, []);
+
   return (
     <PageContainer>
       <ProTable
@@ -181,7 +172,7 @@ const TableList: React.FC = () => {
         bordered
         actionRef={actionRef}
         rowKey="id"
-        pagination={false} // ❗️我们自己控制分页
+        pagination={false}
         dataSource={dataSource}
         loading={loading}
         columns={columns}

@@ -1,21 +1,31 @@
-import { getDeliveryListByPage } from "@/services/order";
+import { getReceiveWarehouseList } from "@/services";
 import type {
   ActionType,
   ProColumns,
   ProFormInstance,
 } from "@ant-design/pro-components";
 import { PageContainer, ProTable } from "@ant-design/pro-components";
-import { DatePicker, Pagination, Select, Tag, message } from "antd";
+import { DatePicker, Pagination, Tag, message } from "antd";
 import moment from "moment";
 import React, { useEffect, useRef, useState } from "react";
+
+type OrderProductRow = {
+  id: string;
+  logisticsCode: string;
+  scanMsg: string;
+  signatureMsg: string;
+  userName: string;
+  updateTime: string;
+};
+
 const { RangePicker } = DatePicker;
 
 const TableList: React.FC = () => {
   const actionRef = useRef<ActionType | null>(null);
   const formRef = useRef<ProFormInstance | undefined>(undefined);
-  const [dataSource, setDataSource] = useState<any[]>([]);
-  const [total, setTotal] = useState(0);
+  const [dataSource, setDataSource] = useState<OrderProductRow[]>([]);
   const [loading, setLoading] = useState(false);
+  const [total, setTotal] = useState(0);
   const [current, setCurrent] = useState(1);
   const [size, setSize] = useState(10);
   const [filters, setFilters] = useState<Record<string, any>>({});
@@ -25,13 +35,14 @@ const TableList: React.FC = () => {
     const query = {
       current,
       size,
+      // ...filters,
       ...params,
     };
     console.log("fetchData -> query", query);
 
     setLoading(true);
     try {
-      const res: any = await getDeliveryListByPage(query);
+      const res: any = await getReceiveWarehouseList(query);
       setDataSource(res.data.records || []);
       setTotal(res.data.total || 0);
     } catch (e) {
@@ -43,110 +54,67 @@ const TableList: React.FC = () => {
 
   /** ✅ 状态列渲染 */
   const statusMap: Record<string, string> = {
-    待收货: "orange",
-    已收货: "green",
-    收货异常: "red",
+    识别成功: "green",
+    已签收: "green",
   };
 
   const renderStatusTag = (text: string) => {
-    const color = statusMap[text] || "default"; // 未匹配的状态使用默认色
+    const color = statusMap[text] || "red"; // 未匹配的状态使用默认色
     return <Tag color={color}>{text}</Tag>;
   };
-  const columns: ProColumns<any>[] = [
-    {
-      title: "订单号",
-      dataIndex: "orderCode",
-    },
-    {
-      title: "采购编号",
-      dataIndex: "purchaseCode",
-    },
-
-    {
-      title: "快递公司",
-      dataIndex: "logisticsCompany",
-      hideInSearch: true,
-    },
+  const columns: ProColumns<OrderProductRow>[] = [
     {
       title: "快递单号",
       dataIndex: "logisticsCode",
     },
     {
-      title: "收货人",
+      title: "识别结果",
+      dataIndex: "scanMsg",
+      render: (text: any) => renderStatusTag(text),
+      hideInSearch: true,
+    },
+    {
+      title: "签收状态",
+      dataIndex: "signatureMsg",
+      render: (text: any) => renderStatusTag(text),
+      hideInSearch: true,
+    },
+    {
+      title: "签收人",
       dataIndex: "userName",
       hideInSearch: true,
     },
     {
-      title: "收货状态",
-      dataIndex: "receiveStatus",
-      render: (text: any) => renderStatusTag(text),
-      renderFormItem: (_, { type, defaultRender, ...rest }, form) => {
-        return (
-          <Select
-            placeholder="请选择收货状态"
-            allowClear
-            style={{ width: "100%" }}
-            options={[
-              { label: "待收货", value: 1011 },
-              { label: "已收货", value: 1012 },
-              { label: "收货异常", value: 1013 },
-            ]}
-          />
-        );
-      },
-    },
-    {
-      title: "发货时间",
-      dataIndex: "createTime",
-      valueType: "dateTimeRange",
-      render: (_, record) => record?.createTime,
-      renderFormItem: () => (
-        <RangePicker
-          showTime
-          format="YYYY-MM-DD HH:mm:ss"
-          style={{ width: "100%" }}
-        />
-      ),
-    },
-    {
-      title: "收货时间",
+      title: "签收时间",
       dataIndex: "updateTime",
       valueType: "dateTimeRange",
-      render: (_, records: any) => {
-        if (records?.receiveStatus === "已收货") {
-          return records?.updateTime;
-        }
-        return "-";
-      },
-      renderFormItem: () => (
+      render: (_, record) => record?.updateTime,
+      renderFormItem: (_, { type, defaultRender, ...rest }, form) => (
         <RangePicker
           showTime
           format="YYYY-MM-DD HH:mm:ss"
           style={{ width: "100%" }}
+          // value={form?.getFieldValue("updateTime") || undefined}
+          // onChange={(dates) => {
+          //   form?.setFieldsValue({
+          //     updateTime: dates || undefined,
+          //   });
+          // }}
         />
       ),
     },
   ];
+
   /** ✅ 搜索提交 */
   const onSubmitSearch = (values: any) => {
-    const [createStartTime, createEndTime] = values.createTime || [];
-    const [updateStartTime, updateEndTime] = values.updateTime || [];
+    const [startTime, endTime] = values.updateTime || [];
     const filterParams = {
-      orderCode: values.orderCode,
-      purchaseCode: values.purchaseCode,
       logisticsCode: values.logisticsCode,
-      receiveStatusCode: values.receiveStatus,
-      createTimeFrom: createStartTime
-        ? moment(createStartTime).format("YYYY-MM-DD HH:mm:ss")
+      updateTimeFrom: startTime
+        ? moment(startTime).format("YYYY-MM-DD HH:mm:ss")
         : undefined,
-      createTimeTo: createEndTime
-        ? moment(createEndTime).format("YYYY-MM-DD HH:mm:ss")
-        : undefined,
-      updateTimeFrom: updateStartTime
-        ? moment(updateStartTime).format("YYYY-MM-DD HH:mm:ss")
-        : undefined,
-      updateTimeTo: updateEndTime
-        ? moment(updateEndTime).format("YYYY-MM-DD HH:mm:ss")
+      updateTimeTo: endTime
+        ? moment(endTime).format("YYYY-MM-DD HH:mm:ss")
         : undefined,
     };
     setFilters(filterParams);
@@ -173,6 +141,7 @@ const TableList: React.FC = () => {
   useEffect(() => {
     fetchData();
   }, []);
+
   return (
     <PageContainer>
       <ProTable
@@ -181,16 +150,12 @@ const TableList: React.FC = () => {
         bordered
         actionRef={actionRef}
         rowKey="id"
-        pagination={false} // ❗️我们自己控制分页
+        pagination={false}
         dataSource={dataSource}
         loading={loading}
         columns={columns}
         onSubmit={onSubmitSearch}
         onReset={handleReset}
-        search={{
-          labelWidth: "auto",
-          defaultCollapsed: false, // ❗ 默认展开
-        }}
         options={{
           reload: false,
           fullScreen: true,

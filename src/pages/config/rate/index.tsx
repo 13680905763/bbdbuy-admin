@@ -152,14 +152,12 @@ const ConfigList: React.FC = () => {
         columns={columns}
       />
 
-      {/* 修改弹窗 ✅ 保留一个 Modal 就行 */}
       <Modal
         title="修改汇率"
         open={editModalVisible}
         onCancel={() => setEditModalVisible(false)}
         onOk={handleSave}
         width={500}
-        destroyOnClose
       >
         <Form
           form={form}

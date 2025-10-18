@@ -35,11 +35,6 @@ const ConfigList: React.FC = () => {
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [currentRow, setCurrentRow] = useState<any>(null);
   const [form] = Form.useForm();
-  console.log(
-    "currentRow",
-    currentRow,
-    currentRow?.countries?.map((c: any) => c.countryId)
-  );
 
   /** 拉取数据 */
   const fetchData = async () => {
@@ -83,6 +78,8 @@ const ConfigList: React.FC = () => {
     form.setFieldsValue({
       ...record,
       countryIds: record.countries?.map((c: any) => c.countryId) || [],
+      cargoCategoryIds:
+        record.cargoCategories?.map((c: any) => c.categoryId) || [],
     });
     setEditModalVisible(true);
   };
@@ -132,7 +129,7 @@ const ConfigList: React.FC = () => {
     }
   };
 
-  const columns = [
+  const columns: any = [
     { title: "服务商名称", dataIndex: "serverName", width: 90 },
     { title: "服务商代码", dataIndex: "serverCode" },
     { title: "公司名", dataIndex: "companyName" },
@@ -291,7 +288,6 @@ const ConfigList: React.FC = () => {
             name="cargoCategoryIds"
             label="货物类型"
             rules={[{ required: true, message: "请选择支持的货物类型" }]}
-            // initialValue={currentRow?.countries?.map((c: any) => c.countryId)}
           >
             <Select
               mode="multiple"

@@ -32,23 +32,22 @@ export async function getPurchaseListByPage(params: {
     },
   });
 }
-/** 获取收货单列表 POST /orders/page */
-export async function getDeliveryListByPage(params: {
-  /** 当前的页码 */
-  page?: number;
-  /** 页面的容量 */
-  pageSize?: number;
-}) {
+/** 获取收货单列表 */
+export async function getDeliveryListByPage(data: any) {
+  console.log("data", data);
+
   return request<API.RuleList>("/inbound-receive/page", {
     method: "POST",
-    data: {
-      current: params.page,
-      /** 页面的容量 */
-      size: params.pageSize,
-    },
+    data,
   });
 }
-
+/** 获取到库单列表 POST /orders/page */
+export async function getReceiveWarehouseList(data: any) {
+  return request<API.RuleList>("/receive-package/page", {
+    method: "POST",
+    data,
+  });
+}
 export async function purchaseInitiate(data: {
   ids: string[];
   remark?: string;
@@ -59,20 +58,11 @@ export async function purchaseInitiate(data: {
   });
 }
 
-/** 获取验货单列表 POST /orders/page */
-export async function getInspectionListByPage(params: {
-  /** 当前的页码 */
-  page?: number;
-  /** 页面的容量 */
-  pageSize?: number;
-}) {
+/** 获取验货单列表  */
+export async function getInspectionListByPage(data: any) {
   return request<API.RuleList>("/inbound-inspection/page", {
     method: "POST",
-    data: {
-      current: params.page,
-      /** 页面的容量 */
-      size: params.pageSize,
-    },
+    data,
   });
 }
 /** 获取验货单（包裹）信息 */
@@ -91,5 +81,12 @@ export async function InspectionSubmit(data: string[]) {
     data: {
       checkList: data,
     },
+  });
+}
+/** 获取到库单列表 POST /orders/page */
+export async function getPhotoList(data: any) {
+  return request("/inbound-service/page", {
+    method: "POST",
+    data,
   });
 }

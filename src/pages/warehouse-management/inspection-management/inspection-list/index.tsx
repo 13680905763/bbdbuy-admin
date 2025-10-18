@@ -1,113 +1,131 @@
 import { getInspectionListByPage } from "@/services/order"; // 你自己的接口路径
-import type { ActionType, ProColumns } from "@ant-design/pro-components";
+import type {
+  ActionType,
+  ProColumns,
+  ProFormInstance,
+} from "@ant-design/pro-components";
 import { PageContainer, ProTable } from "@ant-design/pro-components";
-import { Pagination, Tag, message } from "antd";
+import {
+  DatePicker,
+  Form,
+  Image,
+  Input,
+  Modal,
+  Pagination,
+  Select,
+  Tag,
+  message,
+} from "antd";
+import moment from "moment";
 import React, { useEffect, useRef, useState } from "react";
+const { RangePicker } = DatePicker;
+const inspectionStatusOptions = [
+  { value: "NORMAL", label: "验货正常" },
+  { value: "ABNORMAL", label: "验货异常" },
+];
 
-type OrderProductRow = {
-  id: string;
-  orderCode: string;
-  customerName: string;
-  callNo: string;
-  totalFee: number;
-  postFee: number;
-  discountFee: number;
-  customerPayStatusCode: number;
-  createTime: string;
-  remark?: string;
-  orderRowSpan?: number;
-  productTitle: string;
-  sku: any;
-  picUrl: any;
-};
-
+const abnormalOptions = [
+  { value: "10331", label: "破损" },
+  { value: "10332", label: "质量问题" },
+  { value: "10333", label: "少发" },
+  { value: "10334", label: "错发" },
+  { value: "10335", label: "少买" },
+  { value: "10336", label: "错买" },
+  { value: "10337", label: "多发" },
+  { value: "10338", label: "多买" },
+];
 const TableList: React.FC = () => {
   const actionRef = useRef<ActionType | null>(null);
-  const [dataSource, setDataSource] = useState<OrderProductRow[]>([]);
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const formRef = useRef<ProFormInstance | undefined>(undefined);
+  const [dataSource, setDataSource] = useState<any[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [current, setCurrent] = useState(1);
+  const [size, setSize] = useState(10);
+  const [filters, setFilters] = useState<Record<string, any>>({});
+  const [modalVisible, setModalVisible] = useState(false);
+  const [editingRecord, setEditingRecord] = useState<any>(null);
 
-  const fetchData = async () => {
+  const [modalForm] = Form.useForm();
+  /** ✅ fetchData 不依赖外部状态，只依赖参数 */
+  const fetchData = async (params?: any) => {
+    const query = {
+      current,
+      size,
+      ...params,
+    };
+    console.log("fetchData -> query", query);
+
     setLoading(true);
     try {
-      const res: any = await getInspectionListByPage({ page, pageSize });
-      setDataSource(res.data.records);
-      setTotal(res.data.total);
+      const res: any = await getInspectionListByPage(query);
+      setDataSource(res.data.records || []);
+      setTotal(res.data.total || 0);
     } catch (e) {
       message.error("加载失败");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
+  };
+  /** ✅ 状态列渲染 */
+  const statusMap: Record<string, string> = {
+    验货正常: "green",
+    验货异常: "red",
   };
 
-  useEffect(() => {
-    fetchData();
-  }, [page, pageSize]);
-  console.log("dataSource", dataSource);
-
-  const columns: ProColumns<OrderProductRow>[] = [
+  const renderStatusTag = (text: string) => {
+    const color = statusMap[text] || "default"; // 未匹配的状态使用默认色
+    return <Tag color={color}>{text}</Tag>;
+  };
+  const columns: ProColumns<any>[] = [
     {
       title: "订单号",
       dataIndex: "orderCode",
-      width: 200,
-    },
-    {
-      title: "用户名",
-      dataIndex: "customerName",
-      width: 100,
     },
     {
       title: "快递单号",
       dataIndex: "logisticsCode",
-      width: 200,
+    },
+    {
+      title: "包裹单号",
+      dataIndex: "packageCode",
     },
 
     {
-      title: "商品详情",
+      title: "商品名称",
       dataIndex: "orderProduct",
+      hideInSearch: true,
       width: 300,
       render: (orderProduct: any) => {
         return (
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "12px",
-              padding: "8px 0",
-            }}
-          >
+          <div style={{ display: "flex", gap: 12, padding: "8px 0" }}>
             {/* 左侧图片 */}
+            <Image
+              width={90}
+              height={90}
+              src={orderProduct?.picUrl}
+              alt={orderProduct?.productTitle || "商品图片"}
+              preview={orderProduct?.picUrl}
+              style={{ objectFit: "cover", borderRadius: 4 }}
+            />
+            {/* 右侧内容 */}
             <div
               style={{
-                flexShrink: 0,
-                width: 100,
-                height: 100,
-                borderRadius: 8,
-                overflow: "hidden",
-                background: "#f7f7f7",
+                flex: 1,
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "space-between",
               }}
             >
-              <img
-                src={orderProduct?.picUrl}
-                alt="商品图片"
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  objectFit: "cover",
-                }}
-              />
-            </div>
-
-            {/* 右侧文字内容 */}
-            <div style={{ flex: 1, lineHeight: 1.6 }}>
+              {/* 商品标题 */}
               <div
                 style={{
                   fontWeight: 500,
                   fontSize: 14,
-                  marginBottom: 4,
+                  color: "#333",
+                  lineHeight: 1.4,
                   display: "-webkit-box",
-                  WebkitLineClamp: 2, // 限制显示两行
+                  WebkitLineClamp: 2,
                   WebkitBoxOrient: "vertical",
                   overflow: "hidden",
                   textOverflow: "ellipsis",
@@ -116,10 +134,24 @@ const TableList: React.FC = () => {
                 {orderProduct.productTitle}
               </div>
 
-              <div style={{ color: "red", marginBottom: 4 }}>
-                {orderProduct.propAndValue.propName_valueName}
-              </div>
-              <div style={{ color: "#555" }}>
+              {/* 属性 */}
+              {orderProduct.propAndValue?.propName_valueName && (
+                <div
+                  style={{
+                    fontSize: 12,
+                    color: "#999",
+                    marginTop: 2,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {orderProduct.propAndValue.propName_valueName}
+                </div>
+              )}
+
+              {/* 价格与数量 */}
+              <div style={{ fontSize: 14, color: "#e60012", marginTop: 2 }}>
                 ￥{orderProduct.price} × {orderProduct.quantity}
               </div>
             </div>
@@ -131,14 +163,22 @@ const TableList: React.FC = () => {
       title: "商品类型",
       dataIndex: "packageItem.categoryName",
       width: 300,
+      hideInSearch: true,
       render: (_: any, record: any) => {
         return <div>{record?.packageItem?.categoryName}</div>;
       },
     },
     {
-      title: "商品类型",
+      title: "用户名",
+      dataIndex: "customerName",
+      hideInSearch: true,
+      width: 100,
+    },
+    {
+      title: "验货详情",
       dataIndex: "packageItem.id",
       width: 150,
+      hideInSearch: true,
       render: (_: any, record: any) => {
         return (
           <div style={{ fontSize: 13, color: "#555", lineHeight: "20px" }}>
@@ -152,24 +192,16 @@ const TableList: React.FC = () => {
         );
       },
     },
+
     {
       title: "验货状态",
       dataIndex: "inspectionStatus",
-
       render: (_, record: any) => {
         const { inspectionStatus, abnormalMsg } = record;
-        let color: string = "default";
-
-        if (inspectionStatus === "验货正常") {
-          color = "green";
-        } else if (inspectionStatus === "验货异常") {
-          color = "red";
-        }
-
         return (
           <div style={{ display: "flex", justifyContent: "center" }}>
             <div>
-              <Tag color={color}>{inspectionStatus || "未验货"}</Tag>
+              {renderStatusTag(inspectionStatus)}
               {inspectionStatus === "验货异常" && abnormalMsg && (
                 <div style={{ color: "#999", fontSize: 12, marginTop: 4 }}>
                   异常原因：{abnormalMsg}
@@ -179,56 +211,226 @@ const TableList: React.FC = () => {
           </div>
         );
       },
+      renderFormItem: () => {
+        return (
+          <Select
+            placeholder="请选择验货状态"
+            allowClear
+            options={[
+              { label: "待验货", value: 1031 },
+              { label: "验货正常", value: 1032 },
+              { label: "验货异常", value: 1033 },
+            ]}
+          />
+        );
+      },
     },
     {
       title: "验货人",
-      dataIndex: "packageItem.userName",
+      dataIndex: "userName",
       width: 100,
-      render: (_: any, record: any) => {
-        return <div>{record?.packageItem?.userName}</div>;
+      hideInSearch: true,
+      render: (userName, records: any) => {
+        if (records?.inspectionStatus === "待验货") {
+          return "-";
+        }
+        return userName;
       },
     },
 
     {
       title: "验货时间",
-      dataIndex: "packageItem.updateTime",
+      dataIndex: "updateTime",
+      valueType: "dateTimeRange",
       width: 200,
-      render: (_: any, record: any) => {
-        return <div>{record?.packageItem?.updateTime}</div>;
+      render: (_, records: any) => {
+        if (records?.inspectionStatus === "待验货") {
+          return "-";
+        }
+        return records?.updateTime;
       },
+      renderFormItem: () => (
+        <RangePicker
+          showTime
+          format="YYYY-MM-DD HH:mm:ss"
+          style={{ width: "100%" }}
+        />
+      ),
     },
+    // {
+    //   title: "操作",
+    //   valueType: "option",
+    //   render: (_: any, records: any) => {
+    //     if (records?.inspectionStatus === "待验货") {
+    //       return "-";
+    //     }
+    //     return (
+    //       <Button
+    //         style={{ color: "#f0700c" }}
+    //         type="link"
+    //         onClick={() => {
+    //           setEditingRecord(records);
+    //           modalForm.setFieldsValue(records);
+    //           setModalVisible(true);
+    //         }}
+    //       >
+    //         修改验货
+    //       </Button>
+    //     );
+    //   },
+    // },
   ];
+  /** ✅ 搜索提交 */
+  const onSubmitSearch = (values: any) => {
+    console.log("values", values);
 
+    const [startTime, endTime] = values.updateTime || [];
+    const filterParams = {
+      orderCode: values.orderCode,
+      logisticsCode: values.logisticsCode,
+      packageCode: values.packageCode,
+      inspectionStatusCode: values.inspectionStatus,
+      updateTimeFrom: startTime
+        ? moment(startTime).format("YYYY-MM-DD HH:mm:ss")
+        : undefined,
+      updateTimeTo: endTime
+        ? moment(endTime).format("YYYY-MM-DD HH:mm:ss")
+        : undefined,
+    };
+    setFilters(filterParams);
+    setCurrent(1);
+    fetchData({ current: 1, ...filterParams });
+  };
+
+  /** ✅ 分页变化 */
+  const handlePageChange = (page: number, pageSize?: number) => {
+    setCurrent(page);
+    setSize(pageSize || 10);
+    fetchData({ current: page, size: pageSize, ...filters });
+  };
+
+  /** ✅ 重置搜索 */
+  const handleReset = () => {
+    setFilters({});
+    setCurrent(1);
+    formRef.current?.resetFields();
+    fetchData({ current: 1 });
+  };
+  /** ✅ 保存修改 */
+  const handleModalOk = async () => {
+    try {
+      const values = await modalForm.validateFields();
+      console.log("修改数据", values);
+      // TODO: 调用修改接口
+      message.success("修改成功");
+      setModalVisible(false);
+      fetchData({ current, size, ...filters });
+    } catch (err) {
+      console.log(err);
+    }
+  };
+  /** ✅ 初始化加载 */
+  useEffect(() => {
+    fetchData();
+  }, []);
   return (
     <PageContainer>
-      <ProTable<OrderProductRow>
+      <ProTable
+        formRef={formRef}
+        size="small"
         bordered
         actionRef={actionRef}
         rowKey="id"
-        // search={false}
         pagination={false} // ❗️我们自己控制分页
         dataSource={dataSource}
         loading={loading}
         columns={columns}
-        // rowSelection={{
-        //   onChange: (_, selectedRows) => {
-        //     // setSelectedRows(selectedRows);
-        //   },
-        // }}
+        onSubmit={onSubmitSearch}
+        onReset={handleReset}
+        search={{
+          labelWidth: "auto",
+          defaultCollapsed: false, // ❗ 默认展开
+        }}
+        options={{
+          reload: false,
+          fullScreen: true,
+          density: false,
+        }}
       />
       <div style={{ padding: 16, textAlign: "right" }}>
         <Pagination
-          current={page}
-          pageSize={pageSize}
+          current={current}
+          pageSize={size}
           total={total}
-          showSizeChanger={true}
-          onChange={(newPage, newSize) => {
-            setPage(newPage);
-            setPageSize(newSize); // 更新页大小
-            // 发起请求，例如 fetchData(newPage, newSize)
-          }}
+          showSizeChanger
+          onChange={handlePageChange}
         />
       </div>
+      <Modal
+        title="修改"
+        open={modalVisible}
+        onCancel={() => setModalVisible(false)}
+        onOk={handleModalOk}
+        width={500}
+      >
+        <Form form={modalForm} layout="vertical">
+          <Form.Item
+            label="验货状态"
+            name="inspectionStatus"
+            rules={[{ required: true }]}
+          >
+            <Select options={inspectionStatusOptions} />
+          </Form.Item>
+
+          {/* 动态渲染 */}
+          <Form.Item
+            shouldUpdate={(prev, curr) =>
+              prev.inspectionStatus !== curr.inspectionStatus
+            }
+          >
+            {() => {
+              const status = modalForm.getFieldValue("inspectionStatus");
+              if (status === "NORMAL") {
+                return (
+                  <>
+                    <div style={{ display: "flex", gap: 16 }}>
+                      <Form.Item label="长（cm）" name="length">
+                        <Input type="number" min={0} />
+                      </Form.Item>
+                      <Form.Item label="宽（cm）" name="width">
+                        <Input type="number" min={0} />
+                      </Form.Item>
+                      <Form.Item label="高（cm）" name="height">
+                        <Input type="number" min={0} />
+                      </Form.Item>
+                    </div>
+                    <div style={{ display: "flex", gap: 16 }}>
+                      <Form.Item label="重量（g）" name="weight">
+                        <Input type="number" min={0} />
+                      </Form.Item>
+                      <Form.Item label="数量" name="quantity">
+                        <Input type="number" min={0} />
+                      </Form.Item>
+                    </div>
+                  </>
+                );
+              }
+              if (status === "ABNORMAL") {
+                return (
+                  <Form.Item
+                    label="异常原因"
+                    name="abnormalMsg"
+                    rules={[{ required: true }]}
+                  >
+                    <Select options={abnormalOptions} />
+                  </Form.Item>
+                );
+              }
+              return null;
+            }}
+          </Form.Item>
+        </Form>
+      </Modal>
     </PageContainer>
   );
 };

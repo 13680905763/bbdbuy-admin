@@ -63,7 +63,12 @@ export default [
     routes: [
       {
         path: "/warehouse-management",
-        redirect: "/warehouse-management/delivery-list",
+        redirect: "/warehouse-management/receive-warehouse-list",
+      },
+      {
+        path: "/warehouse-management/receive-warehouse-list",
+        name: "到库列表",
+        component: "./warehouse-management/receive-warehouse-list",
       },
       {
         path: "/warehouse-management/delivery-list",
@@ -88,11 +93,12 @@ export default [
           },
         ],
       },
-      // {
-      //   path: "/warehouse-management/c",
-      //   name: "拍照单",
-      //   component: "./developing",
-      // },
+      {
+        path: "/warehouse-management/photo-list",
+        name: "拍照列表",
+        component: "./warehouse-management/photo-list",
+      },
+
       // {
       //   path: "/warehouse-management/d",
       //   name: "上架单",
