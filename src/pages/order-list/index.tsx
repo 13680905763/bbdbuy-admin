@@ -1,184 +1,277 @@
-import { getOrderListByPage } from "@/services/order"; // 你自己的接口路径
-import type { ActionType, ProColumns } from "@ant-design/pro-components";
+import { getOrderListByPage } from "@/services/order"; // 你的接口路径
+import { getStatusOptions, renderStatusTag } from "@/utils/status-render";
+import { DownOutlined, RightOutlined } from "@ant-design/icons";
+import type {
+  ActionType,
+  ProColumns,
+  ProFormInstance,
+} from "@ant-design/pro-components";
 import { PageContainer, ProTable } from "@ant-design/pro-components";
-import { Pagination, Table, Tag, message } from "antd";
+import {
+  DatePicker,
+  Image,
+  Pagination,
+  Select,
+  Table,
+  Tag,
+  message,
+} from "antd";
+import moment from "moment";
 import React, { useEffect, useRef, useState } from "react";
 
-type OrderProductRow = {
-  id: string;
-  orderCode: string;
-  customerName: string;
-  callNo: string;
-  totalFee: number;
-  postFee: number;
-  discountFee: number;
-  customerPayStatusCode: number;
-  createTime: string;
-  remark?: string;
-  orderRowSpan?: number;
-  productTitle: string;
-  sku: any;
-  picUrl: any;
-};
+const { RangePicker } = DatePicker;
 
 const TableList: React.FC = () => {
   const actionRef = useRef<ActionType | null>(null);
-  const [dataSource, setDataSource] = useState<OrderProductRow[]>([]);
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const formRef = useRef<ProFormInstance | undefined>(undefined);
+  const [dataSource, setDataSource] = useState<any[]>([]);
+
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [expandedRowKeys, setExpandedRowKeys] = useState<React.Key[]>([]); // ✅ 展开行控制
+  const [current, setCurrent] = useState(1);
+  const [size, setSize] = useState(10);
+  const [filters, setFilters] = useState<Record<string, any>>({});
 
-  const fetchData = async () => {
+  /** ✅ fetchData 不依赖外部状态，只依赖参数 */
+  const fetchData = async (params?: any) => {
+    const query = {
+      current,
+      size,
+      // ...filters,目前 搜索跟分页自己带上
+      ...params,
+    };
+    console.log("fetchData -> query", query);
+
     setLoading(true);
     try {
-      const res: any = await getOrderListByPage({ page, pageSize });
-      setDataSource(res.data.records);
-      setTotal(res.data.total);
+      const res: any = await getOrderListByPage(query);
+      setDataSource(res.data.records || []);
+      setTotal(res.data.total || 0);
     } catch (e) {
       message.error("加载失败");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
-  useEffect(() => {
-    fetchData();
-  }, [page, pageSize]);
-  console.log("dataSource", dataSource);
+  // ✅ 切换展开状态
+  const handleExpand = (record: any) => {
+    setExpandedRowKeys((prev) =>
+      prev.includes(record.id)
+        ? prev.filter((k) => k !== record.id)
+        : [...prev, record.id]
+    );
+  };
 
-  const columns: ProColumns<OrderProductRow>[] = [
-    {
-      title: "订单号",
-      dataIndex: "orderCode",
-    },
-    {
-      title: "用户名",
-      dataIndex: "customerName",
-    },
-
-    {
-      title: "商品金额",
-      dataIndex: "productFee",
-    },
-    {
-      title: "订单总金额",
-      dataIndex: "totalFee",
-    },
+  const columns: ProColumns<any>[] = [
+    { title: "订单号", dataIndex: "orderCode" },
+    { title: "用户名", dataIndex: "customerName", hideInSearch: true },
+    { title: "商品金额", dataIndex: "productFee", hideInSearch: true },
+    { title: "订单总金额", dataIndex: "totalFee", hideInSearch: true },
     {
       title: "商品信息",
       dataIndex: "products",
-      render: (products: any) => {
-        console.log("products", products);
+      hideInSearch: true,
+      render: (products: any = [], record) => {
+        const preview = products?.slice(0, 3);
+        const expanded = expandedRowKeys.includes(record.id);
         return (
-          <div className="purchase-table">
-            <Table
-              bordered
-              dataSource={products}
-              columns={[
-                {
-                  title: "商品图片",
-                  dataIndex: "picUrl",
-                  key: "picUrl",
-                  width: 100,
-                  render: (picUrl: string, row: any) => {
-                    return <img src={row?.skuPicUrl} alt="" width={100} />;
-                  },
-                },
-                {
-                  title: "sku",
-                  dataIndex: "sku",
-                  key: "sku",
-                  width: 200,
-                  render: (sku) => {
-                    return sku.propName_valueName;
-                  },
-                },
-                {
-                  title: "数量",
-                  dataIndex: "quantity",
-                  key: "quantity",
-                },
-                {
-                  title: "价格",
-                  dataIndex: "price",
-                  key: "price",
-                },
-              ]}
-              pagination={false}
-            />
+          <div
+            onClick={() => handleExpand(record)}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              cursor: "pointer",
+            }}
+          >
+            {/* 自定义展开图标 */}
+            {expanded ? (
+              <DownOutlined style={{ color: "#f0700c" }} />
+            ) : (
+              <RightOutlined style={{ color: "#999" }} />
+            )}
+
+            {/* 缩略图预览 */}
+            {preview.map((p: any) => (
+              <Image
+                key={p.id}
+                src={p.skuPicUrl || p.picUrl}
+                width={40}
+                height={40}
+                preview={false}
+              />
+            ))}
+
+            {/* 若超过3张则显示数量标签 */}
+            {products?.length > 3 && (
+              <Tag color="blue">+{products.length - 3}</Tag>
+            )}
           </div>
         );
       },
     },
-
     {
-      title: "状态",
-      dataIndex: "status",
-      render: (dom, record: any) => {
-        const status = record.status;
-        const statusCode = record.statusCode;
-        let color = "default";
-
-        switch (statusCode) {
-          case 100: // 已取消
-            color = "gray";
-            break;
-          case 101: // 待付款
-            color = "orange";
-            break;
-          case 102: // 待采购
-            color = "blue";
-            break;
-          case 103: // 待商家发货
-            color = "cyan";
-            break;
-          case 104: // 待入库
-            color = "purple";
-            break;
-          case 105: // 入库中
-            color = "geekblue";
-            break;
-          case 106: // 已入库
-            color = "green";
-            break;
-          default:
-            color = "default";
-        }
-        return <Tag color={color}>{status}</Tag>;
+      title: "订单状态",
+      dataIndex: "statusCode",
+      render: (value: any) => renderStatusTag("order", value),
+      renderFormItem: (_, { type, defaultRender, ...rest }, form) => {
+        return (
+          <Select
+            placeholder="请选择订单状态"
+            allowClear
+            options={getStatusOptions("order")}
+          />
+        );
       },
     },
-    { title: "下单时间", dataIndex: "createTime" },
-    { title: "备注", dataIndex: "remark" },
+    { title: "备注", dataIndex: "remark", hideInSearch: true },
+    {
+      title: "下单时间",
+      dataIndex: "createTime",
+      valueType: "dateTimeRange",
+      render: (_, records: any) => {
+        return records?.createTime;
+      },
+      renderFormItem: () => (
+        <RangePicker
+          showTime
+          format="YYYY-MM-DD HH:mm:ss"
+          style={{ width: "100%" }}
+        />
+      ),
+    },
   ];
 
+  /** ✅ 搜索提交 */
+  const onSubmitSearch = (values: any) => {
+    console.log("values", values);
+    const [startTime, endTime] = values.createTime || [];
+    const filterParams = {
+      orderCode: values.orderCode,
+      statusCode: values.statusCode,
+      createTimeFrom: startTime
+        ? moment(startTime).format("YYYY-MM-DD HH:mm:ss")
+        : undefined,
+      createTimeTo: endTime
+        ? moment(endTime).format("YYYY-MM-DD HH:mm:ss")
+        : undefined,
+    };
+    setFilters(filterParams);
+    setCurrent(1);
+    fetchData({ current: 1, ...filterParams });
+  };
+  /** ✅ 分页变化 */
+  const handlePageChange = (page: number, pageSize?: number) => {
+    setCurrent(page);
+    setSize(pageSize || 10);
+    fetchData({ current: page, size: pageSize, ...filters });
+  };
+
+  /** ✅ 重置搜索 */
+  const handleReset = () => {
+    setFilters({});
+    setCurrent(1);
+    formRef.current?.resetFields();
+    fetchData({ current: 1 });
+  };
+
+  /** ✅ 初始化加载 */
+  useEffect(() => {
+    fetchData();
+  }, []);
   return (
     <PageContainer>
-      <ProTable<OrderProductRow>
+      <ProTable
         bordered
+        formRef={formRef}
+        size="small"
         actionRef={actionRef}
         rowKey="id"
-        // search={false}
-        pagination={false} // ❗️我们自己控制分页
-        dataSource={dataSource}
         loading={loading}
         columns={columns}
-        // rowSelection={{
-        //   onChange: (_, selectedRows) => {
-        //     // setSelectedRows(selectedRows);
-        //   },
-        // }}
+        dataSource={dataSource}
+        pagination={false}
+        onSubmit={onSubmitSearch}
+        onReset={handleReset}
+        expandable={{
+          expandedRowKeys,
+          onExpand: (expanded, record) => handleExpand(record),
+          expandedRowRender: (record) => (
+            <Table
+              size="small"
+              pagination={false}
+              showHeader={false}
+              dataSource={record.products}
+              rowKey="id"
+              style={{
+                backgroundColor: "#f9fafb",
+                borderRadius: 8,
+                border: "none",
+              }}
+              columns={[
+                {
+                  dataIndex: "skuPicUrl",
+                  render: (url, records: any) => (
+                    <Image src={url || records?.picUrl} width={50} />
+                  ),
+                },
+                {
+                  dataIndex: "propAndValue",
+                  render: (propAndValue) => (
+                    <div
+                      style={{
+                        color: "#e60012",
+                        fontSize: 13,
+                        fontWeight: 500,
+                        lineHeight: "1.4",
+                        maxWidth: 200,
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {propAndValue?.propName_valueName || "-"}
+                    </div>
+                  ),
+                },
+                {
+                  dataIndex: "quantity",
+                  render: (q) => <span style={{ color: "#4b5563" }}>×{q}</span>,
+                },
+                {
+                  dataIndex: "price",
+                  render: (p) => (
+                    <span style={{ color: "#1f2937", fontWeight: 500 }}>
+                      ¥{p}
+                    </span>
+                  ),
+                },
+              ]}
+            />
+          ),
+          expandIcon: () => null, // ✅ 隐藏默认的展开图标
+          expandIconColumnIndex: -1,
+          expandRowByClick: false, // 由我们手动控制点击
+          rowExpandable: (record) => record.products?.length > 0,
+        }}
+        search={{
+          labelWidth: "auto",
+          defaultCollapsed: false, // ❗ 默认展开
+        }}
+        options={{
+          reload: false,
+          fullScreen: true,
+          density: false,
+        }}
       />
+
       <div style={{ padding: 16, textAlign: "right" }}>
         <Pagination
-          current={page}
-          pageSize={pageSize}
+          current={current}
+          pageSize={size}
           total={total}
-          showSizeChanger={true}
-          onChange={(newPage, newSize) => {
-            setPage(newPage);
-            setPageSize(newSize); // 更新页大小
-            // 发起请求，例如 fetchData(newPage, newSize)
-          }}
+          showSizeChanger
+          onChange={handlePageChange}
         />
       </div>
     </PageContainer>

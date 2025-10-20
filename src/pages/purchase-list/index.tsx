@@ -1,91 +1,139 @@
 import { getPurchaseListByPage, purchaseInitiate } from "@/services/order";
-import { PlusOutlined } from "@ant-design/icons";
-import type { ActionType, ProColumns } from "@ant-design/pro-components";
+import { getStatusOptions, renderStatusTag } from "@/utils/status-render";
+import { DownOutlined, PlusOutlined, RightOutlined } from "@ant-design/icons";
+import type {
+  ActionType,
+  ProColumns,
+  ProFormInstance,
+} from "@ant-design/pro-components";
 import { PageContainer, ProTable } from "@ant-design/pro-components";
-import { Button, Pagination, Table, Tag, message } from "antd";
+import {
+  Button,
+  DatePicker,
+  Form,
+  Image,
+  Pagination,
+  Select,
+  Table,
+  Tag,
+  message,
+} from "antd";
+import moment from "moment";
 import React, { useEffect, useRef, useState } from "react";
-
-type OrderProductRow = {
-  id: string;
-  orderCode: string;
-  customerName: string;
-  callNo: string;
-  totalFee: number;
-  postFee: number;
-  discountFee: number;
-  customerPayStatusCode: number;
-  createTime: string;
-  remark?: string;
-  orderRowSpan?: number;
-  productTitle: string;
-  sku: any;
-  picUrl: any;
-  purchaseCode?: any;
-};
-
-const flattenOrders = (orders: any[]): OrderProductRow[] => {
-  const result: OrderProductRow[] = [];
-
-  orders.forEach((order) => {
-    const products = order.products || [];
-    products.forEach((product: any, index: number) => {
-      result.push({
-        id: product.id,
-        orderCode: order.orderCode,
-        customerName: order.customerName,
-        callNo: product.shopName,
-        totalFee: order.totalFee,
-        postFee: order.postFee,
-        discountFee: order.discountFee,
-        customerPayStatusCode: order.customerPayStatusCode,
-        createTime: order.createTime,
-        remark: product.remark,
-        ...product,
-        orderRowSpan: index === 0 ? products.length : 0,
-      });
-    });
-  });
-
-  return result;
-};
+const { RangePicker } = DatePicker;
+export interface ProcureStatusItem {
+  label: string; // 显示文字
+  value: number; // 状态码
+  color: string; // 标签颜色
+}
 
 const TableList: React.FC = () => {
   const actionRef = useRef<ActionType | null>(null);
-  const [dataSource, setDataSource] = useState<OrderProductRow[]>([]);
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const formRef = useRef<ProFormInstance | undefined>(undefined);
+
+  const [dataSource, setDataSource] = useState<any>([]);
+
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const [selectedRowsState, setSelectedRows] = useState<any>([]);
+  const [current, setCurrent] = useState(1);
+  const [size, setSize] = useState(10);
+  const [filters, setFilters] = useState<Record<string, any>>({});
+  const [expandedRowKeys, setExpandedRowKeys] = useState<React.Key[]>([]); // ✅ 展开行控制
 
-  const fetchData = async () => {
+  /** ✅ fetchData 不依赖外部状态，只依赖参数 */
+  const fetchData = async (params?: any) => {
+    const query = {
+      current,
+      size,
+      // ...filters,目前 搜索跟分页自己带上
+      ...params,
+    };
+    console.log("fetchData -> query", query);
+
     setLoading(true);
     try {
-      const res: any = await getPurchaseListByPage({ page, pageSize });
-      setDataSource(res.data.records);
-      console.log(dataSource);
-
-      setTotal(res.data.total);
+      const res: any = await getPurchaseListByPage(query);
+      setDataSource(res.data.records || []);
+      setTotal(res.data.total || 0);
     } catch (e) {
       message.error("加载失败");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
+  };
+  // ✅ 切换展开状态
+  const handleExpand = (record: any) => {
+    setExpandedRowKeys((prev) =>
+      prev.includes(record.id)
+        ? prev.filter((k) => k !== record.id)
+        : [...prev, record.id]
+    );
   };
 
-  useEffect(() => {
-    fetchData();
-  }, [page, pageSize]);
-
-  const columns: ProColumns<OrderProductRow>[] = [
+  const columns: ProColumns<any>[] = [
     {
-      title: "采购订单号",
+      title: "采购编号",
+      dataIndex: "purchaseCode",
+      hideInSearch: true,
+    },
+    {
+      title: "订单编号",
+      dataIndex: "orderCode",
+    },
+    {
+      title: "商品信息",
+      dataIndex: "products",
+      hideInSearch: true,
+      render: (products: any = [], record) => {
+        const preview = products?.slice(0, 3);
+        const expanded = expandedRowKeys.includes(record.id);
+        return (
+          <div
+            onClick={() => handleExpand(record)}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              cursor: "pointer",
+            }}
+          >
+            {/* 自定义展开图标 */}
+            {expanded ? (
+              <DownOutlined style={{ color: "#f0700c" }} />
+            ) : (
+              <RightOutlined style={{ color: "#999" }} />
+            )}
+
+            {/* 缩略图预览 */}
+            {preview.map((p: any) => (
+              <Image
+                key={p.id}
+                src={p.skuPicUrl || p.picUrl}
+                width={40}
+                height={40}
+                preview={false}
+              />
+            ))}
+
+            {/* 若超过3张则显示数量标签 */}
+            {products?.length > 3 && (
+              <Tag color="blue">+{products.length - 3}</Tag>
+            )}
+          </div>
+        );
+      },
+    },
+    {
+      title: "平台采购单号",
       dataIndex: "sourceOrderId",
     },
+
     {
       title: "快递单号",
       dataIndex: "packages",
       width: 180,
-      render: (dom, record: any) => {
+      render: (_, record: any) => {
         const packages = record.packages;
         return packages?.map((item: any) => {
           return (
@@ -97,129 +145,253 @@ const TableList: React.FC = () => {
       },
     },
     {
-      title: "采购编号",
-      dataIndex: "purchaseCode",
-    },
-    {
-      title: "订单编号",
-      dataIndex: "orderCode",
-    },
-
-    {
       title: "采购状态",
-      dataIndex: "status",
+      dataIndex: "statusCode",
       width: 80,
-      render: (dom, record: any) => {
-        const status = record.status;
-        let color = "black";
-        if (status === "待采购") {
-          color = "red";
-        } else if (status === "已采购") {
-          color = "green";
-        }
-        return <Tag color={color}>{status}</Tag>;
-      },
-    },
-    {
-      title: "支付状态",
-      dataIndex: "payStatus",
-      width: 80,
-      render: (dom, record: any) => {
-        const payStatus = record.payStatus;
-        let color = "black";
-        if (payStatus === "已付款") {
-          color = "green";
-        } else {
-          color = "red";
-        }
-        return <Tag color={color}>{payStatus}</Tag>;
-      },
-    },
-    {
-      title: "采购员",
-      dataIndex: "dispatchUserName",
-    },
-
-    {
-      title: "商品信息",
-      dataIndex: "products",
-      render: (products: any) => {
-        console.log("products", products);
+      render: (value: any) => renderStatusTag("purchase", value),
+      renderFormItem: () => {
         return (
-          <div className="purchase-table">
-            <Table
-              bordered
-              dataSource={products}
-              columns={[
-                {
-                  title: "商品图片",
-                  dataIndex: "picUrl",
-                  key: "picUrl",
-                  width: 100,
-                  render: (picUrl: string, record: any) => {
-                    return <img src={record?.skuPicUrl} alt="" width={100} />;
-                  },
-                },
-                {
-                  title: "sku",
-                  dataIndex: "sku",
-                  key: "sku",
-                  width: 150,
-                  render: (sku, record: any) => {
-                    return (
-                      <div>
-                        <p>{sku.propName_valueName}</p>
-                        <p>
-                          <a href={record?.productUrl} target="_blank">
-                            原链接
-                          </a>
-                        </p>
-                      </div>
-                    );
-                  },
-                },
-                {
-                  title: "数量",
-                  dataIndex: "quantity",
-                  key: "quantity",
-                  width: 50,
-                },
-                {
-                  title: "价格",
-                  dataIndex: "price",
-                  key: "price",
-                  width: 50,
-                },
-                {
-                  title: "备注",
-                  dataIndex: "remark",
-                  key: "remark",
-                  width: 100,
-                },
-              ]}
-              pagination={false}
-            />
-          </div>
+          <Select
+            placeholder="请选择采购状态"
+            allowClear
+            options={getStatusOptions("purchase")}
+          />
         );
       },
     },
+
     {
-      title: "创建时间",
+      title: "采购员",
+      dataIndex: "dispatchUserName",
+      hideInSearch: true,
+    },
+
+    {
+      title: "时间信息",
       dataIndex: "createTime",
+      valueType: "dateTimeRange",
+      formItemProps: {
+        label: false, // ✅ 关键：隐藏 label
+        // style: { width: "900px" },
+      },
+      render: (_, record: any) => {
+        return (
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 4,
+              fontSize: 12,
+              lineHeight: 1.4,
+              color: "#555",
+            }}
+          >
+            <div>
+              <span style={{ color: "#999" }}>采购：</span>
+              {record.purchaseTime || "-"}
+            </div>
+            <div>
+              <span style={{ color: "#999" }}>付款：</span>
+              {record.payTime || "-"}
+            </div>
+            <div>
+              <span style={{ color: "#999" }}>发货：</span>
+              {record.sendTime || "-"}
+            </div>
+          </div>
+        );
+      },
+      renderFormItem: (_, { type, defaultRender, ...rest }, form) => (
+        <div style={{ display: "flex", gap: 8, flexDirection: "column" }}>
+          <Form.Item
+            name="purchaseTime"
+            label="采购时间"
+            style={{ marginBottom: 0 }}
+          >
+            <RangePicker
+              showTime
+              format="YYYY-MM-DD HH:mm:ss"
+              style={{ width: "100%" }}
+              placeholder={["开始时间", "结束时间"]}
+            />
+          </Form.Item>
+          <Form.Item
+            name="payTime"
+            label="付款时间"
+            style={{ marginBottom: 0 }}
+          >
+            <RangePicker
+              showTime
+              format="YYYY-MM-DD HH:mm:ss"
+              style={{ width: "100%" }}
+              placeholder={["开始时间", "结束时间"]}
+            />
+          </Form.Item>
+          <Form.Item
+            name="sendTime"
+            label="发货时间"
+            style={{ marginBottom: 0 }}
+          >
+            <RangePicker
+              showTime
+              format="YYYY-MM-DD HH:mm:ss"
+              style={{ width: "100%" }}
+              placeholder={["开始时间", "结束时间"]}
+            />
+          </Form.Item>
+        </div>
+      ),
     },
   ];
+  /** ✅ 搜索提交 */
+  const onSubmitSearch = (values: any) => {
+    const [purchaseStartTime, purchaseEndTime] = values.purchaseTime || [];
+    const [payStartTime, payEndTime] = values.payTime || [];
+    const [sendStartTime, sendEndTime] = values.sendTime || [];
+    const filterParams = {
+      orderCode: values.orderCode,
+      sourceOrderId: values.sourceOrderId,
+      logisticsCode: values.packages,
+      statusCode: values.statusCode,
+      purchaseTimeFrom: purchaseStartTime
+        ? moment(purchaseStartTime).format("YYYY-MM-DD HH:mm:ss")
+        : undefined,
+      purchaseTimeTo: purchaseEndTime
+        ? moment(purchaseEndTime).format("YYYY-MM-DD HH:mm:ss")
+        : undefined,
+      payTimeFrom: payStartTime
+        ? moment(payStartTime).format("YYYY-MM-DD HH:mm:ss")
+        : undefined,
+      payTimeTo: payEndTime
+        ? moment(payEndTime).format("YYYY-MM-DD HH:mm:ss")
+        : undefined,
+      sendTimeFrom: sendStartTime
+        ? moment(sendStartTime).format("YYYY-MM-DD HH:mm:ss")
+        : undefined,
+      sendTimeTo: sendEndTime
+        ? moment(sendEndTime).format("YYYY-MM-DD HH:mm:ss")
+        : undefined,
+    };
+    setFilters(filterParams);
+    setCurrent(1);
+    fetchData({ current: 1, ...filterParams });
+  };
+  /** ✅ 分页变化 */
+  const handlePageChange = (page: number, pageSize?: number) => {
+    setCurrent(page);
+    setSize(pageSize || 10);
+    fetchData({ current: page, size: pageSize, ...filters });
+  };
 
+  /** ✅ 重置搜索 */
+  const handleReset = () => {
+    setFilters({});
+    setCurrent(1);
+    formRef.current?.resetFields();
+    fetchData({ current: 1 });
+  };
+
+  /** ✅ 初始化加载 */
+  useEffect(() => {
+    fetchData();
+  }, []);
   return (
     <PageContainer>
       <ProTable
         bordered
+        size="small"
         actionRef={actionRef}
         rowKey="id"
-        // search={false}
         pagination={false} // ❗️我们自己控制分页
         dataSource={dataSource}
         loading={loading}
         columns={columns}
+        onSubmit={onSubmitSearch}
+        onReset={handleReset}
+        expandable={{
+          expandedRowKeys,
+          onExpand: (expanded, record) => handleExpand(record),
+          expandedRowRender: (record) => (
+            <Table
+              size="small"
+              pagination={false}
+              showHeader={false}
+              dataSource={record.products}
+              rowKey="id"
+              style={{
+                backgroundColor: "#f9fafb",
+                borderRadius: 8,
+                border: "none",
+              }}
+              columns={[
+                {
+                  dataIndex: "skuPicUrl",
+                  render: (url, records: any) => (
+                    <Image src={url || records?.picUrl} width={50} />
+                  ),
+                },
+                {
+                  dataIndex: "productUrl",
+                  render: (productUrl) => (
+                    <a href={productUrl} target="_blank">
+                      商品原链接
+                    </a>
+                  ),
+                },
+                {
+                  dataIndex: "propAndValue",
+                  render: (propAndValue) => (
+                    <div
+                      style={{
+                        color: "#e60012",
+                        fontSize: 13,
+                        fontWeight: 500,
+                        lineHeight: "1.4",
+                        maxWidth: 200,
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {propAndValue?.propName_valueName || "-"}
+                    </div>
+                  ),
+                },
+                {
+                  dataIndex: "quantity",
+                  render: (q) => <span style={{ color: "#4b5563" }}>×{q}</span>,
+                },
+                {
+                  dataIndex: "price",
+                  render: (p) => (
+                    <span style={{ color: "#1f2937", fontWeight: 500 }}>
+                      ¥{p}
+                    </span>
+                  ),
+                },
+                {
+                  dataIndex: "remark",
+                  render: (remark) => (
+                    <span style={{ color: "#1f2937", fontWeight: 500 }}>
+                      {remark}
+                    </span>
+                  ),
+                },
+              ]}
+            />
+          ),
+          expandIcon: () => null, // ✅ 隐藏默认的展开图标
+          expandIconColumnIndex: -1,
+          expandRowByClick: false, // 由我们手动控制点击
+          rowExpandable: (record) => record.products?.length > 0,
+        }}
+        search={{
+          labelWidth: "auto",
+          defaultCollapsed: false, // ❗ 默认展开
+        }}
+        options={{
+          reload: false,
+          fullScreen: true,
+          density: false,
+        }}
         rowSelection={{
           onChange: (_, selectedRows) => {
             setSelectedRows(selectedRows);
@@ -248,15 +420,11 @@ const TableList: React.FC = () => {
       />
       <div style={{ padding: 16, textAlign: "right" }}>
         <Pagination
-          current={page}
-          pageSize={pageSize}
+          current={current}
+          pageSize={size}
           total={total}
-          showSizeChanger={true}
-          onChange={(newPage, newSize) => {
-            setPage(newPage);
-            setPageSize(newSize); // 更新页大小
-            // 发起请求，例如 fetchData(newPage, newSize)
-          }}
+          showSizeChanger
+          onChange={handlePageChange}
         />
       </div>
     </PageContainer>

@@ -6,15 +6,15 @@ import ProTable, { ProColumns } from "@ant-design/pro-table";
 import { Button, Card, Image, Input, message, Select } from "antd";
 import React, { useEffect, useRef, useState } from "react";
 const inspectionStatusCode: any = [
-  { value: "1032", label: "正常" },
-  { value: "10331", label: "破损" },
-  { value: "10332", label: "质量问题" },
-  { value: "10333", label: "少发" },
-  { value: "10334", label: "错发" },
-  { value: "10335", label: "少买" },
-  { value: "10336", label: "错买" },
-  { value: "10337", label: "多发" },
-  { value: "10338", label: "多买" },
+  { value: 1032, label: "正常" },
+  { value: 10331, label: "破损" },
+  { value: 10332, label: "质量问题" },
+  { value: 10333, label: "少发" },
+  { value: 10334, label: "错发" },
+  { value: 10335, label: "少买" },
+  { value: 10336, label: "错买" },
+  { value: 10337, label: "多发" },
+  { value: 10338, label: "多买" },
 ];
 const ParticularPaper: React.FC = () => {
   const [scanValue, setScanValue] = useState("");
@@ -54,7 +54,7 @@ const ParticularPaper: React.FC = () => {
         res?.data?.inspectionList.map((row: any) => ({
           ...row,
           categoryId: categoryOptions.find((opt: any) => opt.isDefault)?.value,
-          inspectionStatusCode: 1032,
+          // inspectionStatusCode: 1032,
         }))
       );
     }
@@ -427,11 +427,11 @@ const ParticularPaper: React.FC = () => {
       render: (text, record, index) => {
         return (
           <Select
-            value={record.inspectionStatusCode}
+            // value={record.inspectionStatusCode}
             style={{ width: 120 }}
             onChange={(v) => {
               console.log(v);
-              if (v === "1032") {
+              if (v === 1032) {
                 setTableData((prev) => {
                   const updated = [...prev];
                   updated[index].inspectionStatusCode = v;
@@ -441,7 +441,7 @@ const ParticularPaper: React.FC = () => {
               } else {
                 setTableData((prev) => {
                   const updated = [...prev];
-                  updated[index].inspectionStatusCode = "1033";
+                  updated[index].inspectionStatusCode = 1033;
                   updated[index].abnormalCode = v;
                   return updated;
                 });

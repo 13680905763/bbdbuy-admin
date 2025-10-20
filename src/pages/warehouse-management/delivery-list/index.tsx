@@ -1,11 +1,12 @@
 import { getDeliveryListByPage } from "@/services/order";
+import { getStatusOptions, renderStatusTag } from "@/utils/status-render";
 import type {
   ActionType,
   ProColumns,
   ProFormInstance,
 } from "@ant-design/pro-components";
 import { PageContainer, ProTable } from "@ant-design/pro-components";
-import { DatePicker, Pagination, Select, Tag, message } from "antd";
+import { DatePicker, Pagination, Select, message } from "antd";
 import moment from "moment";
 import React, { useEffect, useRef, useState } from "react";
 const { RangePicker } = DatePicker;
@@ -41,17 +42,6 @@ const TableList: React.FC = () => {
     }
   };
 
-  /** ✅ 状态列渲染 */
-  const statusMap: Record<string, string> = {
-    待收货: "orange",
-    已收货: "green",
-    收货异常: "red",
-  };
-
-  const renderStatusTag = (text: string) => {
-    const color = statusMap[text] || "default"; // 未匹配的状态使用默认色
-    return <Tag color={color}>{text}</Tag>;
-  };
   const columns: ProColumns<any>[] = [
     {
       title: "订单号",
@@ -78,19 +68,15 @@ const TableList: React.FC = () => {
     },
     {
       title: "收货状态",
-      dataIndex: "receiveStatus",
-      render: (text: any) => renderStatusTag(text),
+      dataIndex: "receiveStatusCode",
+      render: (value: any) => renderStatusTag("receiving", value),
       renderFormItem: (_, { type, defaultRender, ...rest }, form) => {
         return (
           <Select
             placeholder="请选择收货状态"
             allowClear
             style={{ width: "100%" }}
-            options={[
-              { label: "待收货", value: 1011 },
-              { label: "已收货", value: 1012 },
-              { label: "收货异常", value: 1013 },
-            ]}
+            options={getStatusOptions("receiving")}
           />
         );
       },
@@ -135,7 +121,7 @@ const TableList: React.FC = () => {
       orderCode: values.orderCode,
       purchaseCode: values.purchaseCode,
       logisticsCode: values.logisticsCode,
-      receiveStatusCode: values.receiveStatus,
+      receiveStatusCode: values.receiveStatusCode,
       createTimeFrom: createStartTime
         ? moment(createStartTime).format("YYYY-MM-DD HH:mm:ss")
         : undefined,

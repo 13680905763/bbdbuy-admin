@@ -1,4 +1,5 @@
 import { getInspectionListByPage } from "@/services/order"; // 你自己的接口路径
+import { getStatusOptions, renderStatusTag } from "@/utils/status-render";
 import type {
   ActionType,
   ProColumns,
@@ -13,7 +14,6 @@ import {
   Modal,
   Pagination,
   Select,
-  Tag,
   message,
 } from "antd";
 import moment from "moment";
@@ -67,16 +67,7 @@ const TableList: React.FC = () => {
       setLoading(false);
     }
   };
-  /** ✅ 状态列渲染 */
-  const statusMap: Record<string, string> = {
-    验货正常: "green",
-    验货异常: "red",
-  };
 
-  const renderStatusTag = (text: string) => {
-    const color = statusMap[text] || "default"; // 未匹配的状态使用默认色
-    return <Tag color={color}>{text}</Tag>;
-  };
   const columns: ProColumns<any>[] = [
     {
       title: "订单号",
@@ -177,7 +168,7 @@ const TableList: React.FC = () => {
     {
       title: "验货详情",
       dataIndex: "packageItem.id",
-      width: 150,
+      width: 400,
       hideInSearch: true,
       render: (_: any, record: any) => {
         return (
@@ -197,11 +188,11 @@ const TableList: React.FC = () => {
       title: "验货状态",
       dataIndex: "inspectionStatus",
       render: (_, record: any) => {
-        const { inspectionStatus, abnormalMsg } = record;
+        const { inspectionStatus, abnormalMsg, inspectionStatusCode } = record;
         return (
           <div style={{ display: "flex", justifyContent: "center" }}>
             <div>
-              {renderStatusTag(inspectionStatus)}
+              {renderStatusTag("inspection", inspectionStatusCode)}
               {inspectionStatus === "验货异常" && abnormalMsg && (
                 <div style={{ color: "#999", fontSize: 12, marginTop: 4 }}>
                   异常原因：{abnormalMsg}
@@ -216,11 +207,7 @@ const TableList: React.FC = () => {
           <Select
             placeholder="请选择验货状态"
             allowClear
-            options={[
-              { label: "待验货", value: 1031 },
-              { label: "验货正常", value: 1032 },
-              { label: "验货异常", value: 1033 },
-            ]}
+            options={getStatusOptions("inspection")}
           />
         );
       },
