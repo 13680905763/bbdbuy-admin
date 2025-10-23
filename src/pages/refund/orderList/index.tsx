@@ -1,5 +1,9 @@
 import { getOrderRefundList, updateRefund } from "@/services/refund";
-import type { ActionType, ProColumns } from "@ant-design/pro-components";
+import type {
+  ActionType,
+  ProColumns,
+  ProFormInstance,
+} from "@ant-design/pro-components";
 import { PageContainer, ProTable } from "@ant-design/pro-components";
 import {
   Button,
@@ -32,12 +36,17 @@ type OrderProductRow = {
 
 const TableList: React.FC = () => {
   const actionRef = useRef<ActionType | null>(null);
+  const formRef = useRef<ProFormInstance | undefined>(undefined);
+
   const [dataSource, setDataSource] = useState<OrderProductRow[]>([]);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [current, setCurrent] = useState(1);
+  const [size, setSize] = useState(10);
+  const [total, setTotal] = useState(0);
 
+  const [filters, setFilters] = useState<Record<string, any>>({});
   // 弹窗状态
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [currentRow, setCurrentRow] = useState<any>(null);
@@ -45,24 +54,26 @@ const TableList: React.FC = () => {
   const [statusCode, setStatusCode] = useState<number>(2); // 默认固定值
   // 新增 state
   const [confirmLoading, setConfirmLoading] = useState(false);
-  const fetchData = async () => {
-    setLoading(true);
-    console.log(6666);
 
+  /** ✅ fetchData 不依赖外部状态，只依赖参数 */
+  const fetchData = async (params?: any) => {
+    const query = {
+      current,
+      size,
+      ...params,
+    };
+    console.log("fetchData -> query", query);
+    setLoading(true);
     try {
-      const res: any = await getOrderRefundList({ page, pageSize });
-      setDataSource(res.data.records);
-      setTotal(res.data.total);
+      const res: any = await getOrderRefundList(query);
+      setDataSource(res.data.records || []);
+      setTotal(res.data.total || 0);
     } catch (e) {
       message.error("加载失败");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
-
-  useEffect(() => {
-    fetchData();
-  }, [page, pageSize]);
-  console.log("dataSource", dataSource);
 
   const columns: ProColumns<OrderProductRow>[] = [
     {
@@ -76,11 +87,14 @@ const TableList: React.FC = () => {
     {
       title: "商品",
       dataIndex: "productTitle",
+      hideInSearch: true,
     },
     {
       title: "商品图片",
       dataIndex: "picUrl",
       key: "picUrl",
+      hideInSearch: true,
+
       width: 100,
       render: (picUrl: any, row: any) => {
         return <img src={row?.skuPicUrl || row?.picUrl} alt="" width={100} />;
@@ -89,11 +103,14 @@ const TableList: React.FC = () => {
     {
       title: "价格",
       dataIndex: "price",
+      hideInSearch: true,
     },
     {
       title: "sku",
       dataIndex: "propAndValue",
       key: "propAndValue",
+      hideInSearch: true,
+
       width: 200,
       render: (propAndValue: any) => {
         return propAndValue?.propName_valueName;
@@ -103,15 +120,18 @@ const TableList: React.FC = () => {
     {
       title: "数量",
       dataIndex: "quantity",
+      hideInSearch: true,
     },
     {
       title: "退款金额",
       dataIndex: "refundAmount",
+      hideInSearch: true,
     },
 
     {
       title: "状态",
       dataIndex: "status",
+      hideInSearch: true,
       render: (dom, record: any) => {
         const status = record.status;
         const statusCode = record.statusCode;
@@ -137,11 +157,13 @@ const TableList: React.FC = () => {
         return <Tag color={color}>{status}</Tag>;
       },
     },
-    { title: "申请时间", dataIndex: "createTime" },
+    { title: "申请时间", dataIndex: "createTime", hideInSearch: true },
     {
       title: "审核时间",
       dataIndex: "updateTime",
-      render: (dom, record: any) => {
+      hideInSearch: true,
+
+      render: (_, record: any) => {
         const statusCode = record.statusCode;
         const updateTime = record.updateTime;
         if (statusCode === 1) return "--";
@@ -196,17 +218,68 @@ const TableList: React.FC = () => {
       setConfirmLoading(false); // 🔹无论成功失败都关闭 loading
     }
   };
+
+  /** ✅ 搜索提交 */
+  const onSubmitSearch = (values: any) => {
+    console.log("values", values);
+    // const [startTime, endTime] = values.createTime || [];
+    const filterParams = {
+      refundCode: values.refundCode,
+      orderCode: values.orderCode,
+      // putawayStatusCode: values.putawayStatusCode,
+      // createTimeFrom: startTime
+      //   ? moment(startTime).format("YYYY-MM-DD HH:mm:ss")
+      //   : undefined,
+      // createTimeTo: endTime
+      //   ? moment(endTime).format("YYYY-MM-DD HH:mm:ss")
+      //   : undefined,
+    };
+    setFilters(filterParams);
+    setCurrent(1);
+    fetchData({ current: 1, ...filterParams });
+  };
+  /** ✅ 分页变化 */
+  const handlePageChange = (page: number, pageSize?: number) => {
+    setCurrent(page);
+    setSize(pageSize || 10);
+    fetchData({ current: page, size: pageSize, ...filters });
+  };
+
+  /** ✅ 重置搜索 */
+  const handleReset = () => {
+    setFilters({});
+    setCurrent(1);
+    formRef.current?.resetFields();
+    fetchData({ current: 1 });
+  };
+
+  /** ✅ 初始化加载 */
+  useEffect(() => {
+    fetchData();
+  }, []);
   return (
     <PageContainer>
       <ProTable<OrderProductRow>
         bordered
         actionRef={actionRef}
+        formRef={formRef}
+        size="small"
         rowKey="id"
-        // search={false}
         pagination={false} // ❗️我们自己控制分页
         dataSource={dataSource}
         loading={loading}
         columns={columns}
+        onSubmit={onSubmitSearch}
+        onReset={handleReset}
+        search={{
+          labelWidth: "auto",
+          defaultCollapsed: false, // ❗ 默认展开
+        }}
+        options={{
+          reload: false,
+          fullScreen: true,
+          density: false,
+        }}
         // rowSelection={{
         //   onChange: (_, selectedRows) => {
         //     // setSelectedRows(selectedRows);
@@ -215,15 +288,11 @@ const TableList: React.FC = () => {
       />
       <div style={{ padding: 16, textAlign: "right" }}>
         <Pagination
-          current={page}
-          pageSize={pageSize}
+          current={current}
+          pageSize={size}
           total={total}
-          showSizeChanger={true}
-          onChange={(newPage, newSize) => {
-            setPage(newPage);
-            setPageSize(newSize); // 更新页大小
-            // 发起请求，例如 fetchData(newPage, newSize)
-          }}
+          showSizeChanger
+          onChange={handlePageChange}
         />
       </div>
       {/* 退款审核 */}

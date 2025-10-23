@@ -174,6 +174,7 @@ const ParticularPaper: React.FC = () => {
           categoryId: item.categoryId,
         };
       });
+      console.log("data", data);
 
       // 校验
       for (let i = 0; i < data.length; i++) {
@@ -201,8 +202,8 @@ const ParticularPaper: React.FC = () => {
             return;
           }
         }
-        if (item.inspectionStatusCode !== "1032" && !item.abnormalCode) {
-          message.warning(`第 ${i + 1} 行状态异常，需填写异常类型`);
+        if (item.inspectionStatusCode !== 1032 && !item.abnormalCode) {
+          message.warning(`第 ${i + 1} 行状态未填写`);
           setSubmitting(false);
           return;
         }
@@ -223,7 +224,7 @@ const ParticularPaper: React.FC = () => {
     {
       title: "商品详情",
       dataIndex: "product",
-      width: 350,
+      width: 300,
       render: (product: any) => {
         return (
           <div style={{ display: "flex", gap: 12, padding: "8px 0" }}>
@@ -235,6 +236,7 @@ const ParticularPaper: React.FC = () => {
               alt={product?.productTitle || "商品图片"}
               preview={product?.picUrl}
               style={{ objectFit: "cover", borderRadius: 4 }}
+              referrerPolicy="no-referrer"
             />
             {/* 右侧内容 */}
             <div
@@ -384,7 +386,7 @@ const ParticularPaper: React.FC = () => {
     {
       title: "数量",
       dataIndex: "quantity",
-      width: 80,
+      width: 120,
       render: (_, __, index) => (
         <Input
           type="number"
@@ -434,7 +436,7 @@ const ParticularPaper: React.FC = () => {
               if (v === 1032) {
                 setTableData((prev) => {
                   const updated = [...prev];
-                  updated[index].inspectionStatusCode = v;
+                  updated[index].inspectionStatusCode = 1032;
                   updated[index].abnormalCode = "";
                   return updated;
                 });

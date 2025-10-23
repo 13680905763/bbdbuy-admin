@@ -98,6 +98,7 @@ const TableList: React.FC = () => {
               alt={orderProduct?.productTitle || "商品图片"}
               preview={orderProduct?.picUrl}
               style={{ objectFit: "cover", borderRadius: 4 }}
+              referrerPolicy="no-referrer"
             />
             {/* 右侧内容 */}
             <div

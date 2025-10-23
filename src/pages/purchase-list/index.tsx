@@ -1,4 +1,9 @@
-import { getPurchaseListByPage, purchaseInitiate } from "@/services/order";
+import {
+  createPurchaseLogistics,
+  getPurchaseListByPage,
+  purchaseInitiate,
+  putPurchaseLogistics,
+} from "@/services/order";
 import { getStatusOptions, renderStatusTag } from "@/utils/status-render";
 import { DownOutlined, PlusOutlined, RightOutlined } from "@ant-design/icons";
 import type {
@@ -12,6 +17,8 @@ import {
   DatePicker,
   Form,
   Image,
+  Input,
+  Modal,
   Pagination,
   Select,
   Table,
@@ -40,7 +47,11 @@ const TableList: React.FC = () => {
   const [size, setSize] = useState(10);
   const [filters, setFilters] = useState<Record<string, any>>({});
   const [expandedRowKeys, setExpandedRowKeys] = useState<React.Key[]>([]); // ✅ 展开行控制
+  // 弹窗状态
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [currentRow, setCurrentRow] = useState<any>(null);
 
+  const [form] = Form.useForm();
   /** ✅ fetchData 不依赖外部状态，只依赖参数 */
   const fetchData = async (params?: any) => {
     const query = {
@@ -113,6 +124,7 @@ const TableList: React.FC = () => {
                 width={40}
                 height={40}
                 preview={false}
+                referrerPolicy="no-referrer"
               />
             ))}
 
@@ -242,7 +254,65 @@ const TableList: React.FC = () => {
         </div>
       ),
     },
+    {
+      title: "操作",
+      valueType: "option",
+      render: (_: any, record: any) => [
+        <Button
+          type="link"
+          style={{ color: "#1890ff", padding: 0 }}
+          onClick={() => handleEdit(record)}
+        >
+          修改
+        </Button>,
+      ],
+    },
   ];
+
+  /** 修改 */
+  const handleEdit = (record: any) => {
+    setCurrentRow(record);
+    console.log("record", record);
+
+    // 取出第一个 package
+    const firstPackage = record?.packages?.[0];
+
+    // 设置表单值
+    form.setFieldsValue({
+      logisticsCompany: firstPackage?.logisticsCompany || "",
+      logisticsCode: firstPackage?.logisticsCode || "",
+    });
+
+    setEditModalVisible(true);
+  };
+  /** 保存（新增 / 修改） */
+  const handleSave = async () => {
+    try {
+      const values = await form.validateFields();
+      values.id = currentRow.id;
+      console.log("value", values);
+
+      setLoading(true);
+
+      let res;
+      if (currentRow?.packages?.[0]) {
+        res = await putPurchaseLogistics(values);
+      } else {
+        res = await createPurchaseLogistics(values);
+      }
+      if (res.success) {
+        message.success("修改成功");
+        setEditModalVisible(false);
+        fetchData();
+      } else {
+        message.error(res.message || "操作失败");
+      }
+    } catch (e) {
+      message.error("操作失败");
+    } finally {
+      setLoading(false);
+    }
+  };
   /** ✅ 搜索提交 */
   const onSubmitSearch = (values: any) => {
     const [purchaseStartTime, purchaseEndTime] = values.purchaseTime || [];
@@ -327,7 +397,11 @@ const TableList: React.FC = () => {
                 {
                   dataIndex: "skuPicUrl",
                   render: (url, records: any) => (
-                    <Image src={url || records?.picUrl} width={50} />
+                    <Image
+                      src={url || records?.picUrl}
+                      width={50}
+                      referrerPolicy="no-referrer"
+                    />
                   ),
                 },
                 {
@@ -427,6 +501,34 @@ const TableList: React.FC = () => {
           onChange={handlePageChange}
         />
       </div>
+      {/* 新增/修改 弹窗 */}
+      <Modal
+        title={"修改"}
+        open={editModalVisible}
+        onCancel={() => setEditModalVisible(false)}
+        onOk={handleSave}
+        confirmLoading={loading}
+        width={500}
+        centered
+      >
+        <Form form={form} layout="vertical">
+          <Form.Item
+            name="logisticsCompany"
+            label="快递公司"
+            rules={[{ required: true, message: "请输入快递公司" }]}
+          >
+            <Input placeholder="请输入快递公司" />
+          </Form.Item>
+
+          <Form.Item
+            name="logisticsCode"
+            label="快递单号"
+            rules={[{ required: true, message: "请输入快递单号" }]}
+          >
+            <Input placeholder="请输入快递单号" />
+          </Form.Item>
+        </Form>
+      </Modal>
     </PageContainer>
   );
 };

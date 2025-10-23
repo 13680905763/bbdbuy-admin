@@ -68,6 +68,8 @@ const TableList: React.FC = () => {
     { title: "订单号", dataIndex: "orderCode" },
     { title: "用户名", dataIndex: "customerName", hideInSearch: true },
     { title: "商品金额", dataIndex: "productFee", hideInSearch: true },
+    { title: "运费金额", dataIndex: "postFee", hideInSearch: true },
+    { title: "服务费金额", dataIndex: "serviceFee", hideInSearch: true },
     { title: "订单总金额", dataIndex: "totalFee", hideInSearch: true },
     {
       title: "商品信息",
@@ -101,6 +103,7 @@ const TableList: React.FC = () => {
                 width={40}
                 height={40}
                 preview={false}
+                referrerPolicy="no-referrer"
               />
             ))}
 
@@ -214,7 +217,11 @@ const TableList: React.FC = () => {
                 {
                   dataIndex: "skuPicUrl",
                   render: (url, records: any) => (
-                    <Image src={url || records?.picUrl} width={50} />
+                    <Image
+                      src={url || records?.picUrl}
+                      width={50}
+                      referrerPolicy="no-referrer"
+                    />
                   ),
                 },
                 {

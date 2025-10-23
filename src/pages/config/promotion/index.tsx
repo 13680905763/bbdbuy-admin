@@ -122,16 +122,20 @@ const ConfigList: React.FC = () => {
     {
       title: "操作",
       valueType: "option",
-      render: (_, record) => [
-        <a key="edit" onClick={() => handleEdit(record)}>
+      render: (_: any, record: any) => [
+        <Button
+          type="link"
+          style={{ color: "#1890ff", padding: 0 }}
+          onClick={() => handleEdit(record)}
+        >
           修改
-        </a>,
+        </Button>,
         <Popconfirm
           key="delete"
           title="确定要删除吗？"
           onConfirm={() => handleDelete(record)}
         >
-          <a>删除</a>
+          <a style={{ color: "#ff4d4f" }}>删除</a>
         </Popconfirm>,
       ],
     },
@@ -150,6 +154,12 @@ const ConfigList: React.FC = () => {
       />
 
       <ProTable
+        size="small"
+        options={{
+          reload: false,
+          fullScreen: true,
+          density: false,
+        }}
         bordered
         actionRef={actionRef}
         rowKey="id"
@@ -172,7 +182,6 @@ const ConfigList: React.FC = () => {
         onOk={handleSave}
         confirmLoading={loading}
         width={480}
-        destroyOnClose
         centered
       >
         <Form form={form} layout="vertical">

@@ -119,11 +119,12 @@ const ConfigList: React.FC = () => {
         <div style={{ display: "flex", gap: 8 }}>
           <Button
             type="link"
+            style={{ color: "#1890ff", padding: 0 }}
             onClick={() => handleEdit(record)}
-            style={{ padding: 0 }}
           >
             修改
           </Button>
+
           <Popconfirm
             title="确认删除这条汇率吗？"
             onConfirm={() => handleDelete(record)}
@@ -142,6 +143,12 @@ const ConfigList: React.FC = () => {
   return (
     <PageContainer>
       <ProTable
+        size="small"
+        options={{
+          reload: false,
+          fullScreen: true,
+          density: false,
+        }}
         bordered
         actionRef={actionRef}
         rowKey="id"

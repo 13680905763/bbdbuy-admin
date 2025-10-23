@@ -1,88 +1,76 @@
 "use client";
 
 import { getOutboundPackListByPage } from "@/services";
-import type { ActionType, ProColumns } from "@ant-design/pro-components";
+import type {
+  ActionType,
+  ProColumns,
+  ProFormInstance,
+} from "@ant-design/pro-components";
 import { PageContainer, ProTable } from "@ant-design/pro-components";
-import { Button, message, Pagination, Tag } from "antd";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import { Button, message, Pagination, Select } from "antd";
+import React, { useEffect, useRef, useState } from "react";
 
+import { getStatusOptions, renderStatusTag } from "@/utils/status-render";
 import { PackageSplitModal } from "./PackageSplitModal";
-
-// ✅ 定义数据类型
-type OrderProductRow = {
-  id: string;
-  outboundCode: string;
-  packageCode: string;
-  locationCode: string;
-  pickStatus: string;
-  createTime: string;
-};
 
 const TableList: React.FC = () => {
   const actionRef = useRef<ActionType | null>(null);
+  const formRef = useRef<ProFormInstance | undefined>(undefined);
 
   // ✅ 状态管理
-  const [dataSource, setDataSource] = useState<OrderProductRow[]>([]);
-  const [selectedRows, setSelectedRows] = useState<OrderProductRow[]>([]);
+  const [dataSource, setDataSource] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
-  const [pagination, setPagination] = useState({
-    current: 1,
-    pageSize: 10,
-    total: 0,
-  });
+
+  const [current, setCurrent] = useState(1);
+  const [size, setSize] = useState(10);
+  const [total, setTotal] = useState(0);
+
+  const [filters, setFilters] = useState<Record<string, any>>({});
 
   // 弹窗状态
   const [splitModalVisible, setSplitModalVisible] = useState(false);
-  const [currentRow, setCurrentRow] = useState<OrderProductRow | null>(null);
-  console.log(
-    "123",
-    currentRow?.items?.map((item) => {
-      return {
-        id: item.id,
-        code: item.packageCode,
-        weight: item.weight,
-      };
-    })
-  );
+  const [currentRow, setCurrentRow] = useState<any>(null);
 
-  // ✅ 请求数据封装
-  const fetchData = useCallback(async () => {
+  /** ✅ fetchData 不依赖外部状态，只依赖参数 */
+  const fetchData = async (params?: any) => {
+    const query = {
+      current,
+      size,
+      ...params,
+    };
+    console.log("fetchData -> query", query);
     setLoading(true);
     try {
-      const res: any = await getOutboundPackListByPage({
-        page: pagination.current,
-        pageSize: pagination.pageSize,
-      });
+      const res: any = await getOutboundPackListByPage(query);
       setDataSource(res.data.records || []);
-      setPagination((prev) => ({
-        ...prev,
-        total: res.data.total || 0,
-      }));
+      setTotal(res.data.total || 0);
     } catch (e) {
       message.error("加载失败");
     } finally {
       setLoading(false);
     }
-  }, [pagination.current, pagination.pageSize]);
-
-  const handleSplitPackage = (record: OrderProductRow) => {
+  };
+  const handleSplitPackage = (record: any) => {
     setCurrentRow(record);
     setSplitModalVisible(true);
   };
 
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
-
   // ✅ 表头配置
-  const columns: ProColumns<OrderProductRow>[] = [
+  const columns: ProColumns<any>[] = [
     {
-      title: "包裹编号",
+      title: "出库单号",
+      dataIndex: "outboundCode",
+    },
+    {
+      title: "出库包裹号",
       dataIndex: "packingPackageCode",
     },
     {
       title: "包裹信息",
       dataIndex: "items",
+      formItemProps: {
+        label: "包裹唯一标识",
+      },
       render: (items: any) => {
         return items?.map((item: any) => (
           <p key={item.location.packageCode}>
@@ -93,21 +81,38 @@ const TableList: React.FC = () => {
     },
     {
       title: "状态",
-      dataIndex: "status",
-      render: (_, record: any) => {
-        const status = record.status;
-        const color = status === "已打包" ? "green" : "red";
-        return <Tag color={color}>{status}</Tag>;
+      dataIndex: "packingStatusCode",
+      render: (value: any) => renderStatusTag("packing", value),
+      renderFormItem: () => {
+        return (
+          <Select
+            placeholder="请选择打包状态"
+            allowClear
+            options={getStatusOptions("packing")}
+          />
+        );
       },
     },
     {
-      title: "下单时间",
-      dataIndex: "createTime",
+      title: "打包人",
+      dataIndex: "updateUserName",
+      hideInSearch: true,
+    },
+    {
+      title: "打包时间",
+      dataIndex: "updateTime",
+      hideInSearch: true,
+      render: (_, record: any) => {
+        const packingStatusCode = record.packingStatusCode;
+        const updateTime = record.updateTime;
+        if (packingStatusCode == 2021) return "--";
+        return updateTime;
+      },
     },
     {
       title: "操作",
       key: "canSplit",
-      render: (_: any, record: OrderProductRow) => {
+      render: (_: any, record: any) => {
         if (record?.canSplit) {
           return (
             <Button type="primary" onClick={() => handleSplitPackage(record)}>
@@ -115,33 +120,82 @@ const TableList: React.FC = () => {
             </Button>
           );
         }
-        return null; // 没有按钮时必须返回 null，否则 Table 渲染会报错
+        return "-"; // 没有按钮时必须返回 null，否则 Table 渲染会报错
       },
+      hideInSearch: true,
     },
   ];
+  /** ✅ 搜索提交 */
+  const onSubmitSearch = (values: any) => {
+    console.log("values", values);
+    // const [startTime, endTime] = values.createTime || [];
+    const filterParams = {
+      outboundCode: values.outboundCode,
+      packingPackageCode: values.packingPackageCode,
+      packageCode: values.items,
+      packingStatusCode: values.packingStatusCode,
+      // createTimeFrom: startTime
+      //   ? moment(startTime).format("YYYY-MM-DD HH:mm:ss")
+      //   : undefined,
+      // createTimeTo: endTime
+      //   ? moment(endTime).format("YYYY-MM-DD HH:mm:ss")
+      //   : undefined,
+    };
+    setFilters(filterParams);
+    setCurrent(1);
+    fetchData({ current: 1, ...filterParams });
+  };
+  /** ✅ 分页变化 */
+  const handlePageChange = (page: number, pageSize?: number) => {
+    setCurrent(page);
+    setSize(pageSize || 10);
+    fetchData({ current: page, size: pageSize, ...filters });
+  };
 
+  /** ✅ 重置搜索 */
+  const handleReset = () => {
+    setFilters({});
+    setCurrent(1);
+    formRef.current?.resetFields();
+    fetchData({ current: 1 });
+  };
+
+  /** ✅ 初始化加载 */
+  useEffect(() => {
+    fetchData();
+  }, []);
   return (
     <PageContainer>
-      <ProTable<OrderProductRow>
+      <ProTable
         bordered
         rowKey="id"
         columns={columns}
+        size="small"
+        formRef={formRef}
         dataSource={dataSource}
         loading={loading}
         actionRef={actionRef}
         pagination={false}
-        search={false}
+        onSubmit={onSubmitSearch}
+        onReset={handleReset}
+        search={{
+          labelWidth: "auto",
+          defaultCollapsed: false, // ❗ 默认展开
+        }}
+        options={{
+          reload: false,
+          fullScreen: true,
+          density: false,
+        }}
       />
 
       <div style={{ padding: 16, textAlign: "right" }}>
         <Pagination
-          current={pagination.current}
-          pageSize={pagination.pageSize}
-          total={pagination.total}
+          current={current}
+          pageSize={size}
+          total={total}
           showSizeChanger
-          onChange={(current, pageSize) =>
-            setPagination({ ...pagination, current, pageSize })
-          }
+          onChange={handlePageChange}
         />
       </div>
 
@@ -149,7 +203,7 @@ const TableList: React.FC = () => {
         open={splitModalVisible} // 控制弹窗显示
         onClose={() => setSplitModalVisible(false)}
         initialPackages={
-          currentRow?.items?.map((item) => {
+          currentRow?.items?.map((item: any) => {
             return {
               id: item.id,
               code: item.packageCode,

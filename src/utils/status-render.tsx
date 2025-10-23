@@ -2,7 +2,17 @@
 import { Tag } from "antd";
 import React from "react";
 
-export type ModuleType = "order" | "purchase" | "inspection" | "receiving"; // 可根据项目扩展
+export type ModuleType =
+  | "order"
+  | "purchase"
+  | "inspection"
+  | "receiving"
+  | "outbound"
+  | "picking"
+  | "packing"
+  | "putaway"
+  | "inputaway"
+  | "delivery"; // 可根据项目扩展
 
 export interface StatusItem {
   label: string;
@@ -44,6 +54,31 @@ export const STATUS_LIST: StatusItem[] = [
   { label: "待验货", value: 1031, module: "inspection", color: "blue" },
   { label: "验货正常", value: 1032, module: "inspection", color: "green" },
   { label: "验货异常", value: 1033, module: "inspection", color: "red" },
+
+  // ✅ 出库列表状态
+  { label: "已取消", value: 200, module: "outbound", color: "default" },
+  { label: "待拣货", value: 201, module: "outbound", color: "orange" },
+  { label: "待打包", value: 202, module: "outbound", color: "blue" },
+  { label: "待付款", value: 203, module: "outbound", color: "cyan" },
+  { label: "待发货", value: 204, module: "outbound", color: "purple" },
+  { label: "运输中", value: 205, module: "outbound", color: "geekblue" },
+  { label: "已收货", value: 206, module: "outbound", color: "green" },
+
+  // ✅ 拣货列表状态
+  { label: "待拣货", value: 2011, module: "picking", color: "blue" },
+  { label: "已拣货", value: 2012, module: "picking", color: "green" },
+  // ✅ 打包列表状态
+  { label: "待打包", value: 2021, module: "packing", color: "blue" },
+  { label: "已打包", value: 2022, module: "packing", color: "green" },
+  // ✅ 上架列表状态
+  { label: "待上架", value: 2025, module: "putaway", color: "blue" },
+  { label: "已上架", value: 2026, module: "putaway", color: "green" },
+  // ✅ 入库上架列表状态
+  { label: "待上架", value: 1071, module: "inputaway", color: "blue" },
+  { label: "已上架", value: 1072, module: "inputaway", color: "green" },
+  // ✅ 发货列表状态
+  { label: "待发货", value: 2041, module: "delivery", color: "blue" },
+  { label: "已发货", value: 2042, module: "delivery", color: "green" },
 ];
 
 // ======================
@@ -85,3 +120,13 @@ export const getStatusOptions = (
     label: item.label,
     value: item.value,
   }));
+
+// 显卡 5060魔刃 2314
+// cpu 9600x散片 1152
+// 主板 b650 ayw 728
+// 内存 金百达黑刃 16*2 1003 / d300 16 632
+// 电源 玄武650w k 260
+// 散热 玄冰500 110
+// 固态 1t 【450左右】
+// 机箱风扇 【100左右】
+// 合计 约 6110 /5739

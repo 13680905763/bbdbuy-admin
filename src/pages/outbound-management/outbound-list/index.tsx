@@ -1,55 +1,63 @@
 import { getOutboundListByPage } from "@/services";
+import { getStatusOptions, renderStatusTag } from "@/utils/status-render";
 import { PlusOutlined } from "@ant-design/icons";
-import type { ActionType, ProColumns } from "@ant-design/pro-components";
+import type {
+  ActionType,
+  ProColumns,
+  ProFormInstance,
+} from "@ant-design/pro-components";
 import { PageContainer, ProTable } from "@ant-design/pro-components";
-import { Button, Pagination, Table, Tag, message } from "antd";
+import {
+  Button,
+  DatePicker,
+  Input,
+  Pagination,
+  Select,
+  Table,
+  message,
+} from "antd";
+import moment from "moment";
 import React, { useEffect, useRef, useState } from "react";
 import { printPickingList } from "./pre";
 
-type OrderProductRow = {
-  id: string;
-  orderCode: string;
-  customerName: string;
-  callNo: string;
-  totalFee: number;
-  postFee: number;
-  discountFee: number;
-  customerPayStatusCode: number;
-  createTime: string;
-  remark?: string;
-  orderRowSpan?: number;
-  productTitle: string;
-  sku: any;
-  picUrl: any;
-};
+const { RangePicker } = DatePicker;
 
 const TableList: React.FC = () => {
   const actionRef = useRef<ActionType | null>(null);
-  const [dataSource, setDataSource] = useState<OrderProductRow[]>([]);
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const formRef = useRef<ProFormInstance | undefined>(undefined);
+
+  const [dataSource, setDataSource] = useState<any[]>([]);
+
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [selectedRows, setSelectedRows] = useState<OrderProductRow[]>([]);
+  const [selectedRows, setSelectedRows] = useState<any[]>([]);
+  const [current, setCurrent] = useState(1);
+  const [size, setSize] = useState(10);
+  const [filters, setFilters] = useState<Record<string, any>>({});
 
-  const fetchData = async () => {
+  /** ✅ fetchData 不依赖外部状态，只依赖参数 */
+  const fetchData = async (params?: any) => {
+    const query = {
+      current,
+      size,
+      // ...filters,目前 搜索跟分页自己带上
+      ...params,
+    };
+    console.log("fetchData -> query", query);
+
     setLoading(true);
     try {
-      const res: any = await getOutboundListByPage({ page, pageSize });
-      setDataSource(res.data.records);
-      setTotal(res.data.total);
+      const res: any = await getOutboundListByPage(query);
+      setDataSource(res.data.records || []);
+      setTotal(res.data.total || 0);
     } catch (e) {
       message.error("加载失败");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
-  useEffect(() => {
-    fetchData();
-  }, [page, pageSize]);
-  console.log("dataSource", dataSource);
-
-  const columns: ProColumns<OrderProductRow>[] = [
+  const columns: ProColumns<any>[] = [
     {
       title: "出库单号",
       dataIndex: "outboundCode",
@@ -57,10 +65,27 @@ const TableList: React.FC = () => {
     {
       title: "用户名",
       dataIndex: "customerName",
+      hideInSearch: true,
     },
     {
       title: "运费",
+      dataIndex: "shippingFee",
+      hideInSearch: true,
+    },
+    {
+      title: "服务费",
+      dataIndex: "serviceFee",
+      hideInSearch: true,
+    },
+    {
+      title: "总费用",
       dataIndex: "totalFee",
+      formItemProps: {
+        label: "出库包裹号",
+      },
+      renderFormItem: () => {
+        return <Input placeholder="请输入" />;
+      },
     },
     {
       title: "包裹信息",
@@ -81,18 +106,9 @@ const TableList: React.FC = () => {
                 },
                 {
                   title: "状态",
-                  dataIndex: "status",
-                  key: "status",
-                  render: (dom, record: any) => {
-                    const status = record.status;
-                    let color = "black";
-                    if (status === "已收货") {
-                      color = "green";
-                    } else {
-                      color = "red";
-                    }
-                    return <Tag color={color}>{status}</Tag>;
-                  },
+                  dataIndex: "statusCode",
+                  key: "statusCode",
+                  render: (value: any) => renderStatusTag("outbound", value),
                 },
               ]}
               pagination={false}
@@ -100,53 +116,86 @@ const TableList: React.FC = () => {
           </div>
         );
       },
+      renderFormItem: () => {
+        return (
+          <Select
+            placeholder="请选择包裹状态"
+            allowClear
+            options={getStatusOptions("outbound")}
+          />
+        );
+      },
     },
-    // {
-    //   title: "附加服务",
-    //   dataIndex: "services",
-    //   key: "services",
-    //   render: (services: any) => {
-    //     console.log("services", services);
-    //     return (
-    //       <div className="purchase-table">
-    //         <Table
-    //           bordered
-    //           rowKey="serviceId"
-    //           dataSource={services}
-    //           columns={[
-    //             {
-    //               title: "服务名",
-    //               dataIndex: "serviceName",
-    //               key: "serviceName",
-    //             },
-    //             {
-    //               title: "备注",
-    //               dataIndex: "remark",
-    //               key: "remark",
-    //             },
-    //           ]}
-    //           pagination={false}
-    //         />
-    //       </div>
-    //     );
-    //   },
-    // },
 
-    { title: "下单时间", dataIndex: "createTime" },
-    { title: "备注", dataIndex: "remark" },
+    { title: "备注", dataIndex: "remark", hideInSearch: true },
+    {
+      title: "下单时间",
+      dataIndex: "createTime",
+      valueType: "dateTimeRange",
+      render: (_, records: any) => {
+        return records?.createTime;
+      },
+      renderFormItem: () => (
+        <RangePicker
+          showTime
+          format="YYYY-MM-DD HH:mm:ss"
+          style={{ width: "100%" }}
+        />
+      ),
+    },
   ];
+  /** ✅ 搜索提交 */
+  const onSubmitSearch = (values: any) => {
+    console.log("values", values);
+    const [startTime, endTime] = values.createTime || [];
+    const filterParams = {
+      outboundCode: values.outboundCode,
+      packingPackageCode: values.totalFee,
+      statusCode: values.packing,
+      createTimeFrom: startTime
+        ? moment(startTime).format("YYYY-MM-DD HH:mm:ss")
+        : undefined,
+      createTimeTo: endTime
+        ? moment(endTime).format("YYYY-MM-DD HH:mm:ss")
+        : undefined,
+    };
+    setFilters(filterParams);
+    setCurrent(1);
+    fetchData({ current: 1, ...filterParams });
+  };
+  /** ✅ 分页变化 */
+  const handlePageChange = (page: number, pageSize?: number) => {
+    setCurrent(page);
+    setSize(pageSize || 10);
+    fetchData({ current: page, size: pageSize, ...filters });
+  };
 
+  /** ✅ 重置搜索 */
+  const handleReset = () => {
+    setFilters({});
+    setCurrent(1);
+    formRef.current?.resetFields();
+    fetchData({ current: 1 });
+  };
+
+  /** ✅ 初始化加载 */
+  useEffect(() => {
+    fetchData();
+  }, []);
   return (
     <PageContainer>
-      <ProTable<OrderProductRow>
+      <ProTable
+        size="small"
         bordered
         actionRef={actionRef}
+        formRef={formRef}
         rowKey="id"
-        // search={false}
         pagination={false} // ❗️我们自己控制分页
         dataSource={dataSource}
         loading={loading}
         columns={columns}
+        onSubmit={onSubmitSearch}
+        onReset={handleReset}
         rowSelection={{
           onChange: (_, selectedRows) => {
             setSelectedRows(selectedRows);
@@ -191,18 +240,23 @@ const TableList: React.FC = () => {
             打印拣货单
           </Button>,
         ]}
+        search={{
+          labelWidth: "auto",
+          defaultCollapsed: false, // ❗ 默认展开
+        }}
+        options={{
+          reload: false,
+          fullScreen: true,
+          density: false,
+        }}
       />
       <div style={{ padding: 16, textAlign: "right" }}>
         <Pagination
-          current={page}
-          pageSize={pageSize}
+          current={current}
+          pageSize={size}
           total={total}
-          showSizeChanger={true}
-          onChange={(newPage, newSize) => {
-            setPage(newPage);
-            setPageSize(newSize); // 更新页大小
-            // 发起请求，例如 fetchData(newPage, newSize)
-          }}
+          showSizeChanger
+          onChange={handlePageChange}
         />
       </div>
     </PageContainer>

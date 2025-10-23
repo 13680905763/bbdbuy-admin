@@ -1,4 +1,4 @@
-import { getOutboundPutawayListByPage } from "@/services";
+import { getInboundPutaway } from "@/services";
 import { getStatusOptions, renderStatusTag } from "@/utils/status-render";
 import type {
   ActionType,
@@ -49,7 +49,7 @@ const TableList: React.FC = () => {
     console.log("fetchData -> query", query);
     setLoading(true);
     try {
-      const res: any = await getOutboundPutawayListByPage(query);
+      const res: any = await getInboundPutaway(query);
       setDataSource(res.data.records || []);
       setTotal(res.data.total || 0);
     } catch (e) {
@@ -61,12 +61,16 @@ const TableList: React.FC = () => {
 
   const columns: ProColumns<OrderProductRow>[] = [
     {
-      title: "出库单号",
-      dataIndex: "outboundCode",
+      title: "订单号",
+      dataIndex: "orderCode",
+    },
+    {
+      title: "入库单号",
+      dataIndex: "inboundCode",
     },
     {
       title: "包裹编号",
-      dataIndex: "packingPackageCode",
+      dataIndex: "packageCode",
     },
     {
       title: "货位",
@@ -87,17 +91,18 @@ const TableList: React.FC = () => {
     {
       title: "状态",
       dataIndex: "putawayStatusCode",
-      render: (value: any) => renderStatusTag("putaway", value),
+      render: (value: any) => renderStatusTag("inputaway", value),
       renderFormItem: () => {
         return (
           <Select
             placeholder="请选择上架状态"
             allowClear
-            options={getStatusOptions("putaway")}
+            options={getStatusOptions("inputaway")}
           />
         );
       },
     },
+
     {
       title: "上架时间",
       dataIndex: "updateTime",
@@ -105,18 +110,20 @@ const TableList: React.FC = () => {
       render: (_, record: any) => {
         const putawayStatusCode = record.putawayStatusCode;
         const updateTime = record.updateTime;
-        if (putawayStatusCode == 2025) return "--";
+        if (putawayStatusCode == 1071) return "--";
         return updateTime;
       },
     },
   ];
+
   /** ✅ 搜索提交 */
   const onSubmitSearch = (values: any) => {
     console.log("values", values);
     // const [startTime, endTime] = values.createTime || [];
     const filterParams = {
-      outboundCode: values.outboundCode,
-      packingPackageCode: values.packingPackageCode,
+      orderCode: values.orderCode,
+      inboundCode: values.inboundCode,
+      packageCode: values.packageCode,
       putawayStatusCode: values.putawayStatusCode,
       // createTimeFrom: startTime
       //   ? moment(startTime).format("YYYY-MM-DD HH:mm:ss")

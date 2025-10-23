@@ -98,7 +98,11 @@ export default [
         name: "拍照列表",
         component: "./warehouse-management/photo-list",
       },
-
+      {
+        path: "/warehouse-management/putaway-list",
+        name: "上架列表",
+        component: "./warehouse-management/putaway-list",
+      },
       // {
       //   path: "/warehouse-management/d",
       //   name: "上架单",
@@ -238,11 +242,11 @@ export default [
         name: "消息",
         component: "./message/list",
       },
-      {
-        path: "/message/management",
-        name: "消息管理",
-        component: "./message/management",
-      },
+      // {
+      //   path: "/message/management",
+      //   name: "消息管理",
+      //   component: "./message/management",
+      // },
     ],
   },
   {

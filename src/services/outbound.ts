@@ -1,52 +1,25 @@
 import { request } from "@umijs/max";
 
 /** 获取出库单列表 POST /orders/page */
-export async function getOutboundListByPage(params: {
-  /** 当前的页码 */
-  page?: number;
-  /** 页面的容量 */
-  pageSize?: number;
-}) {
+export async function getOutboundListByPage(data: any) {
   return request<API.RuleList>("/outbound/page", {
     method: "POST",
-    data: {
-      current: params.page,
-      /** 页面的容量 */
-      size: params.pageSize,
-    },
+    data,
   });
 }
 /** 获取拣货单列表 POST /orders/page */
-export async function getOutboundPickingListByPage(params: {
-  /** 当前的页码 */
-  page?: number;
-  /** 页面的容量 */
-  pageSize?: number;
-}) {
+export async function getOutboundPickingListByPage(data: any) {
   return request<API.RuleList>("/outbound-picking/page", {
     method: "POST",
-    data: {
-      current: params.page,
-      /** 页面的容量 */
-      size: params.pageSize,
-    },
+    data,
   });
 }
 
 /** 获取打包单列表 POST /orders/page */
-export async function getOutboundPackListByPage(params: {
-  /** 当前的页码 */
-  page?: number;
-  /** 页面的容量 */
-  pageSize?: number;
-}) {
+export async function getOutboundPackListByPage(data: any) {
   return request<API.RuleList>("/outbound-packing/page", {
     method: "POST",
-    data: {
-      current: params.page,
-      /** 页面的容量 */
-      size: params.pageSize,
-    },
+    data,
   });
 }
 
@@ -64,35 +37,20 @@ export async function PackSubmit(data: any) {
   });
 }
 
-/** 获取打包单列表 POST /orders/page */
-export async function getOutboundPutawayListByPage(params: {
-  /** 当前的页码 */
-  page?: number;
-  /** 页面的容量 */
-  pageSize?: number;
-}) {
+/** 获取出库上架列表 POST /orders/page */
+export async function getOutboundPutawayListByPage(data: any) {
   return request<API.RuleList>("/outbound-putaway/page", {
     method: "POST",
-    data: {
-      current: params.page,
-      /** 页面的容量 */
-      size: params.pageSize,
-    },
+    data,
   });
 }
 /** 获取发货列表 POST /orders/page */
-export async function getOutboundSendListByPage(params: any) {
-  console.log("paramsdata", params);
-
+export async function getOutboundSendListByPage(data: any) {
   return request<API.RuleList>("/outbound-send/page", {
     method: "POST",
-    data: {
-      current: params.page,
-      /** 页面的容量 */
-      size: params.pageSize,
-      serverId: params.serverId,
-      templateId: params.templateId,
-    },
+    data,
+    // serverId: params.serverId,
+    // templateId: params.templateId,
   });
 }
 
@@ -104,7 +62,7 @@ export async function getShippingServers() {
 }
 /** 根据承运商查询路线 */
 export async function getShippingFeeTemplate(id: string) {
-  return request<API.RuleList>(`/shipping-fee-template/server?id=${id}`, {
+  return request<API.RuleList>(`/shipping-line/server?serverId=${id}`, {
     method: "GET",
   });
 }

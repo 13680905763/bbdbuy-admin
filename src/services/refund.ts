@@ -15,19 +15,10 @@ export async function login(
   });
 }
 
-export async function getOrderRefundList(params: {
-  /** 当前的页码 */
-  page?: number;
-  /** 页面的容量 */
-  pageSize?: number;
-}) {
+export async function getOrderRefundList(data: any) {
   return request<API.RuleList>("/order-refund/list", {
     method: "POST",
-    data: {
-      current: params.page,
-      /** 页面的容量 */
-      size: params.pageSize,
-    },
+    data,
   });
 }
 export async function updateRefund(data: any) {

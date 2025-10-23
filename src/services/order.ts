@@ -14,10 +14,22 @@ export async function getPurchaseListByPage(data: any) {
     data,
   });
 }
+/** 修改采购单快递单号 */
+export async function putPurchaseLogistics(data: any) {
+  return request("/purchase/manual/logistics/code", {
+    method: "POST",
+    data,
+  });
+}
+/** 回填采购单快递单号 */
+export async function createPurchaseLogistics(data: any) {
+  return request("/purchase/manual/send", {
+    method: "POST",
+    data,
+  });
+}
 /** 获取收货单列表 */
 export async function getDeliveryListByPage(data: any) {
-  console.log("data", data);
-
   return request<API.RuleList>("/inbound-receive/page", {
     method: "POST",
     data,
@@ -65,9 +77,16 @@ export async function InspectionSubmit(data: string[]) {
     },
   });
 }
-/** 获取到库单列表 POST /orders/page */
+/** 获取拍照列表 POST /orders/page */
 export async function getPhotoList(data: any) {
   return request("/inbound-service/page", {
+    method: "POST",
+    data,
+  });
+}
+/** 获取入库上架列表 POST /orders/page */
+export async function getInboundPutaway(data: any) {
+  return request("/inbound-putaway/page", {
     method: "POST",
     data,
   });

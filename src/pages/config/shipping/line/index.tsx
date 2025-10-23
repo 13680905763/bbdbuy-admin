@@ -180,33 +180,35 @@ const ConfigList: React.FC = () => {
     {
       title: "操作",
       valueType: "option",
-      render: (_: any, record: any) => (
-        <div style={{ display: "flex", gap: 8 }}>
-          <Button
-            type="link"
-            onClick={() => handleEdit(record)}
-            style={{ padding: 0 }}
-          >
-            修改
-          </Button>
-          <Popconfirm
-            title="确认删除该路线吗？"
-            onConfirm={() => handleDelete(record)}
-            okText="确认"
-            cancelText="取消"
-          >
-            <Button type="link" danger style={{ padding: 0 }}>
-              删除
-            </Button>
-          </Popconfirm>
-        </div>
-      ),
+      minWidth: 100,
+      render: (_: any, record: any) => [
+        <Button
+          type="link"
+          style={{ color: "#1890ff", padding: 0 }}
+          onClick={() => handleEdit(record)}
+        >
+          修改
+        </Button>,
+        <Popconfirm
+          key="delete"
+          title="确定要删除吗？"
+          onConfirm={() => handleDelete(record)}
+        >
+          <a style={{ color: "#ff4d4f" }}>删除</a>
+        </Popconfirm>,
+      ],
     },
   ];
 
   return (
     <PageContainer>
       <ProTable
+        size="small"
+        options={{
+          reload: false,
+          fullScreen: true,
+          density: false,
+        }}
         bordered
         actionRef={actionRef}
         rowKey="id"

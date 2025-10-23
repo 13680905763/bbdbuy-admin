@@ -5,14 +5,19 @@ import {
   getShippingServers,
   uploadOutboundSend,
 } from "@/services";
+import { getStatusOptions, renderStatusTag } from "@/utils/status-render";
 import { ArrowDownOutlined, UploadOutlined } from "@ant-design/icons";
-import type { ActionType, ProColumns } from "@ant-design/pro-components";
+import type {
+  ActionType,
+  ProColumns,
+  ProFormInstance,
+} from "@ant-design/pro-components";
 import {
   PageContainer,
   ProFormSelect,
   ProTable,
 } from "@ant-design/pro-components";
-import { Button, Pagination, Tag, Upload, message } from "antd";
+import { Button, Pagination, Select, Upload, message } from "antd";
 import React, { useEffect, useRef, useState } from "react";
 
 type OrderProductRow = {
@@ -26,79 +31,99 @@ type OrderProductRow = {
 
 const TableList: React.FC = () => {
   const actionRef = useRef<ActionType | null>(null);
-  const [dataSource, setDataSource] = useState<OrderProductRow[]>([]);
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
-  const [total, setTotal] = useState(0);
-  const [loading, setLoading] = useState(false);
-  const [selectedRows, setSelectedRows] = useState<OrderProductRow[]>([]);
+  const formRef = useRef<ProFormInstance | undefined>(undefined);
 
-  // 搜索选项
-  const [serverId, setServerId] = useState<{ label: string; value: string }[]>(
-    []
-  );
-  const [templateId, setTemplateId] = useState<
+  const [dataSource, setDataSource] = useState<OrderProductRow[]>([]);
+  const [serverOptions, setServerOptions] = useState<
     { label: string; value: string }[]
   >([]);
-  const [searchValues, setSearchValues] = useState<{
-    serverId?: string;
-    templateId?: string;
-  }>({});
+  const [routeOptions, setRouteOptions] = useState<
+    { label: string; value: string }[]
+  >([]);
 
-  // 获取承运商列表（运输路线）
+  const [loading, setLoading] = useState(false);
+  const [uploadLoading, setUploadLoading] = useState(false);
+  const [selectedRows, setSelectedRows] = useState<any[]>([]);
+  const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
+
+  const [current, setCurrent] = useState(1);
+  const [size, setSize] = useState(10);
+  const [total, setTotal] = useState(0);
+
+  const [filters, setFilters] = useState<Record<string, any>>({});
+
+  /** ✅ 初始化获取承运商列表 */
   useEffect(() => {
-    async function fetchRoutes() {
+    const fetchServerList = async () => {
       try {
-        const res = await getShippingServers();
-        const options = res?.data?.map((item: any) => ({
-          label: item.serverName,
-          value: item.id,
-        }));
-        setServerId(options);
+        setLoading(true);
+        const res = await getShippingServers(); // 假设返回的数据结构是 { data: [...] }
+        if (res?.data) {
+          // 转换为 ProFormSelect 需要的格式
+          const options = res.data.map((item: any) => ({
+            label: item.serverName,
+            value: item.id,
+          }));
+          setServerOptions(options);
+        }
       } catch (err) {
-        console.error("获取运输路线失败", err);
+        message.error("获取承运商列表失败");
+      } finally {
+        setLoading(false);
       }
-    }
-    fetchRoutes();
+    };
+
+    fetchServerList();
   }, []);
 
-  // 联动：选路线时刷新承运商
-  const handleRouteChange = async (routeCode: string) => {
+  /** ✅ 选中承运商时加载路线 */
+  const handleServerChange = async (serverId: string) => {
+    console.log("serverId", serverId);
+    // 清空之前的路线选择值
+    formRef.current?.setFieldsValue({ lineId: undefined });
+    setRouteOptions([]);
+    if (!serverId) {
+      setRouteOptions([]);
+      return;
+    }
     try {
-      const res = await getShippingFeeTemplate(routeCode);
-      const options = res?.data.map((item: any) => ({
-        label: item.templateName,
-        value: item.id,
-      }));
-      setTemplateId(options);
+      setLoading(true);
+      const res = await getShippingFeeTemplate(serverId);
+      if (res?.data) {
+        const list = res.data.map((item: any) => ({
+          label: item.lineName,
+          value: item.id,
+        }));
+        setRouteOptions(list);
+      }
     } catch (err) {
-      console.error("获取承运商失败", err);
+      message.error("获取路线失败");
+    } finally {
+      setLoading(false);
     }
   };
 
-  const fetchData = async (values?: { route?: string; carrier?: string }) => {
+  /** ✅ fetchData 不依赖外部状态，只依赖参数 */
+  const fetchData = async (params?: any) => {
+    const query = {
+      current,
+      size,
+      ...params,
+    };
+    console.log("fetchData -> query", query);
     setLoading(true);
-    console.log("val", values);
-
     try {
-      const res: any = await getOutboundSendListByPage({
-        page,
-        pageSize,
-        ...values,
-      });
-      setDataSource(res.data.records);
-      setTotal(res.data.total);
-    } catch (err) {
+      const res: any = await getOutboundSendListByPage(query);
+      setDataSource(res.data.records || []);
+      setTotal(res.data.total || 0);
+      setSelectedRows([]);
+      setSelectedRowKeys([]);
+    } catch (e) {
       message.error("加载失败");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
-
-  useEffect(() => {
-    console.log("searchValues", searchValues);
-
-    fetchData(searchValues);
-  }, [page, pageSize, searchValues]);
 
   const columns: ProColumns<OrderProductRow>[] = [
     {
@@ -108,17 +133,47 @@ const TableList: React.FC = () => {
     {
       title: "货位",
       dataIndex: "location",
-      render: (row) => {
+      render: (row: any) => {
         return row?.locationCode;
       },
+      hideInSearch: true,
     },
     {
-      title: "长宽高-重",
+      title: "尺寸/重量",
       dataIndex: "packing",
-      render: (row) => {
+      minWidth: 200,
+
+      hideInSearch: true,
+      render: (row: any) => {
+        if (!row) return "--";
+
+        const dims = [row.length, row.width, row.height].filter(
+          (v) => v != null && v !== "" && v !== 0
+        );
+
         return (
-          <div>
-            {row?.length}* {row?.width}* {row?.height} cm - {row?.weight} g
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              lineHeight: 1.4,
+              color: "#555",
+            }}
+          >
+            {dims.length > 0 && (
+              <div>
+                <span style={{ color: "#999", marginRight: 4 }}>长宽高：</span>
+                <span>{dims.join(" x ")}</span>
+                <span style={{ color: "#999", marginLeft: 4 }}>cm</span>
+              </div>
+            )}
+            {row.weight != null && row.weight > 0 && (
+              <div>
+                <span style={{ color: "#999", marginRight: 4 }}>重量：</span>
+                <span>{row.weight}</span>
+                <span style={{ color: "#999", marginLeft: 4 }}>g</span>
+              </div>
+            )}
           </div>
         );
       },
@@ -126,7 +181,8 @@ const TableList: React.FC = () => {
     {
       title: "收件人",
       dataIndex: "address",
-      render: (record) => {
+      hideInSearch: true,
+      render: (record: any) => {
         // record 是每行的完整对象
         return (
           <div>
@@ -141,170 +197,232 @@ const TableList: React.FC = () => {
         );
       },
     },
-    // {
-    //   title: "货位",
-    //   dataIndex: "sendList",
-    //   render: (sendList: any[]) =>
-    //     sendList.map(
-    //       (item) =>
-    //         `${item.location.packageCode}--${item.location.locationCode}--${item.location.locationStatus}`
-    //     ),
-    // },
     {
       title: "承运商",
-      dataIndex: "shipping.serverName",
-      render: (_, record) => record.shipping?.serverName || "--",
-      // hideInTable: true,
-      renderFormItem: (_, { value, onChange }) => (
+      minWidth: 70,
+
+      dataIndex: "serverId", // 搜索表单字段名必须是独立字段
+      key: "serverId",
+      render: (_, record: any) => record.shipping?.serverName || "--",
+      renderFormItem: () => (
         <ProFormSelect
           placeholder="请选择承运商"
-          name="serverId" // <-- 明确表单字段名
-          options={serverId}
-          value={value}
-          onChange={(val) => {
-            onChange?.(val);
-            console.log("val", val);
-            if (val) {
-              handleRouteChange(val); // 选路线刷新承运商
-            } else {
-              setTemplateId([]);
-            }
+          allowClear
+          options={serverOptions}
+          fieldProps={{
+            onChange: (val: any) => {
+              handleServerChange(val); // 拉取路线
+            },
           }}
         />
       ),
     },
     {
       title: "运输路线",
-      dataIndex: "shipping.templateName",
-      render: (_, record) => record.shipping?.templateName || "--",
-      renderFormItem: (_, { value, onChange }) => (
+      minWidth: 120,
+      dataIndex: "lineId",
+      key: "lineId",
+      render: (_, record: any) => record.shipping?.lineName || "--",
+      renderFormItem: () => (
         <ProFormSelect
-          name="templateId" // <-- 明确表单字段名
-          placeholder="请选择运输路线"
-          options={templateId}
-          value={value}
-          onChange={onChange}
+          placeholder="请选择路线"
+          allowClear
+          options={routeOptions}
         />
       ),
     },
     {
-      title: "状态",
-      dataIndex: "sendStatus",
-      render: (dom, record: any) => {
-        const sendStatus = record.sendStatus;
-        let color = "black";
-        if (sendStatus === "已发货") {
-          color = "green";
-        } else {
-          color = "red";
-        }
-        return <Tag color={color}>{sendStatus}</Tag>;
+      title: "国际物流单号",
+      dataIndex: "shippingCode",
+      width: 150,
+      render: (_, records: any) => records?.shipping?.shippingCode,
+    },
+    {
+      title: "发货状态",
+      dataIndex: "sendStatusCode",
+      render: (value: any) => renderStatusTag("delivery", value),
+      renderFormItem: () => {
+        return (
+          <Select
+            placeholder="请选择发货状态"
+            allowClear
+            options={getStatusOptions("delivery")}
+          />
+        );
+      },
+    },
+    {
+      title: "发货人",
+      dataIndex: "updateUserName",
+      hideInSearch: true,
+    },
+    {
+      title: "发货时间",
+      dataIndex: "updateTime",
+      hideInSearch: true,
+      render: (_, record: any) => {
+        const sendStatusCode = record.sendStatusCode;
+        const updateTime = record.updateTime;
+        if (sendStatusCode == 2041) return "--";
+        return updateTime;
       },
     },
   ];
-  const props = {
+  // 上传按钮配置
+  const uploadProps = {
     accept: ".xlsx,.xls", // 限制文件类型
     beforeUpload: (file: File) => {
-      setLoading(true);
+      setUploadLoading(true);
       uploadOutboundSend(file)
         .then((res) => {
           if (res.success) {
             message.success(res.msg || "上传成功");
           }
         })
-        .catch((err) => {})
-        .finally(() => setLoading(false));
+        .catch(() => {
+          message.error("上传失败");
+        })
+        .finally(() => setUploadLoading(false));
       return false; // 阻止 antd 自动上传
     },
   };
 
+  // 工具栏按钮
+  const toolBarRender = () => {
+    const buttons: React.ReactNode[] = [];
+    // 获取当前搜索表单值
+    const currentFormValues = formRef.current?.getFieldsValue?.();
+    const serverId = currentFormValues?.serverId;
+    const lineId = currentFormValues?.lineId;
+    // 导出发货 Excel 按钮
+    if (serverId) {
+      buttons.push(
+        <Button
+          key="export-outbound"
+          type="primary"
+          icon={<ArrowDownOutlined />}
+          onClick={async () => {
+            if (!serverId) {
+              message.info("请先筛选承运商");
+              return;
+            }
+            // if (selectedRows.length === 0) {
+            //   message.info("请先勾选需要导出的数据");
+            //   return;
+            // }
+
+            try {
+              const res = await getOutboundSend({
+                outboundSendIdSet: selectedRows.map((item) => item.id),
+                serverId,
+                lineId,
+              });
+              if (res?.data) {
+                window.open(res.data, "_blank");
+              }
+            } catch {
+              message.error("导出失败");
+            }
+          }}
+        >
+          导出发货 Excel
+        </Button>
+      );
+    }
+
+    // 上传出库单按钮（未选承运商时隐藏）
+    buttons.push(
+      <Upload key="upload-outbound" {...uploadProps} showUploadList={false}>
+        <Button icon={<UploadOutlined />} loading={uploadLoading}>
+          上传出库单
+        </Button>
+      </Upload>
+    );
+
+    return buttons;
+  };
+
+  /** ✅ 搜索提交 */
+  const onSubmitSearch = (values: any) => {
+    console.log("values", values);
+    // const [startTime, endTime] = values.createTime || [];
+    const filterParams = {
+      outboundCode: values.outboundCode,
+      packingPackageCode: values.packingPackageCode,
+      shippingCode: values.shippingCode,
+      sendStatusCode: values.sendStatusCode,
+      serverId: values.serverId,
+      lineId: values.lineId,
+      // createTimeFrom: startTime
+      //   ? moment(startTime).format("YYYY-MM-DD HH:mm:ss")
+      //   : undefined,
+      // createTimeTo: endTime
+      //   ? moment(endTime).format("YYYY-MM-DD HH:mm:ss")
+      //   : undefined,
+    };
+    setFilters(filterParams);
+    setCurrent(1);
+    fetchData({ current: 1, ...filterParams });
+  };
+  /** ✅ 分页变化 */
+  const handlePageChange = (page: number, pageSize?: number) => {
+    setCurrent(page);
+    setSize(pageSize || 10);
+    fetchData({ current: page, size: pageSize, ...filters });
+  };
+
+  /** ✅ 重置搜索 */
+  const handleReset = () => {
+    setFilters({});
+    setCurrent(1);
+    formRef.current?.resetFields();
+    fetchData({ current: 1 });
+  };
+
+  /** ✅ 初始化加载 */
+  useEffect(() => {
+    fetchData();
+  }, []);
+
   return (
     <PageContainer>
-      <ProTable<OrderProductRow>
+      <ProTable
         bordered
         actionRef={actionRef}
+        formRef={formRef}
         rowKey="id"
+        size="small"
         columns={columns}
         pagination={false}
         dataSource={dataSource}
         loading={loading}
+        onSubmit={onSubmitSearch}
+        onReset={handleReset}
+        toolBarRender={toolBarRender}
+        rowSelection={{
+          selectedRowKeys,
+          onChange: (keys, rows) => {
+            setSelectedRowKeys(keys);
+            setSelectedRows(rows);
+          },
+        }}
         search={{
           labelWidth: "auto",
-          // collapsed: false,
-          defaultCollapsed: false,
+          defaultCollapsed: false, // ❗ 默认展开
         }}
-        onSubmit={(values) => {
-          console.log("values", values);
-
-          setSearchValues({
-            serverId: values.serverId,
-            templateId: values.templateId,
-          });
-          setPage(1);
-        }}
-        toolBarRender={() => {
-          if (!searchValues.serverId) {
-            return [
-              <Upload {...props} showUploadList={false}>
-                <Button icon={<UploadOutlined />} loading={loading}>
-                  上传出库单
-                </Button>
-              </Upload>,
-            ];
-          }
-          return [
-            <Button
-              type="primary"
-              icon={<ArrowDownOutlined />}
-              onClick={async () => {
-                // if (selectedRows.length < 1) {
-                //   message.info("请先勾选打印数据");
-                //   return;
-                // }
-                if (!searchValues.serverId) {
-                  message.info("请筛选承运商");
-                  return;
-                }
-                console.log(
-                  "点击了打印拣货单按钮666",
-                  searchValues,
-                  selectedRows.map((item) => item.id)
-                );
-                const res = await getOutboundSend({
-                  outboundSendIdSet: selectedRows.map((item) => item.id),
-                  ...searchValues,
-                });
-                if (res?.data) {
-                  window.open(res.data, "_blank"); // 直接新标签页下载
-                }
-                console.log("res", res);
-              }}
-            >
-              导出发货excel
-            </Button>,
-            <Upload {...props} showUploadList={false}>
-              <Button icon={<UploadOutlined />} loading={loading}>
-                上传出库单
-              </Button>
-            </Upload>,
-          ];
-        }}
-        rowSelection={{
-          onChange: (_, selectedRows) => {
-            setSelectedRows(selectedRows);
-          },
+        options={{
+          reload: false,
+          fullScreen: true,
+          density: false,
         }}
       />
       <div style={{ padding: 16, textAlign: "right" }}>
         <Pagination
-          current={page}
-          pageSize={pageSize}
+          current={current}
+          pageSize={size}
           total={total}
           showSizeChanger
-          onChange={(newPage, newSize) => {
-            setPage(newPage);
-            setPageSize(newSize);
-          }}
+          onChange={handlePageChange}
         />
       </div>
     </PageContainer>
