@@ -223,17 +223,19 @@ const TableList: React.FC = () => {
   const onSubmitSearch = (values: any) => {
     console.log("values", values);
     // const [startTime, endTime] = values.createTime || [];
-    const filterParams = {
-      refundCode: values.refundCode,
-      orderCode: values.orderCode,
-      // putawayStatusCode: values.putawayStatusCode,
-      // createTimeFrom: startTime
-      //   ? moment(startTime).format("YYYY-MM-DD HH:mm:ss")
-      //   : undefined,
-      // createTimeTo: endTime
-      //   ? moment(endTime).format("YYYY-MM-DD HH:mm:ss")
-      //   : undefined,
-    };
+    const filterParams = Object.fromEntries(
+      Object.entries({
+        refundCode: values.refundCode,
+        orderCode: values.orderCode,
+        // putawayStatusCode: values.putawayStatusCode,
+        // createTimeFrom: startTime
+        //   ? moment(startTime).format("YYYY-MM-DD HH:mm:ss")
+        //   : undefined,
+        // createTimeTo: endTime
+        //   ? moment(endTime).format("YYYY-MM-DD HH:mm:ss")
+        //   : undefined,
+      }).filter(([_, v]) => v !== undefined && v !== null && v !== "")
+    );
     setFilters(filterParams);
     setCurrent(1);
     fetchData({ current: 1, ...filterParams });

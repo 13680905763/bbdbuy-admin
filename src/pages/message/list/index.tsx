@@ -24,61 +24,25 @@ const MessageList: React.FC = () => {
     loadHistory,
     messagesMap,
     sendMessage,
-    setPendingUsers,
-    setRepliedUsers,
     setActiveUser,
+    firstLoadRef,
   } = useModel("chat");
   const { initialState } = useModel("@@initialState");
   const { currentUser } = initialState || {};
   const [inputValue, setInputValue] = useState("");
+
+  // 是否在加载历史
   const [loadingHistory, setLoadingHistory] = useState(false);
-  const [initialLoadDone, setInitialLoadDone] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const chatListRef = useRef<HTMLDivElement>(null);
 
-  // 用 ref 标记是否在加载历史
-  const loadingHistoryRef = useRef(false);
-  const firstLoadRef = useRef(true); // 是否首次加载用户历史
-
-  const isInitialScrollRef = useRef(false);
   useEffect(() => {
-    console.log("messages变化");
+    console.log("messages变化", messages);
   }, [messages]);
-  /** 初次激活用户，加载第一页历史 */
   useEffect(() => {
-    if (!firstLoadRef.current) return;
-    if (!activeUser) return;
-    const key = String(activeUser.id);
-    console.log("首次加载");
-
-    const loadFirstPage = async () => {
-      if (!messagesMap[key]) {
-        await loadHistory(activeUser.id, 1);
-      }
-      setInitialLoadDone(true);
-
-      // 这里不直接滚动，只打个标记
-      isInitialScrollRef.current = true;
-      firstLoadRef.current = false;
-      console.log("加载完成");
-    };
-
-    loadFirstPage();
-  }, [activeUser, messagesMap, loadHistory]);
-
-  /** 等消息真正渲染出来再滚动 */
-  useEffect(() => {
-    if (
-      isInitialScrollRef.current &&
-      messagesMap[String(activeUser?.id)]?.list?.length > 0
-    ) {
-      requestAnimationFrame(() => {
-        chatEndRef.current?.scrollIntoView({ behavior: "auto" });
-        isInitialScrollRef.current = false; // 用完清掉
-      });
-    }
-  }, [messagesMap, activeUser]);
+    console.log("activeUser变化", activeUser);
+  }, [activeUser]);
 
   /** 发送消息 */
   const handleSend = () => {
@@ -88,40 +52,34 @@ const MessageList: React.FC = () => {
     setInputValue("");
   };
 
-  // 用 ref 标记是切换用户触发的滚动
-  const scrollOnUserChangeRef = useRef(false);
-
   /** 接待/切换用户 */
   const handleAcceptUser = async (user: any) => {
     try {
       await setActiveUserAsync(user);
-      setPendingUsers((prev) => prev.filter((u) => u.id !== user.id));
-      setRepliedUsers((prev) => {
-        if (prev.find((u) => u.id === user.id)) return prev;
-        return [user, ...prev];
-      });
-
-      // 切换用户后标记要滚动
-      scrollOnUserChangeRef.current = true;
     } catch (err) {
       console.error("接待用户失败", err);
       AntMessage.error("接待用户失败");
     }
   };
 
-  /** 等消息渲染完成再滚动到底部（切换用户） */
+  // 等消息真正渲染出来再滚动
   useEffect(() => {
-    if (scrollOnUserChangeRef.current && activeUser) {
+    if (
+      firstLoadRef.current &&
+      messagesMap[String(activeUser?.id)]?.list?.length > 0
+    ) {
+      console.log("激活/切换用户 滚动到底部");
       requestAnimationFrame(() => {
         chatEndRef.current?.scrollIntoView({ behavior: "auto" });
-        scrollOnUserChangeRef.current = false;
+        firstLoadRef.current = false;
       });
     }
-  }, [messages, activeUser]);
+  }, [messagesMap, activeUser]);
 
   // 上拉加载历史
   const handleScroll = async (e: React.UIEvent<HTMLDivElement>) => {
-    if (!activeUser || !initialLoadDone || loadingHistoryRef.current) return;
+    if (!activeUser || loadingHistory) return;
+
     const target = e.currentTarget;
 
     if (target.scrollTop <= 10) {
@@ -129,9 +87,8 @@ const MessageList: React.FC = () => {
       const page = messagesMap[key]?.page || 1;
 
       if (messagesMap[key]?.hasMore) {
+        console.log("上拉加载历史中");
         setLoadingHistory(true);
-        loadingHistoryRef.current = true;
-        console.log("loadingHistoryRef.current", loadingHistoryRef.current);
 
         const scrollHeightBefore = target.scrollHeight;
         const scrollTopBefore = target.scrollTop;
@@ -141,9 +98,7 @@ const MessageList: React.FC = () => {
         requestAnimationFrame(() => {
           const scrollDiff = target.scrollHeight - scrollHeightBefore;
           target.scrollTop = scrollTopBefore + scrollDiff;
-
           setLoadingHistory(false);
-          loadingHistoryRef.current = false;
         });
       }
     }
@@ -385,6 +340,13 @@ const MessageList: React.FC = () => {
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               placeholder="请输入回复内容..."
+              onKeyDown={(e) => {
+                // ✅ 按下 Enter 且没有按 Shift 时发送消息
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault(); // 阻止换行
+                  handleSend();
+                }
+              }}
             />
 
             {/* 下方工具栏 */}

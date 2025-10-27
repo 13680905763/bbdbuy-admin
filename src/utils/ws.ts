@@ -1,12 +1,16 @@
+import { message } from "antd";
+
 let ws: WebSocket | null = null;
 const listeners: ((data: any) => void)[] = [];
 let reconnectTimer: number | null = null;
 let reconnectCount = 0;
 const RECONNECT_INTERVAL = 3000; // 重连间隔 ms
 const MAX_RECONNECT = 10;
-let resumeId: string | number | null = null; // 可选：记录最后消息ID，用于 resume
+let resumeId: string | number | null = null; // resume 协议支持
+const messageQueue: string[] = []; // 缓存未发消息
+const onReconnectCallbacks: (() => void)[] = []; // 重连成功后执行的回调
 
-/** 连接 WebSocket，如果已经连接则返回现有 ws */
+/** 连接 WebSocket */
 export function connectWS() {
   if (ws && ws.readyState === WebSocket.OPEN) return ws;
 
@@ -18,39 +22,45 @@ export function connectWS() {
   ws = new WebSocket(url);
 
   ws.onopen = () => {
-    console.log("✅ WebSocket 连接成功");
+    console.log("✅ WebSocket 连接成功 .");
 
-    // 重置重连计数
     reconnectCount = 0;
     if (reconnectTimer) {
       clearTimeout(reconnectTimer);
       reconnectTimer = null;
     }
 
-    // 如果使用 resume 协议，发送上次消息ID
+    // 如果支持 resume 协议
     if (resumeId != null) {
       ws?.send(JSON.stringify({ type: "resume", lastMessageId: resumeId }));
     }
 
-    // 广播重连成功消息
+    // 🔁 补发缓存消息
+    flushMessageQueue();
+
+    // 通知监听者
     listeners.forEach((cb) => cb({ type: "reconnect" }));
+
+    // 调用重连回调（如拉取历史记录）
+    onReconnectCallbacks.forEach((cb) => {
+      try {
+        cb();
+      } catch (err) {
+        console.warn("onReconnect callback error:", err);
+      }
+    });
   };
 
   ws.onmessage = (event) => {
     let data: any;
     try {
       data = JSON.parse(event.data);
-    } catch (err) {
+    } catch {
       console.warn("WS 收到非 JSON:", event.data);
       return;
     }
 
-    // 如果后端返回消息带 id，可记录用于 resume
-    if (data.id != null) {
-      resumeId = data.id;
-    }
-
-    // 广播给所有订阅者
+    if (data.id != null) resumeId = data.id;
     listeners.forEach((cb) => cb(data));
   };
 
@@ -62,8 +72,7 @@ export function connectWS() {
 
   ws.onerror = (err) => {
     console.error("⚠️ WebSocket 错误:", err);
-    // 也尝试重连
-    tryReconnect();
+    ws?.close(); // 强制触发 onclose
   };
 
   return ws;
@@ -80,12 +89,38 @@ function tryReconnect() {
   reconnectCount++;
   reconnectTimer = window.setTimeout(() => {
     console.log(`🔄 WebSocket 尝试第 ${reconnectCount} 次重连...`);
+    message.error("当前会话连接不稳定 ，正在尝试重新连接...");
+
     connectWS();
     reconnectTimer = null;
   }, RECONNECT_INTERVAL);
 }
 
-/** 订阅 WebSocket 消息，返回取消订阅函数 */
+/** ✅ 安全发送消息 */
+export function sendWS(data: any) {
+  const msg = typeof data === "string" ? data : JSON.stringify(data);
+
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(msg);
+  } else {
+    console.warn("⚠️ WS 未连接，缓存消息等待重连");
+    messageQueue.push(msg);
+    if (!ws || ws.readyState === WebSocket.CLOSED) {
+      connectWS();
+    }
+  }
+}
+
+/** 补发消息 */
+function flushMessageQueue() {
+  if (!ws || ws.readyState !== WebSocket.OPEN) return;
+  while (messageQueue.length > 0) {
+    const msg = messageQueue.shift();
+    if (msg) ws.send(msg);
+  }
+}
+
+/** 订阅消息 */
 export function subscribeWS(callback: (data: any) => void) {
   listeners.push(callback);
   return () => {
@@ -94,13 +129,23 @@ export function subscribeWS(callback: (data: any) => void) {
   };
 }
 
-/** 关闭 WebSocket */
+/** 注册重连回调（例如重连后刷新聊天记录） */
+export function addReconnectListener(cb: () => void) {
+  onReconnectCallbacks.push(cb);
+  return () => {
+    const idx = onReconnectCallbacks.indexOf(cb);
+    if (idx >= 0) onReconnectCallbacks.splice(idx, 1);
+  };
+}
+
+/** 关闭连接 */
 export function closeWS() {
   if (ws) {
     ws.close();
     ws = null;
   }
   listeners.length = 0;
+  messageQueue.length = 0;
   if (reconnectTimer) {
     clearTimeout(reconnectTimer);
     reconnectTimer = null;
@@ -108,7 +153,7 @@ export function closeWS() {
   reconnectCount = 0;
 }
 
-/** 获取当前 WebSocket 实例 */
+/** 获取当前实例 */
 export function getWS() {
   return ws;
 }
