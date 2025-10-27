@@ -9,6 +9,7 @@ import {
   sendWS,
   subscribeWS,
 } from "@/utils/ws";
+import { useModel } from "@umijs/max";
 import { message } from "antd";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -37,6 +38,8 @@ export interface PaginatedMessages {
 }
 
 export default function useChatModel() {
+  const { initialState } = useModel("@@initialState");
+  const isLogin = !!initialState?.currentUser; // ✅ 判断登录状态（也可换成 token 判断）
   const [pendingUsers, setPendingUsers] = useState<ChatUser[]>([]);
   const [repliedUsers, setRepliedUsers] = useState<ChatUser[]>([]);
   const [messagesMap, setMessagesMap] = useState<
@@ -270,6 +273,11 @@ export default function useChatModel() {
   }, []);
 
   useEffect(() => {
+    if (!isLogin) {
+      console.log("未登录，不建立 WS 连接");
+      // closeWS(); // 保险起见：登出时关闭连接
+      return;
+    }
     connectWS();
     wsRef.current = getWS();
 
@@ -279,7 +287,10 @@ export default function useChatModel() {
       if (!user) return;
 
       console.log("🔁 WS 重连，刷新当前用户聊天");
-      message.success("会话连接成功");
+      // 延迟触发，让组件稳定后再提示
+      setTimeout(() => {
+        message.success("会话连接成功");
+      }, 500);
 
       wsRef.current = getWS();
 
@@ -292,7 +303,7 @@ export default function useChatModel() {
       unsubscribe();
       unsubscribeReconnect();
     };
-  }, [handleIncoming, loadHistory]);
+  }, [isLogin, handleIncoming]);
 
   return {
     pendingUsers,

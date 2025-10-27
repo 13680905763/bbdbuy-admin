@@ -1,5 +1,6 @@
 import { Footer } from "@/components";
 import { login } from "@/services/ant-design-pro/api";
+import { connectWS } from "@/utils/ws";
 import { LockOutlined, PhoneFilled } from "@ant-design/icons";
 import { LoginForm, ProFormText } from "@ant-design/pro-components";
 import { history, useModel } from "@umijs/max";
@@ -69,6 +70,7 @@ const Login: React.FC = () => {
 
       if (msg.success) {
         message.success("登录成功！");
+        connectWS(); // ✅ 登录后再建立 WS 连接
         await fetchUserInfo();
         history.replace("/");
         return;
