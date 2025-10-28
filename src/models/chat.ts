@@ -279,6 +279,8 @@ export default function useChatModel() {
       return;
     }
     connectWS();
+    console.log("触发ws连接");
+
     wsRef.current = getWS();
 
     const unsubscribe = subscribeWS(handleIncoming);
