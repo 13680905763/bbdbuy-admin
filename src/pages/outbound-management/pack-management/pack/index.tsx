@@ -32,7 +32,7 @@ const ParticularPaper: React.FC = () => {
     try {
       const data: any = {
         finishList: tableData.map((item) => ({
-          id: Number(item.id),
+          id: item.id,
           weight: item.weight,
           length: item.length,
           width: item.width,

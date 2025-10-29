@@ -481,7 +481,7 @@ const TableList: React.FC = () => {
                 selectedRowsState.map((item: any) => item.id)
               );
               const res = await purchaseInitiate({
-                ids: selectedRowsState.map((item: any) => Number(item.id)),
+                ids: selectedRowsState.map((item: any) => item.id),
                 remark: "",
               });
               actionRef?.current?.reload();

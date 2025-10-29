@@ -52,7 +52,7 @@ const ConfigList: React.FC = () => {
     try {
       const res: any = await uploadShippingLineLogo(file as File);
       setLogoUrl(res.data); // 保存到 state
-      form.setFieldsValue({ sample: res.data }); // 同步到表单字段
+      form.setFieldsValue({ sample: [res.data] }); // 同步到表单字段
       message.success("上传成功");
     } catch (err) {
       message.error("上传失败");
