@@ -1,4 +1,5 @@
-import { getInspectionListByPage } from "@/services/order"; // 你自己的接口路径
+import { getGoodsType } from "@/services";
+import { getInspectionListByPage, putInspection } from "@/services/order"; // 你自己的接口路径
 import { getStatusOptions, renderStatusTag } from "@/utils/status-render";
 import type {
   ActionType,
@@ -7,6 +8,7 @@ import type {
 } from "@ant-design/pro-components";
 import { PageContainer, ProTable } from "@ant-design/pro-components";
 import {
+  Button,
   DatePicker,
   Form,
   Image,
@@ -20,8 +22,8 @@ import moment from "moment";
 import React, { useEffect, useRef, useState } from "react";
 const { RangePicker } = DatePicker;
 const inspectionStatusOptions = [
-  { value: "NORMAL", label: "验货正常" },
-  { value: "ABNORMAL", label: "验货异常" },
+  { value: "1032", label: "验货正常" },
+  { value: "1033", label: "验货异常" },
 ];
 
 const abnormalOptions = [
@@ -45,8 +47,29 @@ const TableList: React.FC = () => {
   const [filters, setFilters] = useState<Record<string, any>>({});
   const [modalVisible, setModalVisible] = useState(false);
   const [editingRecord, setEditingRecord] = useState<any>(null);
+  const [inspectionStatus, setInspectionStatus] = useState<any>(null);
+  const [categoryOptions, setCategoryOptions] = useState<
+    { label: string; value: string | number }[]
+  >([]);
+  const [form] = Form.useForm();
+  // 1️⃣ 初始化商品类型
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const res: any = await getGoodsType();
+        const options = res.data.map((item: any) => ({
+          label: item.categoryName,
+          value: item.id,
+          isDefault: item.defaultCategory === 1 ? true : false, // 标记是否默认
+        }));
+        setCategoryOptions(options);
+      } catch (err) {
+        message.error("加载商品类型失败");
+      }
+    };
 
-  const [modalForm] = Form.useForm();
+    fetchCategories();
+  }, []);
   /** ✅ fetchData 不依赖外部状态，只依赖参数 */
   const fetchData = async (params?: any) => {
     const query = {
@@ -245,29 +268,40 @@ const TableList: React.FC = () => {
         />
       ),
     },
-    // {
-    //   title: "操作",
-    //   valueType: "option",
-    //   render: (_: any, records: any) => {
-    //     if (records?.inspectionStatus === "待验货") {
-    //       return "-";
-    //     }
-    //     return (
-    //       <Button
-    //         style={{ color: "#f0700c" }}
-    //         type="link"
-    //         onClick={() => {
-    //           setEditingRecord(records);
-    //           modalForm.setFieldsValue(records);
-    //           setModalVisible(true);
-    //         }}
-    //       >
-    //         修改验货
-    //       </Button>
-    //     );
-    //   },
-    // },
+    {
+      title: "操作",
+      valueType: "option",
+      render: (_: any, records: any) => {
+        if (records?.inspectionStatus === "待验货") {
+          return "-";
+        }
+        return (
+          <Button
+            type="link"
+            style={{ color: "#1890ff", padding: 0 }}
+            onClick={() => {
+              setEditingRecord(records);
+
+              setInspectionStatus(records?.inspectionStatusCode);
+              form.setFieldsValue({
+                ...records,
+                length: records.packageItem?.length || 0,
+                width: records.packageItem?.width || 0,
+                height: records.packageItem?.height || 0,
+                weight: records.packageItem?.weight || 0,
+                quantity: records.packageItem?.quantity || 0,
+                categoryId: records.packageItem?.categoryId || 0,
+              });
+              setModalVisible(true);
+            }}
+          >
+            修改
+          </Button>
+        );
+      },
+    },
   ];
+
   /** ✅ 搜索提交 */
   const onSubmitSearch = (values: any) => {
     console.log("values", values);
@@ -306,15 +340,22 @@ const TableList: React.FC = () => {
   };
   /** ✅ 保存修改 */
   const handleModalOk = async () => {
+    setLoading(true);
     try {
-      const values = await modalForm.validateFields();
-      console.log("修改数据", values);
-      // TODO: 调用修改接口
+      const values = await form.validateFields();
+      values.id = editingRecord?.id;
+      values.logisticsCode = editingRecord?.logisticsCode;
+
+      console.log("values", values);
+
+      await putInspection(values);
       message.success("修改成功");
-      setModalVisible(false);
-      fetchData({ current, size, ...filters });
     } catch (err) {
       console.log(err);
+    } finally {
+      setLoading(false);
+      setModalVisible(false);
+      fetchData({ current, size, ...filters });
     }
   };
   /** ✅ 初始化加载 */
@@ -360,14 +401,20 @@ const TableList: React.FC = () => {
         onCancel={() => setModalVisible(false)}
         onOk={handleModalOk}
         width={500}
+        confirmLoading={loading}
       >
-        <Form form={modalForm} layout="vertical">
+        <Form form={form} layout="vertical">
           <Form.Item
             label="验货状态"
-            name="inspectionStatus"
+            name="inspectionStatusCode"
             rules={[{ required: true }]}
           >
-            <Select options={inspectionStatusOptions} />
+            <Select
+              options={inspectionStatusOptions}
+              onChange={(value) => {
+                setInspectionStatus(value);
+              }}
+            />
           </Form.Item>
 
           {/* 动态渲染 */}
@@ -377,8 +424,7 @@ const TableList: React.FC = () => {
             }
           >
             {() => {
-              const status = modalForm.getFieldValue("inspectionStatus");
-              if (status === "NORMAL") {
+              if (inspectionStatus == 1032) {
                 return (
                   <>
                     <div style={{ display: "flex", gap: 16 }}>
@@ -400,14 +446,28 @@ const TableList: React.FC = () => {
                         <Input type="number" min={0} />
                       </Form.Item>
                     </div>
+                    <Form.Item label="商品类型" name="categoryId">
+                      <Select
+                        // value={record.categoryId}
+                        // style={{ width: 120 }}
+                        // onChange={(newValue) => {
+                        //   setTableData((prev) => {
+                        //     const updated = [...prev];
+                        //     updated[index].categoryId = newValue;
+                        //     return updated;
+                        //   });
+                        // }}
+                        options={categoryOptions}
+                      />
+                    </Form.Item>
                   </>
                 );
               }
-              if (status === "ABNORMAL") {
+              if (inspectionStatus == 1033) {
                 return (
                   <Form.Item
                     label="异常原因"
-                    name="abnormalMsg"
+                    name="abnormalCode"
                     rules={[{ required: true }]}
                   >
                     <Select options={abnormalOptions} />

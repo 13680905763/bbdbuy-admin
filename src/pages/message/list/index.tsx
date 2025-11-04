@@ -7,6 +7,7 @@ import {
   Avatar,
   Button,
   Card,
+  Image,
   Input,
   List,
   Modal,
@@ -297,7 +298,7 @@ const MessageList: React.FC = () => {
                   }}
                 >
                   {isImage ? (
-                    <img
+                    <Image
                       src={msg.text || undefined} // 图片地址存放在 msg.text
                       alt="图片消息"
                       style={{

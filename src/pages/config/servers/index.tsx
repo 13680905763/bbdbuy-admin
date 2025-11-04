@@ -5,12 +5,13 @@ import {
   putServicesList,
   uploadShippingLineLogo,
 } from "@/services";
-import { PlusOutlined } from "@ant-design/icons";
+import { CloseCircleFilled, PlusOutlined } from "@ant-design/icons";
 import type { ActionType } from "@ant-design/pro-components";
 import { PageContainer, ProTable } from "@ant-design/pro-components";
 import {
   Button,
   Form,
+  Image,
   Input,
   message,
   Modal,
@@ -24,7 +25,7 @@ const ConfigList: React.FC = () => {
   const actionRef = useRef<ActionType | null>(null);
   const [dataSource, setDataSource] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
-  const [logoUrl, setLogoUrl] = useState<string>(""); // 用 state 存 logo
+  const [logoUrl, setLogoUrl] = useState<any>([]); // 用 state 存 logo
 
   // 弹窗状态
   const [editModalVisible, setEditModalVisible] = useState(false);
@@ -35,7 +36,7 @@ const ConfigList: React.FC = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const res: any = await getServicesList({});
+      const res: any = await getServicesList({ size: 100 });
       setDataSource(res.data.records);
     } catch (e) {
       message.error("加载失败");
@@ -51,8 +52,8 @@ const ConfigList: React.FC = () => {
   const handleUpload = async ({ file }: any) => {
     try {
       const res: any = await uploadShippingLineLogo(file as File);
-      setLogoUrl(res.data); // 保存到 state
-      form.setFieldsValue({ sample: [res.data] }); // 同步到表单字段
+      setLogoUrl([...logoUrl, res.data]); // 保存到 state
+      form.setFieldsValue({ sample: [...logoUrl, res.data] }); // 同步到表单字段
       message.success("上传成功");
     } catch (err) {
       message.error("上传失败");
@@ -69,12 +70,13 @@ const ConfigList: React.FC = () => {
   const handleEdit = (record: any) => {
     setCurrentRow(record);
     form.setFieldsValue(record);
+    console.log("[...logoUrl, record.sample]", [...logoUrl, ...record.sample]);
 
     // 如果 record 有 logoUrl，设置到 state 方便预览
     if (record.sample) {
-      setLogoUrl(record.sample);
+      setLogoUrl([...logoUrl, ...record.sample]);
     } else {
-      setLogoUrl("");
+      setLogoUrl([]);
     }
 
     setEditModalVisible(true);
@@ -93,7 +95,17 @@ const ConfigList: React.FC = () => {
       message.error("删除失败");
     }
   };
+  const handleRemove = (url: string) => {
+    console.log(
+      "logoUrl.filter((item) => item !== url)",
+      logoUrl.filter((item: any) => item !== url)
+    );
 
+    setLogoUrl((prev: any) => prev.filter((item: any) => item !== url));
+    form.setFieldsValue({
+      sample: [...logoUrl.filter((item: any) => item !== url)],
+    }); // 同步到表单字段
+  };
   /** 保存（新增 / 修改） */
   const handleSave = async () => {
     try {
@@ -102,7 +114,7 @@ const ConfigList: React.FC = () => {
 
       // 同步 logoUrl 到提交数据
       setLoading(true);
-      setLogoUrl(""); // 清空上传状态，防止残留
+      setLogoUrl([]); // 清空上传状态，防止残留
 
       let res;
       if (currentRow?.id) {
@@ -201,7 +213,7 @@ const ConfigList: React.FC = () => {
         open={editModalVisible}
         onCancel={() => {
           setEditModalVisible(false);
-          setLogoUrl(""); // 如果需要也可以清掉 logo
+          setLogoUrl([]); // 如果需要也可以清掉 logo
         }}
         onOk={handleSave}
         confirmLoading={loading}
@@ -290,19 +302,43 @@ const ConfigList: React.FC = () => {
                 </div>
               </Upload>
 
-              {/* 预览 */}
-              {logoUrl && (
-                <img
-                  src={logoUrl}
-                  alt="logo"
-                  style={{
-                    width: 100,
-                    height: 100,
-                    border: "1px solid #eee",
-                    objectFit: "contain",
-                  }}
-                />
-              )}
+              {/* 图片预览 + 删除按钮 */}
+              {logoUrl.length > 0 &&
+                logoUrl.map((url: any) => (
+                  <div
+                    key={url}
+                    style={{
+                      position: "relative",
+                      width: 100,
+                      height: 100,
+                    }}
+                  >
+                    <Image
+                      src={url}
+                      alt="logo"
+                      width={100}
+                      height={100}
+                      style={{
+                        border: "1px solid #eee",
+                        objectFit: "contain",
+                        borderRadius: 4,
+                      }}
+                    />
+                    <CloseCircleFilled
+                      onClick={() => handleRemove(url)}
+                      style={{
+                        position: "absolute",
+                        top: -6,
+                        right: -6,
+                        color: "#ff4d4f",
+                        fontSize: 18,
+                        cursor: "pointer",
+                        background: "#fff",
+                        borderRadius: "50%",
+                      }}
+                    />
+                  </div>
+                ))}
             </div>
           </Form.Item>
           <Form.Item

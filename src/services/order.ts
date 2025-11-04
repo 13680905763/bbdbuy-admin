@@ -59,6 +59,13 @@ export async function getInspectionListByPage(data: any) {
     data,
   });
 }
+/** 修改验货单  */
+export async function putInspection(data: any) {
+  return request<API.RuleList>("/inbound-inspection/update", {
+    method: "POST",
+    data,
+  });
+}
 /** 获取验货单（包裹）信息 */
 export async function getInspectionScan(logisticsCode: string) {
   return request<API.RuleList>(

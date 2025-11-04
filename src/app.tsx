@@ -90,9 +90,9 @@ export const layout: RunTimeLayoutConfig = ({
       content: initialState?.currentUser?.nickName,
     },
     footerRender: () => {
-      // console.log("location.pathname", location.pathname);
+      console.log("location.pathname", location.pathname);
 
-      if (location.pathname === "/admin/message/list") {
+      if (location.pathname === "/message/list") {
         return null; // 消息页面不显示 footer
       }
       return <Footer />; // 其它页面显示
@@ -136,9 +136,9 @@ export const layout: RunTimeLayoutConfig = ({
 export const request: RequestConfig = {
   baseURL: isDev
     ? "http://api.bbdtest.local:8080"
-    : "https://www.bbdbuy1.com/admin-api",
+    : "https://admin.bbdbuy1.com/api",
   // baseURL: process.env.UMI_APP_BASE_API,
   withCredentials: true,
-  timeout: 10000,
+  timeout: 500000,
   ...errorConfig,
 };

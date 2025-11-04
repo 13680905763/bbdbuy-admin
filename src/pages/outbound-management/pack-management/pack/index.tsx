@@ -68,7 +68,7 @@ const ParticularPaper: React.FC = () => {
       dataIndex: "services",
       render: (services: any) => {
         // console.log("services", services);
-        return services.map((item) => {
+        return services.map((item: any) => {
           return <p>{item.serviceName + "--" + item.serviceStatus}</p>;
         });
       },

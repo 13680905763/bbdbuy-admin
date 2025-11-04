@@ -105,9 +105,7 @@ const Login: React.FC = () => {
             mobile: "admin",
             password: "123456",
           }}
-          title={
-            <img src="/admin/logo.png" alt="BBDBUY" style={{ height: 40 }} />
-          }
+          title={<img src="/logo.png" alt="BBDBUY" style={{ height: 40 }} />}
           subTitle={"BBD 后台管理系统"}
           onFinish={async (values) => {
             await handleSubmit(values as API.LoginParams);

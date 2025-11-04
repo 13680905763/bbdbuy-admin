@@ -108,7 +108,7 @@ export const errorConfig: RequestConfig = {
       // 拦截请求配置，进行个性化处理。
       config.headers = config.headers ?? {};
       config.headers["X-Language"] = "zh";
-      config.headers["X-Currency"] = "USD";
+      config.headers["X-Currency"] = "CNY";
       config.headers["X-Timezone"] = "Asia/Shanghai";
       return { ...config };
     },

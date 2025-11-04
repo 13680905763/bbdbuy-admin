@@ -13,6 +13,7 @@ import type {
 } from "@ant-design/pro-components";
 import { PageContainer, ProTable } from "@ant-design/pro-components";
 import {
+  AutoComplete,
   Button,
   DatePicker,
   Form,
@@ -33,6 +34,28 @@ export interface ProcureStatusItem {
   value: number; // 状态码
   color: string; // 标签颜色
 }
+const LOGISTICS_COMPANIES = [
+  "顺丰速运",
+  "中通快递",
+  "圆通速递",
+  "申通快递",
+  "韵达快递",
+  "京东物流",
+  "邮政快递包裹",
+  "德邦快递",
+  "极兔速递",
+  "跨越速运",
+  "天天快递",
+  "百世快递",
+  "宅急送",
+  "EMS",
+  "全峰快递",
+  "优速快递",
+  "快捷快递",
+  "联邦快递（FedEx国内）",
+  "中邮快递",
+  "能达速递",
+];
 
 const TableList: React.FC = () => {
   const actionRef = useRef<ActionType | null>(null);
@@ -302,8 +325,6 @@ const TableList: React.FC = () => {
       }
       if (res.success) {
         message.success("修改成功");
-        setEditModalVisible(false);
-        fetchData();
       } else {
         message.error(res.message || "操作失败");
       }
@@ -311,6 +332,8 @@ const TableList: React.FC = () => {
       message.error("操作失败");
     } finally {
       setLoading(false);
+      setEditModalVisible(false);
+      fetchData();
     }
   };
   /** ✅ 搜索提交 */
@@ -476,16 +499,30 @@ const TableList: React.FC = () => {
             type="primary"
             icon={<PlusOutlined />}
             onClick={async () => {
-              console.log(
-                "点击了采购按钮",
-                selectedRowsState.map((item: any) => item.id)
-              );
-              const res = await purchaseInitiate({
-                ids: selectedRowsState.map((item: any) => item.id),
-                remark: "",
-              });
-              actionRef?.current?.reload();
-              console.log(res);
+              const ids = selectedRowsState.map((item: any) => item.id);
+              console.log("点击了采购按钮", ids);
+              if (!ids.length) {
+                message.error("请选择需要采购的商品！");
+                return;
+              }
+              try {
+                const res = await purchaseInitiate({
+                  ids,
+                  remark: "",
+                });
+
+                // 请求成功提示
+                message.success("采购发起成功！");
+                console.log(res);
+
+                // 刷新表格
+                actionRef?.current?.reload();
+              } catch (error: any) {
+                console.error("采购发起失败", error);
+
+                // 请求失败提示
+                message.error(error?.message || "采购发起失败，请重试");
+              }
             }}
           >
             采购
@@ -515,11 +552,16 @@ const TableList: React.FC = () => {
           <Form.Item
             name="logisticsCompany"
             label="快递公司"
-            rules={[{ required: true, message: "请输入快递公司" }]}
+            rules={[{ required: true, message: "请输入或选择快递公司" }]}
           >
-            <Input placeholder="请输入快递公司" />
+            <AutoComplete
+              options={LOGISTICS_COMPANIES.map((c) => ({ value: c }))}
+              placeholder="请输入或选择快递公司"
+              filterOption={(inputValue: any, option: any) =>
+                option!.value.toLowerCase().includes(inputValue.toLowerCase())
+              }
+            />
           </Form.Item>
-
           <Form.Item
             name="logisticsCode"
             label="快递单号"

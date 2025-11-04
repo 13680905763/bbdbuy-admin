@@ -21,6 +21,7 @@ const ParticularPaper: React.FC = () => {
   const [tableData, setTableData] = useState<any[]>([]);
   const inputRef = useRef(null);
   const [submitting, setSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [categoryOptions, setCategoryOptions] = useState<
     { label: string; value: string | number }[]
   >([]);
@@ -42,23 +43,39 @@ const ParticularPaper: React.FC = () => {
 
     fetchCategories();
   }, []);
+
   const handleScan = async () => {
     if (!scanValue.trim()) {
       message.warning("请输入条码");
       return;
     }
-    const res: any = await getInspectionScan(scanValue);
-    console.log(res.data);
-    if (res.success) {
-      setTableData(
-        res?.data?.inspectionList.map((row: any) => ({
-          ...row,
-          categoryId: categoryOptions.find((opt: any) => opt.isDefault)?.value,
-          // inspectionStatusCode: 1032,
-        }))
-      );
+
+    setIsLoading(true);
+    try {
+      const res: any = await getInspectionScan(scanValue);
+      console.log(res.data);
+
+      if (res.success) {
+        setTableData(
+          res?.data?.inspectionList.map((row: any) => ({
+            ...row,
+            categoryId: categoryOptions.find((opt: any) => opt.isDefault)
+              ?.value,
+            // inspectionStatusCode: 1032,
+          }))
+        );
+        // message.success("扫码成功！");
+      } else {
+        // message.error(res?.message || "扫码失败，请重试");
+      }
+    } catch (error: any) {
+      console.error("扫码请求出错:", error);
+      // message.error(error?.message || "请求异常，请稍后重试");
+    } finally {
+      setIsLoading(false);
     }
   };
+
   const handleBatchPrint = () => {
     if (tableData.length === 0) {
       message.warning("暂无条码可打印");
@@ -508,6 +525,7 @@ const ParticularPaper: React.FC = () => {
           pagination={false}
           search={false}
           options={false}
+          loading={isLoading}
           bordered
         />
         <div style={{ textAlign: "right", marginTop: 16 }}>
