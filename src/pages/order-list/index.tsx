@@ -26,11 +26,11 @@ const TableList: React.FC = () => {
   const formRef = useRef<ProFormInstance | undefined>(undefined);
   const [dataSource, setDataSource] = useState<any[]>([]);
 
-  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const [expandedRowKeys, setExpandedRowKeys] = useState<React.Key[]>([]); // ✅ 展开行控制
   const [current, setCurrent] = useState(1);
   const [size, setSize] = useState(10);
+  const [total, setTotal] = useState(0);
   const [filters, setFilters] = useState<Record<string, any>>({});
 
   /** ✅ fetchData 不依赖外部状态，只依赖参数 */
@@ -250,6 +250,17 @@ const TableList: React.FC = () => {
                   render: (p) => (
                     <span style={{ color: "#1f2937", fontWeight: 500 }}>
                       ¥{p}
+                    </span>
+                  ),
+                },
+                {
+                  dataIndex: "remark",
+                  render: (remark) => (
+                    <span style={{ color: "#1f2937", fontWeight: 500 }}>
+                      <span style={{ color: "#6b7280", fontWeight: 400 }}>
+                        备注：
+                      </span>
+                      {remark || "-"}
                     </span>
                   ),
                 },

@@ -468,7 +468,10 @@ const TableList: React.FC = () => {
                   dataIndex: "remark",
                   render: (remark) => (
                     <span style={{ color: "#1f2937", fontWeight: 500 }}>
-                      {remark}
+                      <span style={{ color: "#6b7280", fontWeight: 400 }}>
+                        备注：
+                      </span>
+                      {remark || "-"}
                     </span>
                   ),
                 },
@@ -493,6 +496,11 @@ const TableList: React.FC = () => {
           onChange: (_, selectedRows) => {
             setSelectedRows(selectedRows);
           },
+
+          getCheckboxProps: (record) => ({
+            disabled: record.products.filter((item: any) => item.remark).length, // 🚫 禁止勾选条件
+            name: record.name,
+          }),
         }}
         toolBarRender={() => [
           <Button

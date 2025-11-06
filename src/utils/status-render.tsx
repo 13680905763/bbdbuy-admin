@@ -12,6 +12,7 @@ export type ModuleType =
   | "packing"
   | "putaway"
   | "inputaway"
+  | "refund"
   | "delivery"; // 可根据项目扩展
 
 export interface StatusItem {
@@ -79,6 +80,13 @@ export const STATUS_LIST: StatusItem[] = [
   // ✅ 发货列表状态
   { label: "待发货", value: 2041, module: "delivery", color: "blue" },
   { label: "已发货", value: 2042, module: "delivery", color: "green" },
+
+  // 退款单状态
+  { label: "待审核", value: 1, module: "refund", color: "orange" },
+  { label: "处理中", value: 2, module: "refund", color: "blue" },
+  { label: "已退款", value: 3, module: "refund", color: "green" },
+  { label: "已驳回", value: 4, module: "refund", color: "red" },
+  { label: "已取消", value: 5, module: "refund", color: "default" },
 ];
 
 // ======================

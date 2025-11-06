@@ -15,6 +15,7 @@ import {
   Input,
   message,
   Modal,
+  Pagination,
   Popconfirm,
   Select,
   Upload,
@@ -32,23 +33,42 @@ const ConfigList: React.FC = () => {
   const [currentRow, setCurrentRow] = useState<any>(null);
   const [form] = Form.useForm();
 
-  /** 拉取数据 */
-  const fetchData = async () => {
+  // 分页
+  const [current, setCurrent] = useState(1);
+  const [size, setSize] = useState(10);
+  const [total, setTotal] = useState(0);
+
+  /** ✅ fetchData 不依赖外部状态，只依赖参数 */
+  const fetchData = async (params?: any) => {
+    const query = {
+      current,
+      size,
+      // ...filters,目前 搜索跟分页自己带上
+      ...params,
+    };
+    console.log("fetchData -> query", query);
+
     setLoading(true);
     try {
-      const res: any = await getServicesList({ size: 100 });
-      setDataSource(res.data.records);
+      const res: any = await getServicesList(query);
+      setDataSource(res.data.records || []);
+      setTotal(res.data.total || 0);
     } catch (e) {
       message.error("加载失败");
     } finally {
       setLoading(false);
     }
   };
-
+  /** ✅ 初始化加载 */
   useEffect(() => {
     fetchData();
   }, []);
-
+  /** ✅ 分页变化 */
+  const handlePageChange = (page: number, pageSize?: number) => {
+    setCurrent(page);
+    setSize(pageSize || 10);
+    fetchData({ current: page, size: pageSize });
+  };
   const handleUpload = async ({ file }: any) => {
     try {
       const res: any = await uploadShippingLineLogo(file as File);
@@ -371,6 +391,15 @@ const ConfigList: React.FC = () => {
           </Form.Item>
         </Form>
       </Modal>
+      <div style={{ padding: 16, textAlign: "right" }}>
+        <Pagination
+          current={current}
+          pageSize={size}
+          total={total}
+          showSizeChanger
+          onChange={handlePageChange}
+        />
+      </div>
     </PageContainer>
   );
 };

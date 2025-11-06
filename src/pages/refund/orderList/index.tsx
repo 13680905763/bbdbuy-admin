@@ -1,20 +1,12 @@
 import { getOrderRefundList, updateRefund } from "@/services/refund";
+import { getStatusOptions, renderStatusTag } from "@/utils/status-render";
 import type {
   ActionType,
   ProColumns,
   ProFormInstance,
 } from "@ant-design/pro-components";
 import { PageContainer, ProTable } from "@ant-design/pro-components";
-import {
-  Button,
-  Form,
-  Input,
-  Modal,
-  Pagination,
-  Select,
-  Tag,
-  message,
-} from "antd";
+import { Button, Form, Input, Modal, Pagination, Select, message } from "antd";
 import React, { useEffect, useRef, useState } from "react";
 
 type OrderProductRow = {
@@ -130,31 +122,16 @@ const TableList: React.FC = () => {
 
     {
       title: "状态",
-      dataIndex: "status",
-      hideInSearch: true,
-      render: (dom, record: any) => {
-        const status = record.status;
-        const statusCode = record.statusCode;
-        let color: string = "default";
-
-        switch (statusCode) {
-          case 1: // 待审核
-            color = "orange";
-            break;
-          case 2: // 处理中
-            color = "blue";
-            break;
-          case 3: // 已退款
-            color = "green";
-            break;
-          case 4: // 已驳回
-            color = "red";
-            break;
-          default:
-            color = "default";
-        }
-
-        return <Tag color={color}>{status}</Tag>;
+      dataIndex: "statusCode",
+      render: (value: any) => renderStatusTag("refund", value),
+      renderFormItem: () => {
+        return (
+          <Select
+            placeholder="请选择采购状态"
+            allowClear
+            options={getStatusOptions("refund")}
+          />
+        );
       },
     },
     { title: "申请时间", dataIndex: "createTime", hideInSearch: true },
@@ -227,6 +204,7 @@ const TableList: React.FC = () => {
       Object.entries({
         refundCode: values.refundCode,
         orderCode: values.orderCode,
+        statusCode: values.statusCode,
         // putawayStatusCode: values.putawayStatusCode,
         // createTimeFrom: startTime
         //   ? moment(startTime).format("YYYY-MM-DD HH:mm:ss")
