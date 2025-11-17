@@ -35,7 +35,20 @@ const ConfigList: React.FC = () => {
   const fetchData = async (type: string) => {
     setLoading(true);
     try {
-      const res: any = await getPromotionList(type);
+      let query: Record<string, any> = {};
+
+      if (type === "EXPERIENCE" || type === "LEVEL") {
+        query = {
+          configCode: "LEVEL_BONUS",
+          configType: "EXPERIENCE",
+        };
+      } else if (type === "POINTS") {
+        query = {
+          configType: "POINTS",
+        };
+      }
+
+      const res: any = await getPromotionList(query);
       setDataSource(res?.data || []);
     } catch (e) {
       message.error("加载失败");
@@ -107,39 +120,123 @@ const ConfigList: React.FC = () => {
       setLoading(false);
     }
   };
-
-  /** 表格列 */
-  const columns: any[] = [
-    { title: "配置类型", dataIndex: "configType" },
-    { title: "配置编码", dataIndex: "configCode" },
-    { title: "配置值", dataIndex: "configValue" },
-    { title: "范围最小值", dataIndex: "rangeMin" },
-    { title: "范围最大值", dataIndex: "rangeMax" },
-    { title: "会员等级编码", dataIndex: "rangeCode" },
-    { title: "会员等级名称", dataIndex: "rangeName" },
-    { title: "优先级", dataIndex: "priority" },
-    { title: "描述", dataIndex: "description" },
-    {
-      title: "操作",
-      valueType: "option",
-      render: (_: any, record: any) => [
-        <Button
-          type="link"
-          style={{ color: "#1890ff", padding: 0 }}
-          onClick={() => handleEdit(record)}
-        >
-          修改
-        </Button>,
-        <Popconfirm
-          key="delete"
-          title="确定要删除吗？"
-          onConfirm={() => handleDelete(record)}
-        >
-          <a style={{ color: "#ff4d4f" }}>删除</a>
-        </Popconfirm>,
-      ],
-    },
-  ];
+  const columns = {
+    EXPERIENCE: [
+      { title: "范围最小值", dataIndex: "rangeMin" },
+      { title: "范围最大值", dataIndex: "rangeMax" },
+      { title: "会员等级编码", dataIndex: "rangeCode" },
+      { title: "会员等级名称", dataIndex: "rangeName" },
+      { title: "优先级", dataIndex: "priority" },
+      { title: "描述", dataIndex: "description" },
+      {
+        title: "操作",
+        valueType: "option",
+        render: (_: any, record: any) => [
+          <Button
+            type="link"
+            style={{ color: "#1890ff", padding: 0 }}
+            onClick={() => handleEdit(record)}
+          >
+            修改
+          </Button>,
+          <Popconfirm
+            key="delete"
+            title="确定要删除吗？"
+            onConfirm={() => handleDelete(record)}
+          >
+            <a style={{ color: "#ff4d4f" }}>删除</a>
+          </Popconfirm>,
+        ],
+      },
+    ],
+    LEVEL: [
+      { title: "配置值", dataIndex: "configValue" },
+      { title: "会员等级编码", dataIndex: "rangeCode" },
+      {
+        title: "操作",
+        valueType: "option",
+        render: (_: any, record: any) => [
+          <Button
+            type="link"
+            style={{ color: "#1890ff", padding: 0 }}
+            onClick={() => handleEdit(record)}
+          >
+            修改
+          </Button>,
+          <Popconfirm
+            key="delete"
+            title="确定要删除吗？"
+            onConfirm={() => handleDelete(record)}
+          >
+            <a style={{ color: "#ff4d4f" }}>删除</a>
+          </Popconfirm>,
+        ],
+      },
+    ],
+    POINTS: [
+      // { title: "配置类型", dataIndex: "configType" },
+      // { title: "配置编码", dataIndex: "configCode" },
+      { title: "配置值", dataIndex: "configValue" },
+      { title: "范围最小值", dataIndex: "rangeMin" },
+      { title: "范围最大值", dataIndex: "rangeMax" },
+      { title: "会员等级编码", dataIndex: "rangeCode" },
+      { title: "会员等级名称", dataIndex: "rangeName" },
+      { title: "优先级", dataIndex: "priority" },
+      { title: "描述", dataIndex: "description" },
+      {
+        title: "操作",
+        valueType: "option",
+        render: (_: any, record: any) => [
+          <Button
+            type="link"
+            style={{ color: "#1890ff", padding: 0 }}
+            onClick={() => handleEdit(record)}
+          >
+            修改
+          </Button>,
+          <Popconfirm
+            key="delete"
+            title="确定要删除吗？"
+            onConfirm={() => handleDelete(record)}
+          >
+            <a style={{ color: "#ff4d4f" }}>删除</a>
+          </Popconfirm>,
+        ],
+      },
+    ],
+  };
+  // /** 表格列 */
+  // const columns: any[] = [
+  //   // { title: "配置类型", dataIndex: "configType" },
+  //   // { title: "配置编码", dataIndex: "configCode" },
+  //   { title: "配置值", dataIndex: "configValue" },
+  //   { title: "范围最小值", dataIndex: "rangeMin" },
+  //   { title: "范围最大值", dataIndex: "rangeMax" },
+  //   { title: "会员等级编码", dataIndex: "rangeCode" },
+  //   { title: "会员等级名称", dataIndex: "rangeName" },
+  //   { title: "优先级", dataIndex: "priority" },
+  //   { title: "描述", dataIndex: "description" },
+  //   {
+  //     title: "操作",
+  //     valueType: "option",
+  //     render: (_: any, record: any) => [
+  //       <Button
+  //         type="link"
+  //         style={{ color: "#1890ff", padding: 0 }}
+  //         onClick={() => handleEdit(record)}
+  //       >
+  //         修改
+  //       </Button>,
+  //       <Popconfirm
+  //         key="delete"
+  //         title="确定要删除吗？"
+  //         onConfirm={() => handleDelete(record)}
+  //       >
+  //         <a style={{ color: "#ff4d4f" }}>删除</a>
+  //       </Popconfirm>,
+  //     ],
+  //   },
+  // ];
 
   return (
     <PageContainer>
@@ -167,7 +264,7 @@ const ConfigList: React.FC = () => {
         pagination={false}
         dataSource={dataSource}
         loading={loading}
-        columns={columns}
+        columns={columns[activeTab]}
         toolBarRender={() => [
           <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
             新建
@@ -194,7 +291,7 @@ const ConfigList: React.FC = () => {
             label="配置编码"
             rules={[{ required: true, message: "请输入配置编码" }]}
           >
-            <Input />
+            <Input disabled={currentRow ? true : false} />
           </Form.Item>
 
           <Form.Item

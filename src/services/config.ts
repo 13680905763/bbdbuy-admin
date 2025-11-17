@@ -15,10 +15,11 @@ export async function putRate(data: any) {
 }
 
 /** 获取推广配置 */
-export async function getPromotionList(configType: string) {
+export async function getPromotionList(query: any) {
   // return request("/promotion-config", {
-  return request("/promotion-config?configType=" + configType, {
+  return request("/promotion-config", {
     method: "GET",
+    params: query, // GET 请求的参数放这里
   });
 }
 export async function putPromotion(data: any) {

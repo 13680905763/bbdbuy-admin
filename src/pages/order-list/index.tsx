@@ -70,6 +70,7 @@ const TableList: React.FC = () => {
     { title: "商品金额", dataIndex: "productFee", hideInSearch: true },
     { title: "运费金额", dataIndex: "postFee", hideInSearch: true },
     { title: "服务费金额", dataIndex: "serviceFee", hideInSearch: true },
+    { title: "退款金额", dataIndex: "refundAmount", hideInSearch: true },
     { title: "订单总金额", dataIndex: "totalFee", hideInSearch: true },
     {
       title: "商品信息",
@@ -242,7 +243,7 @@ const TableList: React.FC = () => {
                   ),
                 },
                 {
-                  dataIndex: "quantity",
+                  dataIndex: "purchaseQuantity",
                   render: (q) => <span style={{ color: "#4b5563" }}>×{q}</span>,
                 },
                 {

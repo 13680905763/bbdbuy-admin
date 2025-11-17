@@ -28,6 +28,13 @@ export async function createPurchaseLogistics(data: any) {
     data,
   });
 }
+/** 修改回填二合一采购单快递单号 */
+export async function updatePurchaseLogistics(data: any) {
+  return request("purchase/update", {
+    method: "POST",
+    data,
+  });
+}
 /** 获取收货单列表 */
 export async function getDeliveryListByPage(data: any) {
   return request<API.RuleList>("/inbound-receive/page", {

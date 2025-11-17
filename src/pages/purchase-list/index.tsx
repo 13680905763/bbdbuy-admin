@@ -1,8 +1,7 @@
 import {
-  createPurchaseLogistics,
   getPurchaseListByPage,
   purchaseInitiate,
-  putPurchaseLogistics,
+  updatePurchaseLogistics,
 } from "@/services/order";
 import { getStatusOptions, renderStatusTag } from "@/utils/status-render";
 import { DownOutlined, PlusOutlined, RightOutlined } from "@ant-design/icons";
@@ -200,6 +199,11 @@ const TableList: React.FC = () => {
       dataIndex: "dispatchUserName",
       hideInSearch: true,
     },
+    {
+      title: "备注",
+      dataIndex: "remark",
+      hideInSearch: true,
+    },
 
     {
       title: "时间信息",
@@ -302,8 +306,10 @@ const TableList: React.FC = () => {
 
     // 设置表单值
     form.setFieldsValue({
+      sourceOrderId: record?.sourceOrderId || "",
       logisticsCompany: firstPackage?.logisticsCompany || "",
       logisticsCode: firstPackage?.logisticsCode || "",
+      remark: firstPackage?.remark || "",
     });
 
     setEditModalVisible(true);
@@ -313,18 +319,30 @@ const TableList: React.FC = () => {
     try {
       const values = await form.validateFields();
       values.id = currentRow.id;
+      // 自定义校验逻辑：采购单号和快递单号必须至少填一个
+      if (!values.sourceOrderId && !values.logisticsCode) {
+        message.error("平台采购单号或快递单号至少填写一个");
+        return;
+      }
+      if (!values.sourceOrderId && values.logisticsCode) {
+        message.error("该订单缺少平台采购单号");
+        return;
+      }
       console.log("value", values);
 
       setLoading(true);
 
-      let res;
-      if (currentRow?.packages?.[0]) {
-        res = await putPurchaseLogistics(values);
-      } else {
-        res = await createPurchaseLogistics(values);
-      }
+      const res = await updatePurchaseLogistics(values);
+      // let res;
+      // if (currentRow?.packages?.[0]) {
+      //   res = await putPurchaseLogistics(values);
+      // } else {
+      //   res = await createPurchaseLogistics(values);
+      // }
       if (res.success) {
         message.success("修改成功");
+        fetchData();
+        setEditModalVisible(false);
       } else {
         message.error(res.message || "操作失败");
       }
@@ -332,8 +350,6 @@ const TableList: React.FC = () => {
       message.error("操作失败");
     } finally {
       setLoading(false);
-      setEditModalVisible(false);
-      fetchData();
     }
   };
   /** ✅ 搜索提交 */
@@ -453,7 +469,7 @@ const TableList: React.FC = () => {
                   ),
                 },
                 {
-                  dataIndex: "quantity",
+                  dataIndex: "purchaseQuantity",
                   render: (q) => <span style={{ color: "#4b5563" }}>×{q}</span>,
                 },
                 {
@@ -557,11 +573,10 @@ const TableList: React.FC = () => {
         centered
       >
         <Form form={form} layout="vertical">
-          <Form.Item
-            name="logisticsCompany"
-            label="快递公司"
-            rules={[{ required: true, message: "请输入或选择快递公司" }]}
-          >
+          <Form.Item name="sourceOrderId" label="平台采购单号">
+            <Input placeholder="请输入平台采购单号" />
+          </Form.Item>
+          <Form.Item name="logisticsCompany" label="快递公司">
             <AutoComplete
               options={LOGISTICS_COMPANIES.map((c) => ({ value: c }))}
               placeholder="请输入或选择快递公司"
@@ -570,12 +585,11 @@ const TableList: React.FC = () => {
               }
             />
           </Form.Item>
-          <Form.Item
-            name="logisticsCode"
-            label="快递单号"
-            rules={[{ required: true, message: "请输入快递单号" }]}
-          >
+          <Form.Item name="logisticsCode" label="快递单号">
             <Input placeholder="请输入快递单号" />
+          </Form.Item>
+          <Form.Item name="remark" label="备注">
+            <Input.TextArea placeholder="请输入备注" />
           </Form.Item>
         </Form>
       </Modal>

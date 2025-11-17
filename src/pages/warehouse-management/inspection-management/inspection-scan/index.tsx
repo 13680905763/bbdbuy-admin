@@ -249,7 +249,7 @@ const ParticularPaper: React.FC = () => {
             <Image
               width={90}
               height={90}
-              src={product?.picUrl}
+              src={product?.skuPicUrl || product?.picUrl}
               alt={product?.productTitle || "商品图片"}
               preview={product?.picUrl}
               style={{ objectFit: "cover", borderRadius: 4 }}

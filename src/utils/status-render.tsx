@@ -13,6 +13,7 @@ export type ModuleType =
   | "putaway"
   | "inputaway"
   | "refund"
+  | "shelf"
   | "delivery"; // 可根据项目扩展
 
 export interface StatusItem {
@@ -36,6 +37,7 @@ export const STATUS_LIST: StatusItem[] = [
   { label: "入库中", value: 105, module: "order", color: "geekblue" },
   { label: "已入库", value: 106, module: "order", color: "green" },
   { label: "已关闭", value: 107, module: "order", color: "red" },
+  { label: "客户申请退款", value: 108, module: "order", color: "red" },
 
   // 采购单状态
   { label: "待审核", value: 200, module: "purchase", color: "orange" },
@@ -45,6 +47,7 @@ export const STATUS_LIST: StatusItem[] = [
   { label: "已发货", value: 204, module: "purchase", color: "purple" },
   { label: "已取消", value: 205, module: "purchase", color: "default" },
   { label: "已退款", value: 206, module: "purchase", color: "red" },
+  { label: "客户申请退款", value: 207, module: "purchase", color: "red" },
 
   // ✅ 收货列表状态
   { label: "待收货", value: 1011, module: "receiving", color: "blue" },
@@ -71,6 +74,9 @@ export const STATUS_LIST: StatusItem[] = [
   // ✅ 打包列表状态
   { label: "待打包", value: 2021, module: "packing", color: "blue" },
   { label: "已打包", value: 2022, module: "packing", color: "green" },
+  // 打包上架状态（shelf）
+  { label: "待上架", value: 2025, module: "shelf", color: "blue" },
+  { label: "已上架", value: 2026, module: "shelf", color: "green" },
   // ✅ 上架列表状态
   { label: "待上架", value: 2025, module: "putaway", color: "blue" },
   { label: "已上架", value: 2026, module: "putaway", color: "green" },

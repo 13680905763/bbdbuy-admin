@@ -73,9 +73,7 @@ const TableList: React.FC = () => {
       },
       render: (items: any) => {
         return items?.map((item: any) => (
-          <p key={item.location.packageCode}>
-            {item.location.packageCode} -- {item.location.locationStatus}
-          </p>
+          <p key={item?.packageCode}>{item?.packageCode}</p>
         ));
       },
     },
@@ -92,6 +90,11 @@ const TableList: React.FC = () => {
           />
         );
       },
+    },
+    {
+      title: "上架状态",
+      dataIndex: "putawayStatusCode",
+      render: (value: any) => renderStatusTag("shelf", value),
     },
     {
       title: "打包人",

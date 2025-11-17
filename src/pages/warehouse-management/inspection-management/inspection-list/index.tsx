@@ -117,7 +117,7 @@ const TableList: React.FC = () => {
             <Image
               width={90}
               height={90}
-              src={orderProduct?.picUrl}
+              src={orderProduct?.skuPicUrl || orderProduct?.picUrl}
               alt={orderProduct?.productTitle || "商品图片"}
               preview={orderProduct?.picUrl}
               style={{ objectFit: "cover", borderRadius: 4 }}

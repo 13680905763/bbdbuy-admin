@@ -179,10 +179,10 @@ const ConfigList: React.FC = () => {
           return (
             <div>
               <div>
-                首体积: {record.firstVolume} m³ / ￥{record.firstVolumeFee}
+                首体积: {record.firstVolume} cm³ / ￥{record.firstVolumeFee}
               </div>
               <div>
-                续体积: {record.additionalVolume} m³ / ￥
+                续体积: {record.additionalVolume} cm³ / ￥
                 {record.additionalVolumeFee}
               </div>
             </div>
@@ -391,7 +391,7 @@ const ConfigList: React.FC = () => {
             <>
               <Form.Item
                 name="firstVolume"
-                label="首体积 (m³)"
+                label="首体积 (cm³)"
                 rules={[{ required: true, message: "请输入首体积" }]}
               >
                 <Input type="number" placeholder="请输入首体积" />
@@ -405,7 +405,7 @@ const ConfigList: React.FC = () => {
               </Form.Item>
               <Form.Item
                 name="additionalVolume"
-                label="续体积 (m³)"
+                label="续体积 (cm³)"
                 rules={[{ required: true, message: "请输入续体积" }]}
               >
                 <Input type="number" placeholder="请输入续体积" />
