@@ -58,7 +58,7 @@ const ParticularPaper: React.FC = () => {
       dataIndex: "items",
       render: (items: any) => {
         return items.map((items: any) => {
-          return <p>{items.location.packageCode}</p>;
+          return <p>{items.packageCode}</p>;
         });
       },
     },

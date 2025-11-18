@@ -21,9 +21,9 @@ import {
 } from "@/services";
 
 const ConfigList: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<"EXPERIENCE" | "LEVEL" | "POINTS">(
-    "EXPERIENCE"
-  );
+  const [activeTab, setActiveTab] = useState<
+    "EXPERIENCE" | "LEVEL" | "POINTS" | "VIP"
+  >("EXPERIENCE");
   const [dataSource, setDataSource] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [editModalVisible, setEditModalVisible] = useState(false);
@@ -45,6 +45,11 @@ const ConfigList: React.FC = () => {
       } else if (type === "POINTS") {
         query = {
           configType: "POINTS",
+        };
+      } else if (type === "VIP") {
+        query = {
+          configType: "VIP",
+          configCode: "LEVEL",
         };
       }
 
@@ -124,8 +129,8 @@ const ConfigList: React.FC = () => {
     EXPERIENCE: [
       { title: "范围最小值", dataIndex: "rangeMin" },
       { title: "范围最大值", dataIndex: "rangeMax" },
-      { title: "会员等级编码", dataIndex: "rangeCode" },
-      { title: "会员等级名称", dataIndex: "rangeName" },
+      { title: "经验等级编码", dataIndex: "rangeCode" },
+      { title: "经验等级名称", dataIndex: "rangeName" },
       { title: "优先级", dataIndex: "priority" },
       { title: "描述", dataIndex: "description" },
       {
@@ -151,7 +156,7 @@ const ConfigList: React.FC = () => {
     ],
     LEVEL: [
       { title: "配置值", dataIndex: "configValue" },
-      { title: "会员等级编码", dataIndex: "rangeCode" },
+      { title: "经验等级编码", dataIndex: "rangeCode" },
       {
         title: "操作",
         valueType: "option",
@@ -174,14 +179,39 @@ const ConfigList: React.FC = () => {
       },
     ],
     POINTS: [
-      // { title: "配置类型", dataIndex: "configType" },
-      // { title: "配置编码", dataIndex: "configCode" },
       { title: "配置值", dataIndex: "configValue" },
+      // { title: "范围最小值", dataIndex: "rangeMin" },
+      // { title: "范围最大值", dataIndex: "rangeMax" },
+      // { title: "会员等级编码", dataIndex: "rangeCode" },
+      // { title: "会员等级名称", dataIndex: "rangeName" },
+      // { title: "优先级", dataIndex: "priority" },
+      { title: "描述", dataIndex: "description" },
+      {
+        title: "操作",
+        valueType: "option",
+        render: (_: any, record: any) => [
+          <Button
+            type="link"
+            style={{ color: "#1890ff", padding: 0 }}
+            onClick={() => handleEdit(record)}
+          >
+            修改
+          </Button>,
+          <Popconfirm
+            key="delete"
+            title="确定要删除吗？"
+            onConfirm={() => handleDelete(record)}
+          >
+            <a style={{ color: "#ff4d4f" }}>删除</a>
+          </Popconfirm>,
+        ],
+      },
+    ],
+    VIP: [
       { title: "范围最小值", dataIndex: "rangeMin" },
       { title: "范围最大值", dataIndex: "rangeMax" },
-      { title: "会员等级编码", dataIndex: "rangeCode" },
-      { title: "会员等级名称", dataIndex: "rangeName" },
-      { title: "优先级", dataIndex: "priority" },
+      { title: "等级编码", dataIndex: "rangeCode" },
+      { title: "等级名称", dataIndex: "rangeName" },
       { title: "描述", dataIndex: "description" },
       {
         title: "操作",
@@ -247,6 +277,7 @@ const ConfigList: React.FC = () => {
           { label: "经验等级", key: "EXPERIENCE" },
           { label: "奖金配置", key: "LEVEL" },
           { label: "积分配置", key: "POINTS" },
+          { label: "VIP配置", key: "VIP" },
         ]}
       />
 
@@ -310,11 +341,11 @@ const ConfigList: React.FC = () => {
             <InputNumber style={{ width: "100%" }} />
           </Form.Item>
 
-          <Form.Item name="rangeCode" label="会员等级编码">
+          <Form.Item name="rangeCode" label="等级编码">
             <Input />
           </Form.Item>
 
-          <Form.Item name="rangeName" label="会员等级名称">
+          <Form.Item name="rangeName" label="等级名称">
             <Input />
           </Form.Item>
 

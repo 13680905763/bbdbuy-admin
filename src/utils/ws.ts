@@ -39,8 +39,8 @@ function getWsUrl() {
   if (process.env.NODE_ENV === "development") {
     return "ws://api.bbdtest.local:8080/ws";
   }
-  // return "wss://admin.bbdbuy1.com/api/ws";
-  return "wss://dev.bbdbuy1.com/admin-api/ws";
+  return "wss://admin.bbdbuy1.com/api/ws";
+  // return "wss://dev.bbdbuy1.com/admin-api/ws";
 }
 
 /**
