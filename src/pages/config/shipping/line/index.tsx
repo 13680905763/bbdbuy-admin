@@ -130,8 +130,8 @@ const ConfigList: React.FC = () => {
   };
 
   const columns: any = [
-    { title: "服务商名称", dataIndex: "serverName", width: 90 },
     { title: "服务商代码", dataIndex: "serverCode" },
+    { title: "服务商名称", dataIndex: "serverName", width: 90 },
     { title: "公司名", dataIndex: "companyName" },
     { title: "路线名", dataIndex: "lineName" },
     {

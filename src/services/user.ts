@@ -25,3 +25,9 @@ export async function getUserInfo() {
     method: "GET",
   });
 }
+/** 获取订单列表 POST /orders/page */
+export async function CommonSearch(key: any) {
+  return request<API.RuleList>(`/search?key=${key}`, {
+    method: "GET",
+  });
+}

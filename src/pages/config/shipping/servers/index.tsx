@@ -95,8 +95,8 @@ const ConfigList: React.FC = () => {
   };
 
   const columns = [
-    { title: "服务商名称", dataIndex: "serverName" },
     { title: "服务商代码", dataIndex: "serverCode" },
+    { title: "服务商名称", dataIndex: "serverName" },
     { title: "更新时间", dataIndex: "updateTime" },
     {
       title: "操作",

@@ -68,14 +68,25 @@ const TableList: React.FC = () => {
   };
 
   const columns: ProColumns<OrderProductRow>[] = [
-    {
-      title: "退款单号",
-      dataIndex: "refundCode",
-    },
+    // {
+    //   title: "退款单号",
+    //   dataIndex: "refundCode",
+    // },
     {
       title: "订单号",
       dataIndex: "orderCode",
     },
+    {
+      title: "来源",
+      dataIndex: "source",
+      hideInSearch: true,
+    },
+    {
+      title: "来源单号",
+      dataIndex: "sourceOrderId",
+      hideInSearch: true,
+    },
+
     {
       title: "商品",
       dataIndex: "productTitle",
@@ -117,6 +128,16 @@ const TableList: React.FC = () => {
     {
       title: "退款金额",
       dataIndex: "refundAmount",
+      hideInSearch: true,
+    },
+    {
+      title: "采购状态",
+      dataIndex: "purchaseStatus",
+      hideInSearch: true,
+    },
+    {
+      title: "退款理由",
+      dataIndex: "applyRemark",
       hideInSearch: true,
     },
 
@@ -178,8 +199,13 @@ const TableList: React.FC = () => {
       const values = await form.validateFields();
       console.log("values", values);
 
-      const res = await updateRefund(values);
-      console.log("res", res);
+      // 删除 handleRemark 字段
+      const { handleRemark, applyRemark, ...payload } = values;
+
+      console.log("values after:", payload);
+      payload.remark = handleRemark;
+      const res = await updateRefund(payload);
+      // console.log("res", res);
 
       if (res.success) {
         message.success("修改成功");
@@ -279,7 +305,12 @@ const TableList: React.FC = () => {
       <Modal
         title="退款审核"
         open={editModalVisible}
-        onCancel={() => setEditModalVisible(false)}
+        onCancel={() => {
+          setEditModalVisible(false);
+          console.log("关闭");
+
+          form.setFieldsValue({});
+        }}
         confirmLoading={confirmLoading} // 🔹确认按钮 loading
         onOk={handleSave}
         width={500} // 🔹稍微加宽
@@ -308,6 +339,9 @@ const TableList: React.FC = () => {
           <Form.Item label="客户名" name="customerName">
             <Input disabled />
           </Form.Item>
+          <Form.Item label="退款理由" name="applyRemark">
+            <Input.TextArea readOnly />
+          </Form.Item>
           {/* 状态选择 */}
           <Form.Item
             label="状态"
@@ -315,37 +349,43 @@ const TableList: React.FC = () => {
             rules={[{ required: true, message: "请选择状态" }]}
           >
             <Select
-              options={[
-                { label: "待审核", value: 1 }, //不显示数量和金额，只显示状态选择
-                { label: "处理中", value: 2 },
-                { label: "已退款", value: 3 }, //数量、金额必填
-                { label: "已驳回", value: 4 },
-              ]}
+              options={getStatusOptions("refund")}
               onChange={(value) => {
                 setStatusCode(value);
               }}
             />
           </Form.Item>
           {/* 备注：在“处理中”和“已驳回”状态下必填 */}
-          {statusCode === 3 && (
+          {statusCode === 4 && (
             <>
-              <Form.Item label="退款数量" name="quantity">
+              <Form.Item
+                label="退款数量"
+                name="quantity"
+                rules={[{ required: true, message: "请选择退款数量" }]}
+              >
                 <Input />
               </Form.Item>
-              <Form.Item label="退款金额(元)" name="refundAmount">
+              <Form.Item
+                label="退款金额(元)"
+                name="refundAmount"
+                rules={[{ required: true, message: "请选择退款金额(元)" }]}
+              >
                 <Input />
               </Form.Item>
             </>
           )}
-          {statusCode !== 1 && (
-            <Form.Item
-              label="备注"
-              name="remark"
-              rules={[{ message: "请输入备注" }]}
-            >
-              <Input.TextArea rows={3} />
-            </Form.Item>
-          )}
+          <Form.Item
+            label="备注"
+            name="handleRemark"
+            rules={[
+              {
+                required: statusCode === 5 ? true : false,
+                message: "请输入备注",
+              },
+            ]}
+          >
+            <Input.TextArea rows={3} />
+          </Form.Item>
         </Form>
       </Modal>
     </PageContainer>

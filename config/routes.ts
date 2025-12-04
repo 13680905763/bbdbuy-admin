@@ -14,6 +14,12 @@ export default [
     icon: "dashboard",
     component: "./Dashboard",
   },
+  {
+    path: "/search",
+    name: "通用搜索",
+    icon: "search",
+    component: "./Search",
+  },
   // {
   //   path: "/admin",
   //   name: "管理页",
@@ -24,25 +30,7 @@ export default [
   //     { path: "/admin/sub-page", name: "二级管理页", component: "./Admin" },
   //   ],
   // },
-  // {
-  //   path: "/order-management",
-  //   name: "订单列表",
-  //   icon: "table",
-  //   access: "canAdmin",
-  //   routes: [
-  //     { path: "/order-management", redirect: "/order-management/order-list" },
-  //     {
-  //       path: "/order-management/order-list",
-  //       name: "订单列表",
-  //       component: "./order-management/order-list",
-  //     },
-  //     {
-  //       path: "/order-management/purchase-list",
-  //       name: "采购单列表",
-  //       component: "./order-management/purchase-list",
-  //     },
-  //   ],
-  // },
+
   {
     path: "/order-list",
     name: "订单列表",
@@ -103,11 +91,6 @@ export default [
         name: "上架列表",
         component: "./warehouse-management/putaway-list",
       },
-      // {
-      //   path: "/warehouse-management/d",
-      //   name: "上架单",
-      //   component: "./developing",
-      // },
     ],
   },
 
@@ -174,6 +157,23 @@ export default [
         name: "汇率配置",
         component: "./config/rate",
       },
+      {
+        path: "/config/payment",
+        name: "支付配置",
+        routes: [
+          {
+            path: "/config/payment/method",
+            name: "支付渠道配置",
+            component: "./config/payment/method",
+          },
+          {
+            path: "/config/payment/fee",
+            name: "支付费用配置",
+            component: "./config/payment/fee",
+          },
+        ],
+      },
+
       {
         path: "/config/promotion",
         name: "推广配置",
@@ -257,13 +257,34 @@ export default [
     routes: [
       {
         path: "/refund",
-        redirect: "/refund/orderList",
+        redirect: "/refund/order",
       },
       {
-        path: "/refund/orderList",
+        path: "/refund/order",
         name: "订单退款",
-        component: "./refund/orderList",
+        routes: [
+          {
+            path: "/refund/order/list",
+            name: "订单退款列表",
+            component: "./refund/order/list",
+          },
+          {
+            path: "/refund/order/goods-list",
+            name: "商品退货列表",
+            component: "./refund/order/goods-list",
+          },
+        ],
       },
+      // {
+      //   path: "/refund/orderList",
+      //   name: "订单退款",
+      //   component: "./refund/orderList",
+      // },
+      // {
+      //   path: "/refund/refund",
+      //   name: "订单退款",
+      //   component: "./refund/orderList",
+      // },
       // {
       //   path: "/refund/waybillList",
       //   name: "运单退款",

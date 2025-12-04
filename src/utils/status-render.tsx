@@ -13,12 +13,14 @@ export type ModuleType =
   | "putaway"
   | "inputaway"
   | "refund"
+  | "refundGoods"
   | "shelf"
+  | "payment"
   | "delivery"; // 可根据项目扩展
 
 export interface StatusItem {
   label: string;
-  value: number | string;
+  value: number | string | boolean; // ✅ 明确支持布尔类型
   module: ModuleType;
   color: string;
   icon?: React.ReactNode;
@@ -90,27 +92,55 @@ export const STATUS_LIST: StatusItem[] = [
   // 退款单状态
   { label: "待审核", value: 1, module: "refund", color: "orange" },
   { label: "处理中", value: 2, module: "refund", color: "blue" },
-  { label: "已退款", value: 3, module: "refund", color: "green" },
-  { label: "已驳回", value: 4, module: "refund", color: "red" },
-  { label: "已取消", value: 5, module: "refund", color: "default" },
+  { label: "待退款", value: 3, module: "refund", color: "red" },
+  { label: "已退款", value: 4, module: "refund", color: "green" },
+  { label: "已驳回", value: 5, module: "refund", color: "red" },
+  { label: "已取消", value: 6, module: "refund", color: "default" },
+  // 退货商品
+  { label: "待发货", value: 0, module: "refundGoods", color: "orange" },
+  { label: "已发货", value: 1, module: "refundGoods", color: "blue" },
+  { label: "已签收", value: 2, module: "refundGoods", color: "green" },
+  // ✅ 支付方式配置 - 布尔类型示例
+  { label: "关闭", value: true, module: "payment", color: "red" },
+  { label: "启用", value: false, module: "payment", color: "green" },
 ];
 
 // ======================
 // ✅ Map 快速查询
 // key = `${module}_${value}` 保证唯一
+// 注意：布尔值需要特殊处理，因为 false.toString() === "false"
 // ======================
 export const STATUS_MAP: Record<string, StatusItem> = {};
 STATUS_LIST.forEach((item) => {
-  STATUS_MAP[`${item.module}_${item.value}`] = item;
+  // 处理布尔值的key
+  let keyValue: string;
+  if (typeof item.value === "boolean") {
+    keyValue = item.value ? "true" : "false";
+  } else {
+    keyValue = String(item.value);
+  }
+  STATUS_MAP[`${item.module}_${keyValue}`] = item;
 });
 
 // ======================
 // ✅ 渲染 Tag
 // module 必须传，避免 value 重复冲突
+// 支持布尔类型的value
 // ======================
-export const renderStatusTag = (module: ModuleType, value: string | number) => {
-  const status = STATUS_MAP[`${module}_${value}`];
-  if (!status) return <Tag>{value}</Tag>;
+export const renderStatusTag = (
+  module: ModuleType,
+  value: string | number | boolean
+) => {
+  // 将value转换为字符串key
+  let keyValue: string;
+  if (typeof value === "boolean") {
+    keyValue = value ? "true" : "false";
+  } else {
+    keyValue = String(value);
+  }
+
+  const status = STATUS_MAP[`${module}_${keyValue}`];
+  if (!status) return <Tag>{String(value)}</Tag>;
   return (
     <Tag color={status.color}>
       {status.icon && <span style={{ marginRight: 4 }}>{status.icon}</span>}
@@ -123,24 +153,70 @@ export const renderStatusTag = (module: ModuleType, value: string | number) => {
 // ✅ 生成 Select Options
 // 可传 module 过滤，仅显示当前模块的状态
 // 可选 values 过滤部分值
+// 支持布尔类型的values
 // ======================
 export const getStatusOptions = (
   module: ModuleType,
-  values?: Array<string | number>
+  values?: Array<string | number | boolean>
 ) =>
   STATUS_LIST.filter(
-    (item) => item.module === module && (!values || values.includes(item.value))
+    (item) =>
+      item.module === module &&
+      (!values ||
+        values.some((v) => {
+          // 比较时需要处理类型差异
+          if (typeof item.value === "boolean" && typeof v === "boolean") {
+            return item.value === v;
+          }
+          return String(item.value) === String(v);
+        }))
   ).map((item) => ({
     label: item.label,
     value: item.value,
   }));
 
-// 显卡 5060魔刃 2314
-// cpu 9600x散片 1152
-// 主板 b650 ayw 728
-// 内存 金百达黑刃 16*2 1003 / d300 16 632
-// 电源 玄武650w k 260
-// 散热 玄冰500 110
-// 固态 1t 【450左右】
-// 机箱风扇 【100左右】
-// 合计 约 6110 /5739
+// ======================
+// ✅ 获取状态信息
+// 根据module和value获取完整的状态信息
+// ======================
+export const getStatusInfo = (
+  module: ModuleType,
+  value: string | number | boolean
+): StatusItem | undefined => {
+  let keyValue: string;
+  if (typeof value === "boolean") {
+    keyValue = value ? "true" : "false";
+  } else {
+    keyValue = String(value);
+  }
+
+  return STATUS_MAP[`${module}_${keyValue}`];
+};
+
+// ======================
+// ✅ 根据label获取value
+// ======================
+export const getStatusValueByLabel = (
+  module: ModuleType,
+  label: string
+): string | number | boolean | undefined => {
+  const status = STATUS_LIST.find(
+    (item) => item.module === module && item.label === label
+  );
+  return status?.value;
+};
+
+// ======================
+// ✅ 使用示例
+// ======================
+/*
+// 渲染Tag
+renderStatusTag("payment", true)  // 显示"启用"的绿色标签
+renderStatusTag("payment", false) // 显示"关闭"的红色标签
+
+// 获取选项
+getStatusOptions("payment") // 返回 [{label: "关闭", value: false}, {label: "启用", value: true}]
+
+// 获取状态信息
+getStatusInfo("payment", true) // 返回 {label: "启用", value: true, module: "payment", color: "green"}
+*/

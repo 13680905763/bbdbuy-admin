@@ -13,7 +13,32 @@ export async function putRate(data: any) {
     data,
   });
 }
-
+/** 获取支付方式配置 */
+export async function getPaymentList(data?: any) {
+  return request("/payment/list", {
+    method: "post",
+    data,
+  });
+}
+export async function putPaymentList(data?: any) {
+  return request("/payment", {
+    method: "put",
+    data,
+  });
+}
+/** 获取支付费用配置 */
+export async function getPaymentFeeList(data?: any) {
+  return request("/payment-fee/list", {
+    method: "post",
+    data,
+  });
+}
+export async function putPaymentFeeList(data?: any) {
+  return request("/payment-fee", {
+    method: "put",
+    data,
+  });
+}
 /** 获取推广配置 */
 export async function getPromotionList(query: any) {
   // return request("/promotion-config", {

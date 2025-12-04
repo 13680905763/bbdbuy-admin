@@ -530,13 +530,75 @@ const TableList: React.FC = () => {
                 return;
               }
               try {
-                const res = await purchaseInitiate({
+                const res: any = await purchaseInitiate({
                   ids,
                   remark: "",
                 });
 
-                // 请求成功提示
-                message.success("采购发起成功！");
+                if (res.data) {
+                  const errorEntries: any = Object.entries(res.data);
+
+                  const content = (
+                    <div style={{ maxWidth: 400 }}>
+                      <div
+                        style={{
+                          marginBottom: 8,
+                          fontWeight: 600,
+                          color: "#ff4d4f",
+                          fontSize: 14,
+                        }}
+                      >
+                        ({errorEntries.length} 个 操作失败)
+                      </div>
+                      <div
+                        style={{
+                          overflow: "auto",
+                          backgroundColor: "#fff2f0",
+                          padding: 8,
+                          borderRadius: 4,
+                          border: "1px solid #ffccc7",
+                        }}
+                      >
+                        {errorEntries.map(
+                          ([orderId, errorMsg]: any, index: any) => (
+                            <div
+                              key={orderId}
+                              style={{
+                                marginBottom: 6,
+                                paddingBottom: 6,
+                                borderBottom:
+                                  index < errorEntries.length - 1
+                                    ? "1px dashed #ffa39e"
+                                    : "none",
+                              }}
+                            >
+                              <div
+                                style={{
+                                  color: "#d4380d",
+                                  fontWeight: 500,
+                                  fontSize: 12,
+                                  marginBottom: 2,
+                                }}
+                              >
+                                📦 订单号: {orderId}
+                              </div>
+                              <div style={{ fontSize: 13 }}>❌ {errorMsg}</div>
+                            </div>
+                          )
+                        )}
+                      </div>
+                    </div>
+                  );
+
+                  message.info({
+                    content,
+                    duration: 5,
+                    icon: <></>,
+                  });
+                } else {
+                  // 请求成功提示
+                  message.success("采购发起成功！");
+                }
                 console.log(res);
 
                 // 刷新表格
