@@ -97,9 +97,12 @@ export const STATUS_LIST: StatusItem[] = [
   { label: "已驳回", value: 5, module: "refund", color: "red" },
   { label: "已取消", value: 6, module: "refund", color: "default" },
   // 退货商品
-  { label: "待发货", value: 0, module: "refundGoods", color: "orange" },
-  { label: "已发货", value: 1, module: "refundGoods", color: "blue" },
-  { label: "已签收", value: 2, module: "refundGoods", color: "green" },
+  { label: "待申请", value: 0, module: "refundGoods", color: "geekblue" },
+  { label: "待退货", value: 1, module: "refundGoods", color: "cyan" },
+  { label: "待签收", value: 2, module: "refundGoods", color: "gold" },
+  { label: "待退款", value: 3, module: "refundGoods", color: "volcano" },
+  { label: "已退款", value: 4, module: "refundGoods", color: "green" },
+
   // ✅ 支付方式配置 - 布尔类型示例
   { label: "关闭", value: true, module: "payment", color: "red" },
   { label: "启用", value: false, module: "payment", color: "green" },

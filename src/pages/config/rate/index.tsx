@@ -105,6 +105,18 @@ const ConfigList: React.FC = () => {
       dataIndex: "symbol",
     },
     {
+      title: "汇率类型",
+      dataIndex: "convertType",
+      render: (_: any, record: any) => {
+        return record.convertType === 1 ? "百分比" : "固定值";
+      },
+    },
+
+    {
+      title: "百分比",
+      dataIndex: "ratio",
+    },
+    {
       title: "汇率",
       dataIndex: "rate",
     },

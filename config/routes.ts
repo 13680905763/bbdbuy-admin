@@ -268,11 +268,11 @@ export default [
             name: "订单退款列表",
             component: "./refund/order/list",
           },
-          {
-            path: "/refund/order/goods-list",
-            name: "商品退货列表",
-            component: "./refund/order/goods-list",
-          },
+          // {
+          //   path: "/refund/order/goods-list",
+          //   name: "商品退货列表",
+          //   component: "./refund/order/goods-list",
+          // },
         ],
       },
       // {

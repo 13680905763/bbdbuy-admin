@@ -174,6 +174,7 @@ const ConfigList: React.FC = () => {
     { title: "最大体积", dataIndex: "maxVolume" },
     { title: "最小重量", dataIndex: "minWeight" },
     { title: "最大重量", dataIndex: "maxWeight" },
+    { title: "最大边长", dataIndex: "maxSideLength" },
 
     { title: "描述", dataIndex: "description" },
     { title: "更新时间", dataIndex: "updateTime" },
@@ -236,7 +237,15 @@ const ConfigList: React.FC = () => {
         destroyOnClose
         centered
       >
-        <Form form={form} layout="vertical">
+        <Form
+          form={form}
+          layout="vertical"
+          style={{
+            maxHeight: "70vh",
+            overflowY: "auto",
+            scrollbarWidth: "none",
+          }}
+        >
           <Form.Item name="serverId" label="服务商">
             <Select
               placeholder="请选择服务商"
@@ -325,6 +334,9 @@ const ConfigList: React.FC = () => {
 
           <Form.Item name="maxWeight" label="最大重量">
             <Input type="number" placeholder="请输入最大重量" />
+          </Form.Item>
+          <Form.Item name="maxSideLength" label="最大边长">
+            <Input type="number" placeholder="请输入最大边长" />
           </Form.Item>
 
           <Form.Item name="description" label="描述">

@@ -1,10 +1,11 @@
 import {
   getPurchaseListByPage,
   purchaseInitiate,
+  PurchaseManual,
   updatePurchaseLogistics,
 } from "@/services/order";
 import { getStatusOptions, renderStatusTag } from "@/utils/status-render";
-import { DownOutlined, PlusOutlined, RightOutlined } from "@ant-design/icons";
+import { DownOutlined, RightOutlined } from "@ant-design/icons";
 import type {
   ActionType,
   ProColumns,
@@ -12,53 +13,32 @@ import type {
 } from "@ant-design/pro-components";
 import { PageContainer, ProTable } from "@ant-design/pro-components";
 import {
-  AutoComplete,
   Button,
   DatePicker,
   Form,
   Image,
   Input,
+  message,
   Modal,
   Pagination,
   Select,
   Table,
   Tag,
-  message,
 } from "antd";
 import moment from "moment";
 import React, { useEffect, useRef, useState } from "react";
+import EditModal, { EditModalRef } from "./editmodal";
 const { RangePicker } = DatePicker;
 export interface ProcureStatusItem {
   label: string; // 显示文字
   value: number; // 状态码
   color: string; // 标签颜色
 }
-const LOGISTICS_COMPANIES = [
-  "顺丰速运",
-  "中通快递",
-  "圆通速递",
-  "申通快递",
-  "韵达快递",
-  "京东物流",
-  "邮政快递包裹",
-  "德邦快递",
-  "极兔速递",
-  "跨越速运",
-  "天天快递",
-  "百世快递",
-  "宅急送",
-  "EMS",
-  "全峰快递",
-  "优速快递",
-  "快捷快递",
-  "联邦快递（FedEx国内）",
-  "中邮快递",
-  "能达速递",
-];
 
 const TableList: React.FC = () => {
   const actionRef = useRef<ActionType | null>(null);
   const formRef = useRef<ProFormInstance | undefined>(undefined);
+  const editModalRef = useRef<EditModalRef>(null);
 
   const [dataSource, setDataSource] = useState<any>([]);
 
@@ -70,11 +50,14 @@ const TableList: React.FC = () => {
   const [filters, setFilters] = useState<Record<string, any>>({});
   const [expandedRowKeys, setExpandedRowKeys] = useState<React.Key[]>([]); // ✅ 展开行控制
   // 弹窗状态
-  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [modalType, setModalType] = useState<"edit" | "manual" | null>(null);
   const [currentRow, setCurrentRow] = useState<any>(null);
 
   const [form] = Form.useForm();
-  /** ✅ fetchData 不依赖外部状态，只依赖参数 */
+
+  // 用于接收 EditModal 的数据
+  const [editModalData, setEditModalData] = useState<any[]>([]);
+
   const fetchData = async (params?: any) => {
     const query = {
       current,
@@ -89,13 +72,13 @@ const TableList: React.FC = () => {
       const res: any = await getPurchaseListByPage(query);
       setDataSource(res.data.records || []);
       setTotal(res.data.total || 0);
+      setSelectedRows([]);
     } catch (e) {
       message.error("加载失败");
     } finally {
       setLoading(false);
     }
   };
-  // ✅ 切换展开状态
   const handleExpand = (record: any) => {
     setExpandedRowKeys((prev) =>
       prev.includes(record.id)
@@ -157,6 +140,13 @@ const TableList: React.FC = () => {
           </div>
         );
       },
+    },
+
+    {
+      title: "平台",
+      hideInSearch: true,
+
+      dataIndex: "source",
     },
     {
       title: "平台采购单号",
@@ -284,74 +274,188 @@ const TableList: React.FC = () => {
     {
       title: "操作",
       valueType: "option",
-      render: (_: any, record: any) => [
-        <Button
-          type="link"
-          style={{ color: "#1890ff", padding: 0 }}
-          onClick={() => handleEdit(record)}
-        >
-          修改
-        </Button>,
-      ],
+      render: (_: any, record: any) => {
+        return (
+          <>
+            {record?.manualFlag && (
+              <Button
+                type="link"
+                style={{ color: "#1890ff", padding: 0 }}
+                onClick={() => handleOption(record, "manual")}
+              >
+                手动采购
+              </Button>
+            )}
+            {record?.updateFlag && (
+              <Button
+                type="link"
+                style={{ color: "#1890ff", padding: 0 }}
+                onClick={() => handleOption(record, "edit")}
+              >
+                修改
+              </Button>
+            )}
+          </>
+        );
+      },
     },
   ];
 
-  /** 修改 */
-  const handleEdit = (record: any) => {
+  /** 操作 */
+  const handleOption = (record: any, type: "edit" | "manual") => {
     setCurrentRow(record);
+    if (type === "edit") {
+      // 初始化 EditModal 数据 (这里假设如果已有 packages，需要转换成 EditModal 需要的格式)
+      // 目前简单起见，如果需要回显，可以转换 record.packages
+      // 这里先置空，或根据需求回显
+      if (record.packages && record.packages.length > 0) {
+        const initialData = record.packages.map((item: any) => ({
+          id: item.id,
+          logisticsCompany: item.logisticsCompany,
+          logisticsCode: item.logisticsCode,
+          productList: item.items.map((prod: any) => ({
+            id: prod.orderProductId,
+            quantity: prod.quantity,
+          })),
+        }));
+        console.log("initialData", initialData);
+
+        setEditModalData(initialData);
+      } else {
+        setEditModalData([]);
+      }
+    }
+    setModalType(type);
     console.log("record", record);
 
-    // 取出第一个 package
-    const firstPackage = record?.packages?.[0];
-
-    // 设置表单值
-    form.setFieldsValue({
-      sourceOrderId: record?.sourceOrderId || "",
-      logisticsCompany: firstPackage?.logisticsCompany || "",
-      logisticsCode: firstPackage?.logisticsCode || "",
-      remark: firstPackage?.remark || "",
-    });
-
-    setEditModalVisible(true);
+    if (type === "manual") {
+      form.setFieldsValue({
+        sourceOrderId: record?.sourceOrderId || "",
+        remark: record?.remark || "",
+      });
+    }
   };
   /** 保存（新增 / 修改） */
   const handleSave = async () => {
     try {
-      const values = await form.validateFields();
-      values.id = currentRow.id;
-      // 自定义校验逻辑：采购单号和快递单号必须至少填一个
-      if (!values.sourceOrderId && !values.logisticsCode) {
-        message.error("平台采购单号或快递单号至少填写一个");
-        return;
-      }
-      if (!values.sourceOrderId && values.logisticsCode) {
-        message.error("该订单缺少平台采购单号");
-        return;
-      }
-      console.log("value", values);
-
       setLoading(true);
 
-      const res = await updatePurchaseLogistics(values);
-      // let res;
-      // if (currentRow?.packages?.[0]) {
-      //   res = await putPurchaseLogistics(values);
-      // } else {
-      //   res = await createPurchaseLogistics(values);
-      // }
+      let res;
+      const values: any = {};
+      values.id = currentRow.id;
+
+      // 合并 EditModal 的数据
+      if (modalType === "edit") {
+        // 调用 EditModal 内部的校验方法
+        const valid = await editModalRef.current?.validate();
+        if (!valid) return;
+
+        values.packageList = editModalData.map((item) => ({
+          logisticsCompany: item.logisticsCompany,
+          logisticsCode: item.logisticsCode,
+          productList: item.productList,
+        }));
+        res = await updatePurchaseLogistics(values);
+        console.log("value", values);
+      } else {
+        const formdata = await form.validateFields();
+        values.sourceOrderId = formdata.sourceOrderId;
+        values.remark = formdata.remark;
+        res = await PurchaseManual(values);
+        console.log("value", values);
+      }
+
       if (res.success) {
         message.success("修改成功");
         fetchData();
-        setEditModalVisible(false);
+        setModalType(null);
       } else {
         message.error(res.message || "操作失败");
       }
-    } catch (e) {
-      message.error("操作失败");
+    } catch {
     } finally {
       setLoading(false);
     }
   };
+
+  const doSubmit = async (ids: string[]) => {
+    try {
+      console.log("采购请求");
+
+      const res: any = await purchaseInitiate({
+        ids,
+        remark: "",
+      });
+
+      if (res.data && res.success) {
+        const errorEntries = Object.entries(res.data);
+
+        const content = (
+          <div style={{ maxWidth: 400 }}>
+            <div
+              style={{
+                marginBottom: 8,
+                fontWeight: 600,
+                color: "#ff4d4f",
+                fontSize: 14,
+              }}
+            >
+              ({errorEntries.length} 个 操作失败)
+            </div>
+            <div
+              style={{
+                overflow: "auto",
+                backgroundColor: "#fff2f0",
+                padding: 8,
+                borderRadius: 4,
+                border: "1px solid #ffccc7",
+              }}
+            >
+              {errorEntries.map(([orderId, errorMsg]: any, index) => (
+                <div
+                  key={orderId}
+                  style={{
+                    marginBottom: 6,
+                    paddingBottom: 6,
+                    borderBottom:
+                      index < errorEntries.length - 1
+                        ? "1px dashed #ffa39e"
+                        : "none",
+                  }}
+                >
+                  <div
+                    style={{
+                      color: "#d4380d",
+                      fontWeight: 500,
+                      fontSize: 12,
+                      marginBottom: 2,
+                    }}
+                  >
+                    📦 订单号: {orderId}
+                  </div>
+                  <div style={{ fontSize: 13 }}>❌ {errorMsg}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+
+        message.info({
+          content,
+          duration: 5,
+          icon: <></>,
+        });
+      } else if (res.success) {
+        message.success("采购发起成功！");
+      }
+
+      actionRef?.current?.reload();
+    } catch (error: any) {
+      console.error("采购发起失败", error);
+      message.error(error?.message || "采购发起失败，请重试");
+    }
+  };
+
   /** ✅ 搜索提交 */
   const onSubmitSearch = (values: any) => {
     const [purchaseStartTime, purchaseEndTime] = values.purchaseTime || [];
@@ -512,106 +616,47 @@ const TableList: React.FC = () => {
           onChange: (_, selectedRows) => {
             setSelectedRows(selectedRows);
           },
-
-          getCheckboxProps: (record) => ({
-            disabled: record.products.filter((item: any) => item.remark).length, // 🚫 禁止勾选条件
-            name: record.name,
-          }),
         }}
         toolBarRender={() => [
           <Button
             type="primary"
-            icon={<PlusOutlined />}
             onClick={async () => {
               const ids = selectedRowsState.map((item: any) => item.id);
-              console.log("点击了采购按钮", ids);
+
               if (!ids.length) {
                 message.error("请选择需要采购的商品！");
                 return;
               }
-              try {
-                const res: any = await purchaseInitiate({
-                  ids,
-                  remark: "",
+
+              const hasRemarkData = dataSource.filter(
+                (item: any) => ids.includes(item.id) && item.orderRemark
+              );
+
+              if (hasRemarkData.length) {
+                Modal.confirm({
+                  title: "确认操作",
+                  content: "所选采购单中存在商品备注，是否确认继续？",
+                  okText: "确认继续",
+                  cancelText: "返回检查",
+                  okButtonProps: {
+                    type: "primary",
+                    style: {
+                      backgroundColor: "#f0700c",
+                      borderColor: "#f0700c",
+                    },
+                  },
+                  onOk: () => doSubmit(ids), // ✅ 确认后继续
                 });
-
-                if (res.data) {
-                  const errorEntries: any = Object.entries(res.data);
-
-                  const content = (
-                    <div style={{ maxWidth: 400 }}>
-                      <div
-                        style={{
-                          marginBottom: 8,
-                          fontWeight: 600,
-                          color: "#ff4d4f",
-                          fontSize: 14,
-                        }}
-                      >
-                        ({errorEntries.length} 个 操作失败)
-                      </div>
-                      <div
-                        style={{
-                          overflow: "auto",
-                          backgroundColor: "#fff2f0",
-                          padding: 8,
-                          borderRadius: 4,
-                          border: "1px solid #ffccc7",
-                        }}
-                      >
-                        {errorEntries.map(
-                          ([orderId, errorMsg]: any, index: any) => (
-                            <div
-                              key={orderId}
-                              style={{
-                                marginBottom: 6,
-                                paddingBottom: 6,
-                                borderBottom:
-                                  index < errorEntries.length - 1
-                                    ? "1px dashed #ffa39e"
-                                    : "none",
-                              }}
-                            >
-                              <div
-                                style={{
-                                  color: "#d4380d",
-                                  fontWeight: 500,
-                                  fontSize: 12,
-                                  marginBottom: 2,
-                                }}
-                              >
-                                📦 订单号: {orderId}
-                              </div>
-                              <div style={{ fontSize: 13 }}>❌ {errorMsg}</div>
-                            </div>
-                          )
-                        )}
-                      </div>
-                    </div>
-                  );
-
-                  message.info({
-                    content,
-                    duration: 5,
-                    icon: <></>,
-                  });
-                } else {
-                  // 请求成功提示
-                  message.success("采购发起成功！");
-                }
-                console.log(res);
-
-                // 刷新表格
-                actionRef?.current?.reload();
-              } catch (error: any) {
-                console.error("采购发起失败", error);
-
-                // 请求失败提示
-                message.error(error?.message || "采购发起失败，请重试");
+                return;
               }
+
+              // ✅ 没备注，直接执行
+              console.log("采购");
+
+              await doSubmit(ids);
             }}
           >
-            采购
+            批量采购
           </Button>,
         ]}
       />
@@ -624,36 +669,38 @@ const TableList: React.FC = () => {
           onChange={handlePageChange}
         />
       </div>
-      {/* 新增/修改 弹窗 */}
       <Modal
-        title={"修改"}
-        open={editModalVisible}
-        onCancel={() => setEditModalVisible(false)}
+        title={modalType === "edit" ? "修改采购单" : "手动采购"}
+        open={modalType !== null}
+        onCancel={() => setModalType(null)}
         onOk={handleSave}
         confirmLoading={loading}
-        width={500}
+        width={modalType === "edit" ? 1200 : 500}
         centered
+        maskClosable={false} // ✅ 允许点击遮罩层关闭
+        destroyOnHidden // ✅ 确保每次打开都重置
       >
-        <Form form={form} layout="vertical">
-          <Form.Item name="sourceOrderId" label="平台采购单号">
-            <Input placeholder="请输入平台采购单号" />
-          </Form.Item>
-          <Form.Item name="logisticsCompany" label="快递公司">
-            <AutoComplete
-              options={LOGISTICS_COMPANIES.map((c) => ({ value: c }))}
-              placeholder="请输入或选择快递公司"
-              filterOption={(inputValue: any, option: any) =>
-                option!.value.toLowerCase().includes(inputValue.toLowerCase())
-              }
-            />
-          </Form.Item>
-          <Form.Item name="logisticsCode" label="快递单号">
-            <Input placeholder="请输入快递单号" />
-          </Form.Item>
-          <Form.Item name="remark" label="备注">
-            <Input.TextArea placeholder="请输入备注" />
-          </Form.Item>
-        </Form>
+        {modalType === "edit" ? (
+          <EditModal
+            ref={editModalRef}
+            products={currentRow?.products || []}
+            value={editModalData}
+            onChange={setEditModalData}
+          />
+        ) : (
+          <Form form={form} layout="vertical">
+            <Form.Item
+              name="sourceOrderId"
+              label="平台采购单号"
+              rules={[{ required: true, message: "请输入平台采购单号" }]}
+            >
+              <Input placeholder="请输入平台采购单号" />
+            </Form.Item>
+            <Form.Item name="remark" label="备注">
+              <Input.TextArea placeholder="请输入备注" />
+            </Form.Item>
+          </Form>
+        )}
       </Modal>
     </PageContainer>
   );

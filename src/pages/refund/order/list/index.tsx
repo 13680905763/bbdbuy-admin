@@ -1,12 +1,25 @@
 import { getOrderRefundList, updateRefund } from "@/services/refund";
 import { getStatusOptions, renderStatusTag } from "@/utils/status-render";
+import { DownOutlined, RightOutlined } from "@ant-design/icons";
 import type {
   ActionType,
   ProColumns,
   ProFormInstance,
 } from "@ant-design/pro-components";
 import { PageContainer, ProTable } from "@ant-design/pro-components";
-import { Button, Form, Input, Modal, Pagination, Select, message } from "antd";
+import {
+  Button,
+  Form,
+  Image,
+  Input,
+  InputNumber,
+  Modal,
+  Pagination,
+  Select,
+  Table,
+  Tag,
+  message,
+} from "antd";
 import React, { useEffect, useRef, useState } from "react";
 
 type OrderProductRow = {
@@ -47,6 +60,17 @@ const TableList: React.FC = () => {
   // 新增 state
   const [confirmLoading, setConfirmLoading] = useState(false);
 
+  const [expandedRowKeys, setExpandedRowKeys] = useState<React.Key[]>([]); // ✅ 展开行控制
+  // ✅ 切换展开状态
+  const handleExpand = (record: any) => {
+    console.log("record", record);
+    setCurrentRow(record);
+    setExpandedRowKeys((prev) =>
+      prev.includes(record.id)
+        ? prev.filter((k) => k !== record.id)
+        : [record.id]
+    );
+  };
   /** ✅ fetchData 不依赖外部状态，只依赖参数 */
   const fetchData = async (params?: any) => {
     const query = {
@@ -68,82 +92,84 @@ const TableList: React.FC = () => {
   };
 
   const columns: ProColumns<OrderProductRow>[] = [
-    // {
-    //   title: "退款单号",
-    //   dataIndex: "refundCode",
-    // },
     {
       title: "订单号",
       dataIndex: "orderCode",
+    },
+    {
+      title: "用户名",
+      dataIndex: "customerName",
+      hideInSearch: true,
     },
     {
       title: "来源",
       dataIndex: "source",
       hideInSearch: true,
     },
+    // {
+    //   title: "来源单号",
+    //   dataIndex: "sourceOrderId",
+    //   hideInSearch: true,
+    // },
     {
-      title: "来源单号",
-      dataIndex: "sourceOrderId",
+      title: "商品信息",
+      dataIndex: "items",
       hideInSearch: true,
-    },
+      render: (products: any = [], record: any) => {
+        const preview = products?.slice(0, 9);
+        const expanded = expandedRowKeys.includes(record?.orderId);
+        return (
+          <div
+            onClick={() => handleExpand(record)}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              cursor: "pointer",
+            }}
+          >
+            {/* 自定义展开图标 */}
+            {expanded ? (
+              <DownOutlined style={{ color: "#f0700c" }} />
+            ) : (
+              <RightOutlined style={{ color: "#999" }} />
+            )}
 
-    {
-      title: "商品",
-      dataIndex: "productTitle",
-      hideInSearch: true,
-    },
-    {
-      title: "商品图片",
-      dataIndex: "picUrl",
-      key: "picUrl",
-      hideInSearch: true,
+            {/* 缩略图预览 */}
+            {preview.map((p: any) => (
+              <Image
+                key={p.id}
+                src={p.skuPicUrl || p.picUrl}
+                width={40}
+                height={40}
+                preview={false}
+                referrerPolicy="no-referrer"
+              />
+            ))}
 
-      width: 100,
-      render: (picUrl: any, row: any) => {
-        return <img src={row?.skuPicUrl || row?.picUrl} alt="" width={100} />;
+            {/* 若超过3张则显示数量标签 */}
+            {products?.length > 9 && (
+              <Tag color="blue">+{products.length - 9}</Tag>
+            )}
+          </div>
+        );
       },
     },
-    {
-      title: "价格",
-      dataIndex: "price",
-      hideInSearch: true,
-    },
-    {
-      title: "sku",
-      dataIndex: "propAndValue",
-      key: "propAndValue",
-      hideInSearch: true,
 
-      width: 200,
-      render: (propAndValue: any) => {
-        return propAndValue?.propName_valueName;
-      },
-    },
-
-    {
-      title: "数量",
-      dataIndex: "quantity",
-      hideInSearch: true,
-    },
-    {
-      title: "退款金额",
-      dataIndex: "refundAmount",
-      hideInSearch: true,
-    },
-    {
-      title: "采购状态",
-      dataIndex: "purchaseStatus",
-      hideInSearch: true,
-    },
-    {
-      title: "退款理由",
-      dataIndex: "applyRemark",
-      hideInSearch: true,
-    },
+    // {
+    //   title: "采购状态",
+    //   dataIndex: "purchaseStatus",
+    //   hideInSearch: true,
+    // },
+    // {
+    //   title: "退款理由",
+    //   dataIndex: "applyRemark",
+    //   hideInSearch: true,
+    // },
 
     {
       title: "状态",
-      dataIndex: "statusCode",
+      dataIndex: "handleStatus",
       render: (value: any) => renderStatusTag("refund", value),
       renderFormItem: () => {
         return (
@@ -155,41 +181,53 @@ const TableList: React.FC = () => {
         );
       },
     },
-    { title: "申请时间", dataIndex: "createTime", hideInSearch: true },
-    {
-      title: "审核时间",
-      dataIndex: "updateTime",
-      hideInSearch: true,
+    // { title: "申请时间", dataIndex: "createTime", hideInSearch: true },
+    // {
+    //   title: "审核时间",
+    //   dataIndex: "updateTime",
+    //   hideInSearch: true,
 
-      render: (_, record: any) => {
-        const statusCode = record.statusCode;
-        const updateTime = record.updateTime;
-        if (statusCode === 1) return "--";
-        return updateTime;
-      },
-    },
+    //   render: (_, record: any) => {
+    //     const statusCode = record.statusCode;
+    //     const updateTime = record.updateTime;
+    //     if (statusCode === 1) return "--";
+    //     return updateTime;
+    //   },
+    // },
     {
       title: "操作",
-      valueType: "option",
+      dataIndex: "canHandle",
+      hideInSearch: true,
       render: (_: any, record: any) => (
         <div style={{ display: "flex", gap: 8 }}>
-          <Button
-            type="link"
-            onClick={() => handleEdit(record)}
-            style={{ padding: 0 }}
-          >
-            审核
-          </Button>
+          {record.canHandle && (
+            <Button
+              type="primary"
+              onClick={() => handleExpand(record)}
+              size="small"
+            >
+              审核
+            </Button>
+          )}
         </div>
       ),
     },
   ];
-  const handleEdit = (record: any) => {
+  const handleEdit = async (record: any, statusCode: number) => {
     console.log("record", record);
 
-    setCurrentRow(record);
-    form.setFieldsValue({ ...record });
-    setStatusCode(record.statusCode); // 默认固定值
+    await form.setFieldsValue({
+      ...record,
+      refundProductAmount:
+        currentRow?.refundRemainAmount > record.price * record.quantity
+          ? record.price * record.quantity
+          : currentRow?.refundRemainAmount,
+      deductServiceFee: 0,
+      deductPostFee: 20,
+      refundServiceFee: 0,
+      refundPostFee: 0,
+    });
+    setStatusCode(statusCode); // 默认固定值
     setEditModalVisible(true);
   };
   const handleSave = async () => {
@@ -200,19 +238,19 @@ const TableList: React.FC = () => {
       console.log("values", values);
 
       // 删除 handleRemark 字段
-      const { handleRemark, applyRemark, ...payload } = values;
+      const { handleRemark, applyRemark, price, ...payload } = values;
 
       console.log("values after:", payload);
       payload.remark = handleRemark;
+      payload.statusCode = statusCode;
       const res = await updateRefund(payload);
-      // console.log("res", res);
 
       if (res.success) {
         message.success("修改成功");
         setEditModalVisible(false);
         fetchData();
       } else {
-        message.error(res.message || "修改失败");
+        message.error(res.msg || "修改失败");
       }
     } catch (e) {
       console.error(e);
@@ -230,7 +268,7 @@ const TableList: React.FC = () => {
       Object.entries({
         refundCode: values.refundCode,
         orderCode: values.orderCode,
-        statusCode: values.statusCode,
+        statusCode: values.handleStatus,
         // putawayStatusCode: values.putawayStatusCode,
         // createTimeFrom: startTime
         //   ? moment(startTime).format("YYYY-MM-DD HH:mm:ss")
@@ -265,7 +303,7 @@ const TableList: React.FC = () => {
   }, []);
   return (
     <PageContainer>
-      <ProTable<OrderProductRow>
+      <ProTable
         bordered
         actionRef={actionRef}
         formRef={formRef}
@@ -286,11 +324,137 @@ const TableList: React.FC = () => {
           fullScreen: true,
           density: false,
         }}
-        // rowSelection={{
-        //   onChange: (_, selectedRows) => {
-        //     // setSelectedRows(selectedRows);
-        //   },
-        // }}
+        expandable={{
+          expandedRowKeys,
+          onExpand: (expanded, record) => handleExpand(record),
+          expandedRowRender: (record: any) => (
+            <Table
+              size="small"
+              pagination={false}
+              showHeader={false}
+              dataSource={record?.items}
+              rowKey="id"
+              style={{
+                backgroundColor: "#f9fafb",
+                borderRadius: 8,
+                border: "none",
+              }}
+              columns={[
+                {
+                  dataIndex: "skuPicUrl",
+                  render: (url, records: any) => (
+                    <Image
+                      src={url || records?.picUrl}
+                      width={50}
+                      referrerPolicy="no-referrer"
+                    />
+                  ),
+                },
+                {
+                  dataIndex: "productTitle",
+                  width: 200,
+                },
+                {
+                  dataIndex: "propAndValue",
+                  width: 200,
+
+                  render: (propAndValue) => (
+                    <div
+                      style={{
+                        color: "#e60012",
+                        fontSize: 13,
+                        fontWeight: 500,
+                        lineHeight: "1.4",
+                        maxWidth: 200,
+                      }}
+                    >
+                      {propAndValue?.propName_valueName || "-"}
+                    </div>
+                  ),
+                },
+                {
+                  dataIndex: "quantity",
+                  render: (q) => <span style={{ color: "#4b5563" }}>×{q}</span>,
+                },
+                {
+                  dataIndex: "price",
+                  width: 100,
+
+                  render: (p) => (
+                    <span style={{ color: "#1f2937", fontWeight: 500 }}>
+                      ¥{p}
+                    </span>
+                  ),
+                },
+                {
+                  dataIndex: "statusCode",
+                  width: 200,
+                  render: (value: any, record) => {
+                    return (
+                      <>
+                        {renderStatusTag("refund", value)}
+                        {value == 4 && `¥${record?.refundAmount}`}
+                      </>
+                    );
+                  },
+                },
+                {
+                  title: "申请时间",
+                  dataIndex: "createTime",
+                },
+                // {
+                //   dataIndex: "remark",
+                //   render: (remark) => (
+                //     <span style={{ color: "#1f2937", fontWeight: 500 }}>
+                //       <span style={{ color: "#6b7280", fontWeight: 400 }}>
+                //         备注：
+                //       </span>
+                //       {remark || "-"}
+                //     </span>
+                //   ),
+                // },
+                {
+                  dataIndex: "options",
+                  render: (_: any, record: any) => (
+                    <div style={{ display: "flex", gap: 8 }}>
+                      {record.canProcessing && (
+                        <Button
+                          type="link"
+                          onClick={() => handleEdit(record, 2)}
+                          style={{ padding: 0 }}
+                        >
+                          处理中
+                        </Button>
+                      )}
+                      {record.canRefund && (
+                        <Button
+                          type="link"
+                          onClick={() => handleEdit(record, 4)}
+                          style={{ padding: 0 }}
+                        >
+                          退款
+                        </Button>
+                      )}
+                      {record.canRejected && (
+                        <Button
+                          type="link"
+                          onClick={() => handleEdit(record, 5)}
+                          style={{ padding: 0 }}
+                        >
+                          驳回
+                        </Button>
+                      )}
+                    </div>
+                  ),
+                },
+              ]}
+            />
+          ),
+          expandIcon: () => null, // ✅ 隐藏默认的展开图标
+          expandIconColumnIndex: -1,
+          expandRowByClick: false, // 由我们手动控制点击
+          rowExpandable: (record) => record.items?.length > 0,
+        }}
       />
       <div style={{ padding: 16, textAlign: "right" }}>
         <Pagination
@@ -307,15 +471,21 @@ const TableList: React.FC = () => {
         open={editModalVisible}
         onCancel={() => {
           setEditModalVisible(false);
-          console.log("关闭");
-
           form.setFieldsValue({});
         }}
         confirmLoading={confirmLoading} // 🔹确认按钮 loading
         onOk={handleSave}
         width={500} // 🔹稍微加宽
       >
-        <Form form={form} layout="vertical">
+        <Form
+          form={form}
+          layout="vertical"
+          style={{
+            maxHeight: "70vh",
+            overflowY: "auto",
+            scrollbarWidth: "none",
+          }}
+        >
           {/* 隐藏字段 */}
           <Form.Item name="id" hidden>
             <Input />
@@ -332,6 +502,10 @@ const TableList: React.FC = () => {
           <Form.Item name="customerId" hidden>
             <Input />
           </Form.Item>
+          <Form.Item name="price" hidden>
+            <Input />
+          </Form.Item>
+
           <Form.Item label="来源" name="source" hidden>
             <Input />
           </Form.Item>
@@ -340,46 +514,169 @@ const TableList: React.FC = () => {
             <Input disabled />
           </Form.Item>
           <Form.Item label="退款理由" name="applyRemark">
-            <Input.TextArea readOnly />
+            <Input.TextArea disabled />
           </Form.Item>
-          {/* 状态选择 */}
-          <Form.Item
-            label="状态"
-            name="statusCode"
-            rules={[{ required: true, message: "请选择状态" }]}
-          >
-            <Select
-              options={getStatusOptions("refund")}
-              onChange={(value) => {
-                setStatusCode(value);
-              }}
-            />
-          </Form.Item>
+
           {/* 备注：在“处理中”和“已驳回”状态下必填 */}
-          {statusCode === 4 && (
+          {statusCode == 4 && (
             <>
-              <Form.Item
-                label="退款数量"
-                name="quantity"
-                rules={[{ required: true, message: "请选择退款数量" }]}
+              <div
+                style={{
+                  border: "1px solid #e5e7eb",
+                  borderRadius: 8,
+                  padding: 16,
+                  marginBottom: 16,
+                  backgroundColor: "#fff",
+                  boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+                }}
               >
-                <Input />
-              </Form.Item>
-              <Form.Item
-                label="退款金额(元)"
-                name="refundAmount"
-                rules={[{ required: true, message: "请选择退款金额(元)" }]}
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    fontSize: 14,
+                    marginBottom: 8,
+                    color: "#374151",
+                  }}
+                >
+                  <span>订单总金额</span>
+                  <span style={{ fontWeight: 500 }}>
+                    ¥{currentRow?.totalFee}
+                  </span>
+                </div>
+
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    fontSize: 14,
+                    marginBottom: 8,
+                    color: "#6b7280",
+                  }}
+                >
+                  <span>已退商品金额</span>
+                  <span>¥{currentRow?.refundProductAmount}</span>
+                </div>
+
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    fontSize: 14,
+                    marginBottom: 8,
+                    color: "#6b7280",
+                  }}
+                >
+                  <span>已退运费</span>
+                  <span>¥{currentRow?.refundPostFee}</span>
+                </div>
+
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    fontSize: 14,
+                    marginBottom: 12,
+                    color: "#6b7280",
+                  }}
+                >
+                  <span>已退服务费</span>
+                  <span>¥{currentRow?.refundServiceFee}</span>
+                </div>
+
+                <div
+                  style={{
+                    borderTop: "1px solid #e5e7eb",
+                    paddingTop: 12,
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                >
+                  <span
+                    style={{
+                      fontSize: 14,
+                      fontWeight: 600,
+                      color: "#111827",
+                    }}
+                  >
+                    剩余可退金额
+                  </span>
+                  <span
+                    style={{
+                      fontSize: 16,
+                      fontWeight: 600,
+                      color: "#ef4444",
+                    }}
+                  >
+                    ¥{currentRow?.refundRemainAmount}
+                  </span>
+                </div>
+              </div>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                }}
               >
-                <Input />
-              </Form.Item>
+                <Form.Item label="扣服务费(元)" name="deductServiceFee">
+                  <InputNumber style={{ width: "100%" }} />
+                </Form.Item>
+                <Form.Item label="扣运费(元)" name="deductPostFee">
+                  <InputNumber style={{ width: "100%" }} />
+                </Form.Item>
+              </div>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                }}
+              >
+                <Form.Item label="退服务费(元)" name="refundServiceFee">
+                  <InputNumber style={{ width: "100%" }} />
+                </Form.Item>
+                <Form.Item label="退运费(元)" name="refundPostFee">
+                  <InputNumber style={{ width: "100%" }} />
+                </Form.Item>
+              </div>
+
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  gap: 8,
+                }}
+              >
+                <Form.Item
+                  label="退款数量"
+                  name="quantity"
+                  rules={[{ required: true, message: "请选择退款数量" }]}
+                >
+                  <InputNumber style={{ width: "100%" }} />
+                </Form.Item>
+                <Form.Item label="商品单价" name="price">
+                  <InputNumber style={{ width: "100%" }} disabled />
+                </Form.Item>
+                <Form.Item
+                  label="退商品金额(元)"
+                  name="refundProductAmount"
+                  rules={[{ required: true, message: "请选择退款金额(元)" }]}
+                >
+                  <InputNumber
+                    max={currentRow?.refundRemainAmount}
+                    style={{ width: "100%" }}
+                  />
+                </Form.Item>
+              </div>
             </>
           )}
+
           <Form.Item
             label="备注"
             name="handleRemark"
             rules={[
               {
-                required: statusCode === 5 ? true : false,
+                required: statusCode == 5 ? true : false,
                 message: "请输入备注",
               },
             ]}

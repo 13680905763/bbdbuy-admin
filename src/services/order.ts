@@ -28,7 +28,14 @@ export async function createPurchaseLogistics(data: any) {
     data,
   });
 }
-/** 修改回填二合一采购单快递单号 */
+/** 手动采购 */
+export async function PurchaseManual(data: any) {
+  return request("/purchase/manual", {
+    method: "POST",
+    data,
+  });
+}
+/** 修改快递单号 */
 export async function updatePurchaseLogistics(data: any) {
   return request("purchase/update", {
     method: "POST",

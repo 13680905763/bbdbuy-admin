@@ -417,6 +417,28 @@ const ConfigList: React.FC = () => {
   return (
     <PageContainer>
       <Card className="mb-4" bodyStyle={{ padding: "20px 24px" }}>
+        <Input
+          placeholder={`搜索所有数据...（按回车搜索）`}
+          prefix={<SearchOutlined className="text-gray-400" />}
+          style={{
+            width: 320,
+            height: 42,
+            fontSize: "16px",
+            borderRadius: "8px",
+          }}
+          allowClear
+          value={inputValue}
+          onChange={(e) => setInputValue(e.target.value)}
+          onPressEnter={(e) => {
+            const keyword = inputValue.trim();
+            if (keyword) {
+              handleSearch(keyword);
+            } else {
+              message.info("请输入搜索关键词");
+            }
+          }}
+          onClear={handleClear}
+        />
         <div className="flex items-center gap-4">
           <Tabs
             activeKey={activeTab}
@@ -454,29 +476,6 @@ const ConfigList: React.FC = () => {
           />
 
           <div className="flex-1"></div>
-
-          <Input
-            placeholder={`搜索所有数据...（按回车搜索）`}
-            prefix={<SearchOutlined className="text-gray-400" />}
-            style={{
-              width: 320,
-              height: 42,
-              fontSize: "16px",
-              borderRadius: "8px",
-            }}
-            allowClear
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            onPressEnter={(e) => {
-              const keyword = inputValue.trim();
-              if (keyword) {
-                handleSearch(keyword);
-              } else {
-                message.info("请输入搜索关键词");
-              }
-            }}
-            onClear={handleClear}
-          />
         </div>
       </Card>
 

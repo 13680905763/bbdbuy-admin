@@ -16,7 +16,7 @@ export async function login(
 }
 // 订单退款
 export async function getOrderRefundList(data: any) {
-  return request<API.RuleList>("/order-refund/list", {
+  return request<API.RuleList>("/order-refund/page", {
     method: "POST",
     data,
   });
@@ -40,9 +40,21 @@ export async function putOrderRefundGoodsSend(data: any) {
     data,
   });
 }
+export async function putOrderRefundGoodsUpdate(data: any) {
+  return request<API.RuleList>("/return-goods/update", {
+    method: "put",
+    data,
+  });
+}
 export async function getOrderRefundGoodsSign(data: any) {
   return request<API.RuleList>("/return-goods/sign", {
     method: "put",
+    data,
+  });
+}
+export async function getOrderRefundGoodsReason(data: any) {
+  return request<API.RuleList>("/return-goods/render/reason", {
+    method: "post",
     data,
   });
 }

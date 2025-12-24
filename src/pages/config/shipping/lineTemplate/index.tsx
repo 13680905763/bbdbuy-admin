@@ -17,6 +17,7 @@ import {
   Modal,
   Popconfirm,
   Select,
+  Tag,
   Upload,
 } from "antd";
 import React, { useEffect, useRef, useState } from "react";
@@ -25,6 +26,7 @@ const ConfigList: React.FC = () => {
   const actionRef = useRef<ActionType | null>(null);
   const [dataSource, setDataSource] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [confirmLoading, setConfirmLoading] = useState(false);
   const [billType, setBillType] = useState<string>();
   const [lineOptions, setLineOptions] = useState<any[]>([]);
   const [logoUrl, setLogoUrl] = useState<string>(""); // 用 state 存 logo
@@ -32,11 +34,14 @@ const ConfigList: React.FC = () => {
   // 弹窗状态
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [currentRow, setCurrentRow] = useState<any>(null);
+  const [countryOptions, setCountryOptions] = useState<any[]>([]);
+
   const [form] = Form.useForm();
 
   /** 拉取数据 */
   const fetchData = async () => {
     setLoading(true);
+
     try {
       const res: any = await getShippingLineTemplateList();
       const res1: any = await getShippingLineList();
@@ -73,8 +78,14 @@ const ConfigList: React.FC = () => {
   /** 修改 */
   const handleEdit = (record: any) => {
     setCurrentRow(record);
-    form.setFieldsValue(record);
-
+    setCountryOptions(
+      lineOptions.find((l) => l.id === record.lineId)?.countries || []
+    );
+    form.setFieldsValue({
+      ...record,
+      countryIds: record.templateCountries?.map((c: any) => c.countryId) || [],
+    });
+    // setCountryOptions(record.templateCountries || []);
     // 如果 record 有 logoUrl，设置到 state 方便预览
     if (record.logoUrl) {
       setLogoUrl(record.logoUrl);
@@ -111,7 +122,7 @@ const ConfigList: React.FC = () => {
 
       // 同步 logoUrl 到提交数据
       values.logoUrl = logoUrl;
-      setLoading(true);
+      setConfirmLoading(true);
       setLogoUrl(""); // 清空上传状态，防止残留
 
       let res;
@@ -132,12 +143,11 @@ const ConfigList: React.FC = () => {
     } catch (e) {
       message.error("操作失败");
     } finally {
-      setLoading(false);
+      setConfirmLoading(false);
     }
   };
 
   const columns = [
-    // { title: "运费模板名", dataIndex: "logoUrl" },
     {
       title: "运费模板",
       dataIndex: "templateName",
@@ -158,6 +168,22 @@ const ConfigList: React.FC = () => {
     { title: "服务商", dataIndex: "serverName" },
     { title: "运输公司", dataIndex: "companyName" },
     { title: "路线名称", dataIndex: "lineName" },
+    {
+      title: "支持的国家",
+      width: 300,
+      dataIndex: "templateCountries",
+      render: (_: any, record: any) => {
+        const countries = record.templateCountries as any[];
+        if (!countries || countries.length === 0) return "-";
+        return (
+          <>
+            {countries.map((c) => (
+              <Tag key={c.countryId}>{c.countryName}</Tag>
+            ))}
+          </>
+        );
+      },
+    },
     {
       title: "收费模式",
       dataIndex: "billType",
@@ -262,7 +288,7 @@ const ConfigList: React.FC = () => {
           setLogoUrl(""); // 如果需要也可以清掉 logo
         }}
         onOk={handleSave}
-        confirmLoading={loading}
+        confirmLoading={confirmLoading}
         width={500}
         destroyOnClose
         centered
@@ -274,6 +300,11 @@ const ConfigList: React.FC = () => {
             if (changed.billTypeCode) {
               setBillType(changed.billTypeCode);
             }
+          }}
+          style={{
+            maxHeight: "70vh",
+            overflowY: "auto",
+            scrollbarWidth: "none",
           }}
         >
           {/* 模板名称 */}
@@ -296,12 +327,36 @@ const ConfigList: React.FC = () => {
               options={lineOptions.map((item: any) => ({
                 label: item?.lineName, // 下拉显示服务商名称
                 value: item.id, // 保存服务商代码
+                countries: item.countries,
               }))}
+              onChange={(v, o: any) => {
+                console.log("lineId change");
+
+                form.setFieldsValue({ countryIds: [] }); // 切换路线时清空已选国家
+                setCountryOptions(o?.countries || []);
+              }}
               showSearch
               allowClear
             />
           </Form.Item>
-
+          <Form.Item
+            name="countryIds"
+            label="支持的国家"
+            rules={[{ required: true, message: "请选择支持的国家" }]}
+            // initialValue={currentRow?.countries?.map((c: any) => c.countryId)}
+          >
+            <Select
+              mode="multiple"
+              placeholder="请选择支持的国家"
+              allowClear
+              options={countryOptions.map((item: any) => ({
+                label: item.countryName,
+                value: item.countryId,
+              }))}
+              optionFilterProp="label"
+              showSearch
+            />
+          </Form.Item>
           <Form.Item name="logoUrl" label="Logo">
             <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
               <Upload

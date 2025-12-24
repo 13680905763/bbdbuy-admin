@@ -8,7 +8,7 @@ export async function getRateList(currency?: string) {
   });
 }
 export async function putRate(data: any) {
-  return request("/rate", {
+  return request("/rate/update", {
     method: "put",
     data,
   });
