@@ -7,6 +7,19 @@ export async function getOrderListByPage(data: any) {
     data,
   });
 }
+/** 关闭订单 POST /orders/close */
+export async function closeOrder(orderId: any,remark:any) {
+  return request<API.RuleList>("/orders/close?orderId=" + orderId + "&remark=" + remark, {
+    method: "put",
+  });
+}
+/** 批量同步 POST /orders/close */
+export async function batchSyncOrder(data: any) {
+  return request<API.RuleList>("purchase/sync", {
+    method: "post",
+    data,
+  });
+}
 /** 获取采购单列表 POST /orders/page */
 export async function getPurchaseListByPage(data: any) {
   return request<API.RuleList>("/purchase/page", {
@@ -38,6 +51,25 @@ export async function PurchaseManual(data: any) {
 /** 修改快递单号 */
 export async function updatePurchaseLogistics(data: any) {
   return request("purchase/update", {
+    method: "POST",
+    data,
+  });
+}
+/** 修改快递单号 */
+export async function putPurchaseSync(id: any) {
+  return request(`purchase/sync/${id}`, {
+    method: "put",
+  });
+}
+/** 获取收货单扫描信息 */
+export async function getInboundReceiveScan(logisticsCode: string) {
+  return request<API.RuleList>(`/inbound-receive/scan?logisticsCode=${logisticsCode}`, {
+    method: "GET",
+  });
+}
+/** 获取收货单列表 */
+export async function inboundReceiveSubmit(data: any) {
+  return request<API.RuleList>("/receive-package/submit", {
     method: "POST",
     data,
   });

@@ -1,7 +1,9 @@
 import {
+  batchSyncOrder,
   getPurchaseListByPage,
   purchaseInitiate,
   PurchaseManual,
+  putPurchaseSync,
   updatePurchaseLogistics,
 } from "@/services/order";
 import { getStatusOptions, renderStatusTag } from "@/utils/status-render";
@@ -28,6 +30,7 @@ import {
 import moment from "moment";
 import React, { useEffect, useRef, useState } from "react";
 import EditModal, { EditModalRef } from "./editmodal";
+import { log } from "console";
 const { RangePicker } = DatePicker;
 export interface ProcureStatusItem {
   label: string; // 显示文字
@@ -57,6 +60,7 @@ const TableList: React.FC = () => {
 
   // 用于接收 EditModal 的数据
   const [editModalData, setEditModalData] = useState<any[]>([]);
+  const [editModalRemark, setEditModalRemark] = useState("");
 
   const fetchData = async (params?: any) => {
     const query = {
@@ -98,6 +102,10 @@ const TableList: React.FC = () => {
       dataIndex: "orderCode",
     },
     {
+      title: "客户名",
+      dataIndex: "customerName",
+    },
+    {
       title: "商品信息",
       dataIndex: "products",
       hideInSearch: true,
@@ -132,7 +140,11 @@ const TableList: React.FC = () => {
                 referrerPolicy="no-referrer"
               />
             ))}
-
+            {
+              record?.orderRemark && (
+                <Tag color="red">客户备注商品</Tag>
+              )
+            }
             {/* 若超过3张则显示数量标签 */}
             {products?.length > 3 && (
               <Tag color="blue">+{products.length - 3}</Tag>
@@ -141,7 +153,11 @@ const TableList: React.FC = () => {
         );
       },
     },
-
+    // {
+    //   title: "商品备注",
+    //   hideInSearch: true,
+    //   dataIndex: "orderRemark",
+    // },
     {
       title: "平台",
       hideInSearch: true,
@@ -190,7 +206,7 @@ const TableList: React.FC = () => {
       hideInSearch: true,
     },
     {
-      title: "备注",
+      title: "采购备注",
       dataIndex: "remark",
       hideInSearch: true,
     },
@@ -276,11 +292,18 @@ const TableList: React.FC = () => {
       valueType: "option",
       render: (_: any, record: any) => {
         return (
-          <>
+          <div
+            style={{
+              display: "flex",
+              gap: 4,
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+          >
             {record?.manualFlag && (
               <Button
-                type="link"
-                style={{ color: "#1890ff", padding: 0 }}
+                type="primary"
+                size="small"
                 onClick={() => handleOption(record, "manual")}
               >
                 手动采购
@@ -288,14 +311,23 @@ const TableList: React.FC = () => {
             )}
             {record?.updateFlag && (
               <Button
-                type="link"
-                style={{ color: "#1890ff", padding: 0 }}
+                type="default"
+                size="small"
                 onClick={() => handleOption(record, "edit")}
               >
                 修改
               </Button>
             )}
-          </>
+            {record?.syncFlag && (
+              <Button
+                type="primary"
+                size="small"
+                onClick={() => handleSync(record)}
+              >
+                手动同步
+              </Button>
+            )}
+          </div>
         );
       },
     },
@@ -321,8 +353,11 @@ const TableList: React.FC = () => {
         console.log("initialData", initialData);
 
         setEditModalData(initialData);
+        // 回显第一条记录的备注，或者合并所有备注，这里取第一条有备注的记录
+        setEditModalRemark(record?.remark || "");
       } else {
         setEditModalData([]);
+        setEditModalRemark("");
       }
     }
     setModalType(type);
@@ -335,11 +370,31 @@ const TableList: React.FC = () => {
       });
     }
   };
+  const handleSync = async (record: any) => {
+    Modal.confirm({
+      title: "手动同步",
+      content:
+        "该操作以平台数据更新本地数据，可能造成本地数据异常，请谨慎使用！",
+      okButtonProps: {
+        type: "primary",
+        style: {
+          backgroundColor: "#f0700c",
+          borderColor: "#f0700c",
+        },
+      },
+      onOk: async () => {
+        const res = await putPurchaseSync(record.id);
+        if (res.success) {
+          message.success("同步成功");
+          fetchData();
+        }
+      }, // ✅ 确认后继续
+    });
+  };
   /** 保存（新增 / 修改） */
   const handleSave = async () => {
     try {
       setLoading(true);
-
       let res;
       const values: any = {};
       values.id = currentRow.id;
@@ -347,6 +402,7 @@ const TableList: React.FC = () => {
       // 合并 EditModal 的数据
       if (modalType === "edit") {
         // 调用 EditModal 内部的校验方法
+
         const valid = await editModalRef.current?.validate();
         if (!valid) return;
 
@@ -355,8 +411,10 @@ const TableList: React.FC = () => {
           logisticsCode: item.logisticsCode,
           productList: item.productList,
         }));
+        values.remark = editModalRemark;
         res = await updatePurchaseLogistics(values);
         console.log("value", values);
+        // console.log("editModalRemark", editModalRemark);
       } else {
         const formdata = await form.validateFields();
         values.sourceOrderId = formdata.sourceOrderId;
@@ -464,6 +522,7 @@ const TableList: React.FC = () => {
     const filterParams = {
       orderCode: values.orderCode,
       sourceOrderId: values.sourceOrderId,
+      customerName: values.customerName,
       logisticsCode: values.packages,
       statusCode: values.statusCode,
       purchaseTimeFrom: purchaseStartTime
@@ -658,6 +717,49 @@ const TableList: React.FC = () => {
           >
             批量采购
           </Button>,
+          <Button
+            onClick={async () => {
+              console.log(selectedRowsState);
+
+              if (!selectedRowsState.length) {
+                message.error("请选择需要同步的商品！");
+                return;
+              }
+              const canSyncData = selectedRowsState.filter((item: any) => item.id && item.syncFlag);
+              console.log('canSyncData', canSyncData);
+
+              if (canSyncData.length !== selectedRowsState.length) {
+                message.error("请只勾选支持同步的商品！");
+                return;
+              }
+              const ids = canSyncData.map(
+                (item: any) => item?.id
+              );
+
+              Modal.confirm({
+                title: "确认操作",
+                content: "是否确认同步选中的采购单？",
+                okButtonProps: {
+                  type: "primary",
+                  style: {
+                    backgroundColor: "#f0700c",
+                    borderColor: "#f0700c",
+                  },
+                },
+                onOk: async () => {
+                  const res:any = await batchSyncOrder({ idSet: ids });
+                  if (res.success) {
+                    message.error(res?.msg || "同步失败");
+                    return;
+                  }
+                  message.success("同步成功");
+                  actionRef.current?.reload();
+                }, // ✅ 确认后继续
+              });
+            }}
+          >
+            批量同步
+          </Button>,
         ]}
       />
       <div style={{ padding: 16, textAlign: "right" }}>
@@ -686,6 +788,8 @@ const TableList: React.FC = () => {
             products={currentRow?.products || []}
             value={editModalData}
             onChange={setEditModalData}
+            remark={editModalRemark}
+            onRemarkChange={setEditModalRemark}
           />
         ) : (
           <Form form={form} layout="vertical">
@@ -702,7 +806,7 @@ const TableList: React.FC = () => {
           </Form>
         )}
       </Modal>
-    </PageContainer>
+    </PageContainer >
   );
 };
 

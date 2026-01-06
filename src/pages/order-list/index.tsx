@@ -1,4 +1,4 @@
-import { getOrderListByPage } from "@/services/order"; // 你的接口路径
+import { closeOrder, getOrderListByPage } from "@/services/order"; // 你的接口路径
 import { getStatusOptions, renderStatusTag } from "@/utils/status-render";
 import { DownOutlined, RightOutlined } from "@ant-design/icons";
 import type {
@@ -8,8 +8,11 @@ import type {
 } from "@ant-design/pro-components";
 import { PageContainer, ProTable } from "@ant-design/pro-components";
 import {
+  AutoComplete,
+  Button,
   DatePicker,
   Image,
+  Modal,
   Pagination,
   Select,
   Table,
@@ -63,10 +66,55 @@ const TableList: React.FC = () => {
         : [...prev, record.id]
     );
   };
+  /** 操作 */
+  const handleClose = (record: any) => {
+    let closeReason = "用户关闭订单"; // 默认原因
 
+    Modal.confirm({
+      title: "关闭订单",
+      content: (
+        <div style={{ marginTop: 12 }}>
+          <div style={{ marginBottom: 8 }}>确认关闭订单吗？</div>
+          <AutoComplete
+            style={{ width: "100%" }}
+            placeholder="请选择或输入关闭原因"
+            defaultValue={closeReason}
+            onChange={(value) => {
+              closeReason = value;
+            }}
+            options={[
+              { value: "用户关闭订单", label: "用户关闭订单" },
+              { value: "缺货", label: "缺货" },
+              { value: "买家要求退款", label: "买家要求退款" },
+              { value: "其他原因", label: "其他原因" },
+            ]}
+            // 允许输入不在列表中的值
+            filterOption={(inputValue, option) =>
+              option!.value.toUpperCase().indexOf(inputValue.toUpperCase()) !== -1
+            }
+          />
+
+        </div>
+      ),
+      okButtonProps: {
+        type: "primary",
+        style: {
+          backgroundColor: "#f0700c",
+          borderColor: "#f0700c",
+        },
+      },
+      onOk: async () => {
+        const res = await closeOrder(record.id, closeReason);
+        if (res.success) {
+          message.success("关闭成功");
+          fetchData();
+        }
+      }, // ✅ 确认后继续
+    });
+  };
   const columns: ProColumns<any>[] = [
     { title: "订单号", dataIndex: "orderCode" },
-    { title: "用户名", dataIndex: "customerName", hideInSearch: true },
+    { title: "客户名", dataIndex: "customerName" },
     { title: "商品金额", dataIndex: "productFee", hideInSearch: true },
     { title: "运费金额", dataIndex: "postFee", hideInSearch: true },
     { title: "服务费金额", dataIndex: "serviceFee", hideInSearch: true },
@@ -130,7 +178,7 @@ const TableList: React.FC = () => {
         );
       },
     },
-    { title: "备注", dataIndex: "remark", hideInSearch: true },
+    { title: "备注", dataIndex: "remark", hideInSearch: true, width: 200 },
     {
       title: "下单时间",
       dataIndex: "createTime",
@@ -146,6 +194,34 @@ const TableList: React.FC = () => {
         />
       ),
     },
+    {
+      title: "操作",
+      valueType: "option",
+      render: (_: any, record: any) => {
+        return (
+          <div
+            style={{
+              display: "flex",
+              gap: 4,
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+          >
+            {record?.canCloseFlag && (
+              <Button
+                type="primary"
+                size="small"
+                onClick={() => handleClose(record)}
+              >
+                关闭订单
+              </Button>
+            )}
+
+
+          </div>
+        );
+      },
+    },
   ];
 
   /** ✅ 搜索提交 */
@@ -155,6 +231,7 @@ const TableList: React.FC = () => {
     const filterParams = {
       orderCode: values.orderCode,
       statusCode: values.statusCode,
+      customerName: values.customerName,
       createTimeFrom: startTime
         ? moment(startTime).format("YYYY-MM-DD HH:mm:ss")
         : undefined,

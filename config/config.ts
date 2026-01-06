@@ -44,7 +44,7 @@ export default defineConfig({
    * @doc antd的主题设置 https://ant.design/docs/react/customize-theme-cn
    * @doc umi 的 theme 配置 https://umijs.org/docs/api/config#theme
    */
-  // theme: { '@primary-color': '#1DA57A' }
+  theme: { '@primary-color': '#f0700c' },
   /**
    * @name moment 的国际化配置
    * @description 如果对国际化没有要求，打开之后能减少js的包大小

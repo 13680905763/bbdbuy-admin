@@ -61,7 +61,10 @@ const ParticularPaper: React.FC = () => {
             ...row,
             categoryId: categoryOptions.find((opt: any) => opt.isDefault)
               ?.value,
-            // inspectionStatusCode: 1032,
+            quantity: row?.product?.quantity,
+            inspectionStatusCode: 1032,
+            length: 42,
+            width: 32,
           }))
         );
         // message.success("扫码成功！");
@@ -88,8 +91,8 @@ const ParticularPaper: React.FC = () => {
       <div class="barcode-container">
         <img
           src="https://bwipjs-api.metafloor.com/?bcid=code128&text=${encodeURIComponent(
-            item.packageCode
-          )}&scaleX=3&scaleY=2&paddingwidth=0&paddingheight=0"
+          item.packageCode
+        )}&scaleX=3&scaleY=2&paddingwidth=0&paddingheight=0"
           class="barcode-img"
         />
         <div class="barcode-text">${item.packageCode}</div>
@@ -191,7 +194,6 @@ const ParticularPaper: React.FC = () => {
           categoryId: item.categoryId,
         };
       });
-      console.log("data", data);
 
       // 校验
       for (let i = 0; i < data.length; i++) {
@@ -225,17 +227,20 @@ const ParticularPaper: React.FC = () => {
           return;
         }
       }
+      console.log("data", data);
 
-      const res = await InspectionSubmit(data);
-      if (res.success) {
-        message.success("提交成功");
-        setTableData([]);
-        setScanValue("");
-      }
+      // const res = await InspectionSubmit(data);
+      // if (res.success) {
+      //   message.success("提交成功");
+      //   setTableData([]);
+      //   setScanValue("");
+      // }
     } finally {
       setSubmitting(false); // 无论成功失败都关闭 loading
     }
   };
+  console.log('tableData', tableData);
+
   const columns: ProColumns<any>[] = [
     { title: "入库单号", dataIndex: "inboundId", width: 100 },
     {
@@ -330,6 +335,7 @@ const ParticularPaper: React.FC = () => {
         <Input
           min={1}
           type="number"
+          defaultValue={42}
           onChange={(e) => {
             const newValue = e.target.value;
             setTableData((prev) => {
@@ -350,6 +356,7 @@ const ParticularPaper: React.FC = () => {
         <Input
           min={1}
           type="number"
+          defaultValue={32}
           onChange={(e) => {
             const newValue = e.target.value;
             setTableData((prev) => {
@@ -388,7 +395,8 @@ const ParticularPaper: React.FC = () => {
       render: (_, __, index) => (
         <Input
           type="number"
-          min={1}
+          min={0.1}
+          step={0.1}
           onChange={(e) => {
             const newValue = e.target.value;
             setTableData((prev) => {
@@ -404,8 +412,9 @@ const ParticularPaper: React.FC = () => {
       title: "数量",
       dataIndex: "quantity",
       width: 120,
-      render: (_, __, index) => (
+      render: (_, record: any, index) => (
         <Input
+          defaultValue={record?.product?.quantity}
           type="number"
           min={1}
           onChange={(e) => {
@@ -446,7 +455,7 @@ const ParticularPaper: React.FC = () => {
       render: (text, record, index) => {
         return (
           <Select
-            // value={record.inspectionStatusCode}
+            value={record.abnormalCode || record.inspectionStatusCode || 1032}
             style={{ width: 120 }}
             onChange={(v) => {
               console.log(v);

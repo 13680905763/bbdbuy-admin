@@ -59,9 +59,22 @@ export default [
         component: "./warehouse-management/receive-warehouse-list",
       },
       {
-        path: "/warehouse-management/delivery-list",
-        name: "收货列表",
-        component: "./warehouse-management/delivery-list",
+        path: "/warehouse-management/delivery-management",
+        name: "收货管理",
+        routes: [
+          {
+            name: "收货列表",
+            path: "/warehouse-management/delivery-management/delivery-list",
+            component:
+              "./warehouse-management/delivery-management/delivery-list",
+          },
+          {
+            name: "收货",
+            path: "/warehouse-management/delivery-management/delivery-scan",
+            component:
+              "./warehouse-management/delivery-management/delivery-scan",
+          },
+        ],
       },
       {
         path: "/warehouse-management/inspection-management",
@@ -297,6 +310,13 @@ export default [
     name: "测试数据模拟",
     icon: "ShoppingCartOutlined",
     component: "./mock-list",
+  },
+
+  {
+    path: "/download-center",
+    name: "下载中心",
+    icon: "CloudDownloadOutlined",
+    component: "./download-center",
   },
 
   { path: "/", redirect: "/dashboard" },

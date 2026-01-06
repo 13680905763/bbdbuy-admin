@@ -2,6 +2,7 @@ import { EditableProTable } from "@ant-design/pro-components";
 import {
   AutoComplete,
   Image,
+  Input,
   InputNumber,
   Select,
   Space,
@@ -176,15 +177,36 @@ interface EditModalProps {
   products: any[]; // 外部传入的商品列表数据
   value?: any[]; // 受控模式值
   onChange?: (value: any[]) => void; // 值变更回调
+  remark?: string;
+  onRemarkChange?: (value: string) => void;
 }
 
 const EditModal = forwardRef<EditModalRef, EditModalProps>(
-  ({ products = [], value, onChange }, ref) => {
+  ({ products = [], value, onChange, remark, onRemarkChange }, ref) => {
+  const [localRemark, setLocalRemark] = useState(remark || "");
+
+  // 同步外部 remark 变化
+  useEffect(() => {
+    setLocalRemark(remark || "");
+  }, [remark]);
+
+  const handleRemarkBlur = () => {
+    console.log("localRemark", localRemark);
+    
+    if (localRemark !== remark) {
+      onRemarkChange?.(localRemark);
+    }
+  };
     const [dataSource, setDataSource] = useState<any>([]);
     const [editableKeys, setEditableRowKeys] = useState<React.Key[]>([]);
 
     useImperativeHandle(ref, () => ({
       validate: async () => {
+        if (editableKeys.length > 0) {
+          message.error("请先保存所有编辑中的行");
+          return false;
+        }
+
         if (!dataSource || dataSource.length === 0) {
           message.error("请至少添加一条发货记录");
           return false;
@@ -259,11 +281,11 @@ const EditModal = forwardRef<EditModalRef, EditModalProps>(
       }
     }, []);
 
-    const handleDataSourceChange = (newData: any[]) => {
+    const handleDataSourceChange = (newData: any) => {
       console.log("表格的onchage触发了", newData);
 
       // 过滤掉 index 字段（如果存在），并移除 id
-      const cleanData = newData.map(({ index, ...rest }: any) => {
+      const cleanData = newData.map(({ index, id, ...rest }: any) => {
         // 转换 productList 结构以匹配后端需求
         const productList = rest.productList?.map((item: any) => ({
           id: item.value || item.id, // 兼容处理
@@ -394,75 +416,88 @@ const EditModal = forwardRef<EditModalRef, EditModalProps>(
         ],
       },
     ];
-
+    console.log("editmodal重新渲染");
     return (
-      <EditableProTable
-        rowKey="id"
-        maxLength={5}
-        recordCreatorProps={{
-          position: "bottom",
-          record: () => ({
-            id: Date.now().toString(),
-            productList: [],
-          }),
-          creatorButtonText: "新增快递信息",
-        }}
-        loading={false}
-        columns={columns}
-        value={dataSource}
-        onChange={handleDataSourceChange}
-        editable={{
-          type: "multiple",
-          editableKeys,
-          onSave: async (rowKey, data, row) => {
-            console.log("校验一下", data, row);
+      <>
+        <EditableProTable
+          rowKey="id"
+          maxLength={5}
+          recordCreatorProps={{
+            position: "bottom",
+            record: () => ({
+              id: Date.now().toString(),
+              productList: [],
+            }),
+            creatorButtonText: "新增快递信息",
+          }}
+          loading={false}
+          columns={columns}
+          value={dataSource}
+          onChange={handleDataSourceChange}
+          editable={{
+            type: "multiple",
+            editableKeys,
+            onSave: async (rowKey, data: any, row) => {
+              console.log("校验一下", data, row);
 
-            // 计算包含当前行在内的所有商品总数
-            const skuTotals: Record<string, number> = {};
+              // 计算包含当前行在内的所有商品总数
+              const skuTotals: Record<string, number> = {};
 
-            // 1. 统计其他行的数量
-            const otherRows = dataSource.filter(
-              (item: any) => item.id !== rowKey
-            );
-            for (const r of otherRows) {
-              if (r.productList) {
-                for (const item of r.productList) {
+              // 1. 统计其他行的数量
+              const otherRows = dataSource.filter(
+                (item: any) => item.id !== rowKey
+              );
+              for (const r of otherRows) {
+                if (r.productList) {
+                  for (const item of r.productList) {
+                    const skuId = item.value || item.id;
+                    skuTotals[skuId] = (skuTotals[skuId] || 0) + item.quantity;
+                  }
+                }
+              }
+              console.log("skuTotals", skuTotals);
+
+              // 2. 统计当前正在保存的行的数量
+              if (data.productList) {
+                for (const item of data.productList) {
                   const skuId = item.value || item.id;
                   skuTotals[skuId] = (skuTotals[skuId] || 0) + item.quantity;
                 }
               }
-            }
-            console.log("skuTotals", skuTotals);
 
-            // 2. 统计当前正在保存的行的数量
-            if (data.productList) {
-              for (const item of data.productList) {
-                const skuId = item.value || item.id;
-                skuTotals[skuId] = (skuTotals[skuId] || 0) + item.quantity;
-              }
-            }
-
-            // 3. 校验总数是否超标
-            for (const [skuId, totalQty] of Object.entries(skuTotals)) {
-              const product = products.find((p: any) => p.id === skuId);
-              if (product) {
-                const maxQty =
-                  product.purchaseQuantity || product.quantity || 0;
-                if (totalQty > maxQty) {
-                  message.error(
-                    ` ${product.propAndValue?.propName_valueName} 分配数量(${totalQty}) 超过采购总数(${maxQty})`
-                  );
-                  // 抛出错误以阻止保存
-                  throw new Error(
-                    ` ${product.propAndValue?.propName_valueName} 分配数量超标`
-                  );
+              // 3. 校验总数是否超标
+              for (const [skuId, totalQty] of Object.entries(skuTotals)) {
+                const product = products.find((p: any) => p.id === skuId);
+                if (product) {
+                  const maxQty =
+                    product.purchaseQuantity || product.quantity || 0;
+                  if (totalQty > maxQty) {
+                    message.error(
+                      ` ${product.propAndValue?.propName_valueName} 分配数量(${totalQty}) 超过采购总数(${maxQty})`
+                    );
+                    // 抛出错误以阻止保存
+                    throw new Error(
+                      ` ${product.propAndValue?.propName_valueName} 分配数量超标`
+                    );
+                  }
                 }
               }
-            }
-          },
-          onChange: setEditableRowKeys,
-        }}
-      />
+            },
+            onChange: setEditableRowKeys,
+          }}
+        />
+        <div style={{ marginTop: 16 }}>
+          <Text strong>采购备注：</Text>
+          <Input.TextArea
+            rows={3}
+            placeholder="请输入备注"
+            style={{ marginTop: 8 }}
+            value={localRemark}
+            onChange={(e) => setLocalRemark(e.target.value)}
+            onBlur={handleRemarkBlur}
+          />
+        </div>
+      </>
     );
   }
 );

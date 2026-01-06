@@ -44,9 +44,9 @@ const TableList: React.FC = () => {
   const formRef = useRef<ProFormInstance | undefined>(undefined);
 
   const [dataSource, setDataSource] = useState<OrderProductRow[]>([]);
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
   const [loading, setLoading] = useState(false);
+
+  // 分页相关
   const [current, setCurrent] = useState(1);
   const [size, setSize] = useState(10);
   const [total, setTotal] = useState(0);
@@ -55,6 +55,7 @@ const TableList: React.FC = () => {
   // 弹窗状态
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [currentRow, setCurrentRow] = useState<any>(null);
+  const [currentItem, setCurrentItem] = useState<any>(null);
   const [form] = Form.useForm();
   const [statusCode, setStatusCode] = useState<number>(2); // 默认固定值
   // 新增 state
@@ -63,7 +64,6 @@ const TableList: React.FC = () => {
   const [expandedRowKeys, setExpandedRowKeys] = useState<React.Key[]>([]); // ✅ 展开行控制
   // ✅ 切换展开状态
   const handleExpand = (record: any) => {
-    console.log("record", record);
     setCurrentRow(record);
     setExpandedRowKeys((prev) =>
       prev.includes(record.id)
@@ -106,18 +106,14 @@ const TableList: React.FC = () => {
       dataIndex: "source",
       hideInSearch: true,
     },
-    // {
-    //   title: "来源单号",
-    //   dataIndex: "sourceOrderId",
-    //   hideInSearch: true,
-    // },
+
     {
       title: "商品信息",
       dataIndex: "items",
       hideInSearch: true,
       render: (products: any = [], record: any) => {
         const preview = products?.slice(0, 9);
-        const expanded = expandedRowKeys.includes(record?.orderId);
+        const expanded = expandedRowKeys.includes(record?.id);
         return (
           <div
             onClick={() => handleExpand(record)}
@@ -156,16 +152,7 @@ const TableList: React.FC = () => {
       },
     },
 
-    // {
-    //   title: "采购状态",
-    //   dataIndex: "purchaseStatus",
-    //   hideInSearch: true,
-    // },
-    // {
-    //   title: "退款理由",
-    //   dataIndex: "applyRemark",
-    //   hideInSearch: true,
-    // },
+
 
     {
       title: "状态",
@@ -181,19 +168,7 @@ const TableList: React.FC = () => {
         );
       },
     },
-    // { title: "申请时间", dataIndex: "createTime", hideInSearch: true },
-    // {
-    //   title: "审核时间",
-    //   dataIndex: "updateTime",
-    //   hideInSearch: true,
 
-    //   render: (_, record: any) => {
-    //     const statusCode = record.statusCode;
-    //     const updateTime = record.updateTime;
-    //     if (statusCode === 1) return "--";
-    //     return updateTime;
-    //   },
-    // },
     {
       title: "操作",
       dataIndex: "canHandle",
@@ -223,10 +198,11 @@ const TableList: React.FC = () => {
           ? record.price * record.quantity
           : currentRow?.refundRemainAmount,
       deductServiceFee: 0,
-      deductPostFee: 20,
+      deductPostFee: 0,
       refundServiceFee: 0,
-      refundPostFee: 0,
+      refundPostFee: record?.canRefundPostFee ? currentRow?.postFee : 0,
     });
+    setCurrentItem(record);
     setStatusCode(statusCode); // 默认固定值
     setEditModalVisible(true);
   };
@@ -256,6 +232,7 @@ const TableList: React.FC = () => {
       console.error(e);
       message.error("修改失败");
     } finally {
+      setCurrentItem(null);
       setConfirmLoading(false); // 🔹无论成功失败都关闭 loading
     }
   };
@@ -351,6 +328,14 @@ const TableList: React.FC = () => {
                   ),
                 },
                 {
+                  dataIndex: "productUrl",
+                  render: (productUrl) => (
+                    <a href={productUrl} target="_blank">
+                      商品原链接
+                    </a>
+                  ),
+                },
+                {
                   dataIndex: "productTitle",
                   width: 200,
                 },
@@ -402,17 +387,7 @@ const TableList: React.FC = () => {
                   title: "申请时间",
                   dataIndex: "createTime",
                 },
-                // {
-                //   dataIndex: "remark",
-                //   render: (remark) => (
-                //     <span style={{ color: "#1f2937", fontWeight: 500 }}>
-                //       <span style={{ color: "#6b7280", fontWeight: 400 }}>
-                //         备注：
-                //       </span>
-                //       {remark || "-"}
-                //     </span>
-                //   ),
-                // },
+
                 {
                   dataIndex: "options",
                   render: (_: any, record: any) => (
@@ -471,6 +446,7 @@ const TableList: React.FC = () => {
         open={editModalVisible}
         onCancel={() => {
           setEditModalVisible(false);
+          setCurrentItem(null);
           form.setFieldsValue({});
         }}
         confirmLoading={confirmLoading} // 🔹确认按钮 loading
@@ -542,6 +518,34 @@ const TableList: React.FC = () => {
                   <span>订单总金额</span>
                   <span style={{ fontWeight: 500 }}>
                     ¥{currentRow?.totalFee}
+                  </span>
+                </div>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    fontSize: 14,
+                    marginBottom: 8,
+                    color: "#374151",
+                  }}
+                >
+                  <span>服务费</span>
+                  <span style={{ fontWeight: 500 }}>
+                    ¥{currentRow?.serviceFee}
+                  </span>
+                </div>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    fontSize: 14,
+                    marginBottom: 8,
+                    color: "#374151",
+                  }}
+                >
+                  <span>运费</span>
+                  <span style={{ fontWeight: 500 }}>
+                    ¥{currentRow?.postFee}
                   </span>
                 </div>
 
@@ -635,8 +639,8 @@ const TableList: React.FC = () => {
                 <Form.Item label="退服务费(元)" name="refundServiceFee">
                   <InputNumber style={{ width: "100%" }} />
                 </Form.Item>
-                <Form.Item label="退运费(元)" name="refundPostFee">
-                  <InputNumber style={{ width: "100%" }} />
+                <Form.Item label="退运费(元)" name="refundPostFee" >
+                  <InputNumber style={{ width: "100%" }} disabled={!currentItem?.canRefundPostFee} />
                 </Form.Item>
               </div>
 
