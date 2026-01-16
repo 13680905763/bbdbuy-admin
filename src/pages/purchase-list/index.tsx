@@ -102,7 +102,7 @@ const TableList: React.FC = () => {
       dataIndex: "orderCode",
     },
     {
-      title: "客户名",
+      title: "客户昵称",
       dataIndex: "customerName",
     },
     {

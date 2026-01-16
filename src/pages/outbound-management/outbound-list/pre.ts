@@ -61,7 +61,7 @@ export async function printPickingList(list: PickListOptions[]) {
           .barcode-label {
             text-align: center;
             font-weight: bold;
-            font-size: 22px;
+            font-size: 16px;
             margin-top: 6px;
           }
           .info {
@@ -99,8 +99,8 @@ export async function printPickingList(list: PickListOptions[]) {
           .map(
             (opt, pageIndex) => `
           <div class="page">
-            <svg id="barcode-${pageIndex}" style="max-width: 100%"></svg>
-            <div class="barcode-label">${opt.packingPackageCode}</div>
+            <svg id="barcode-${pageIndex}" style="max-width: 60%"></svg>
+            <div class="barcode-label" >${opt.packingPackageCode}</div>
             <div class="info">用户名：${opt.customerName}</div>
             <div class="info">邮寄方式：${opt.methodName}</div>
             <div class="info">备注：${opt.remark ?? "-"}</div>
@@ -148,7 +148,7 @@ export async function printPickingList(list: PickListOptions[]) {
                 (opt, i) => `
               JsBarcode("#barcode-${i}", "${opt.packingPackageCode}", {
                 format: "CODE128",
-                width: 1.5,
+                width: 1.2,
                 height: 50,
                 displayValue: false,
                 margin: 0,

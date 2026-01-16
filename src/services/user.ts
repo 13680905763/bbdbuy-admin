@@ -31,3 +31,19 @@ export async function CommonSearch(key: any) {
     method: "GET",
   });
 }
+/** 下载app */
+export async function downloadApk() {
+  return request(`/download/apk`, {
+    method: "GET",
+    responseType: "blob",
+    getResponse: true,
+  });
+}
+/** 下载插件 */
+export async function downloadPlugin() {
+  return request(`/download/plugin`, {
+    method: "GET",
+    responseType: "blob",
+    getResponse: true,
+  });
+}

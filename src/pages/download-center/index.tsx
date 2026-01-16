@@ -1,8 +1,9 @@
+import { downloadApk, downloadPlugin } from "@/services";
 import { DownloadOutlined } from "@ant-design/icons";
 import { PageContainer } from "@ant-design/pro-components";
-import { Button, Card, List, Space, Tag, Typography, message } from "antd";
+import { Button, Card, Col, Row, Space, Tag, Typography, message } from "antd";
 import React from "react";
-import { downloadApk, downloadPlugin } from "@/services";
+// import { downloadApk, downloadPlugin } from "@/services";
 
 const { Paragraph, Title, Text } = Typography;
 
@@ -23,7 +24,7 @@ const softwareList: SoftwareItem[] = [
     name: "仓库小助手",
     icon: (
       <img
-        src="/admin/warehouse_assistant.jpg"
+        src="/warehouse_assistant.jpg"
         alt="仓库小助手"
         style={{ width: 48, height: 48, borderRadius: 8, objectFit: "cover" }}
       />
@@ -39,7 +40,7 @@ const softwareList: SoftwareItem[] = [
     name: "原快递单号回填插件",
     icon: (
       <img
-        src="/admin/express-backfill.jpg"
+        src="/express-backfill.jpg"
         alt="插件"
         style={{ width: 48, height: 48, borderRadius: 8, objectFit: "cover" }}
       />
@@ -57,7 +58,7 @@ const DownloadCenter: React.FC = () => {
   const handleDownload = async (item: SoftwareItem) => {
       const hide = message.loading('请求下载地址中...', 0);
       try {
-          let res;
+          let res:any;
           let extension = '';
           
           if (item.downloadUrl === '/download/apk') {
@@ -76,7 +77,7 @@ const DownloadCenter: React.FC = () => {
 
           // 假设后端直接返回文件流
           if (res?.data) {
-             const blob = new Blob([res.data]);
+             const blob = new Blob([res?.data]);
              const url = window.URL.createObjectURL(blob);
              const link = document.createElement('a');
              link.style.display = 'none';
@@ -109,13 +110,26 @@ const DownloadCenter: React.FC = () => {
 
   return (
     <PageContainer title="下载中心">
-      <List
-        grid={{ gutter: 16, xs: 1, sm: 1, md: 2, lg: 2, xl: 3, xxl: 4 }}
-        dataSource={softwareList}
-        renderItem={(item) => (
-          <List.Item>
+      <Row gutter={[16, 16]}>
+        {softwareList.map((item) => (
+          <Col
+            key={item.id}
+            xs={24}
+            sm={24}
+            md={12}
+            lg={12}
+            xl={8}
+            xxl={6}
+            style={{ display: "flex" }}
+          >
             <Card
               hoverable={false}
+              style={{
+                width: "100%",
+                display: "flex",
+                flexDirection: "column",
+              }}
+              styles={{ body: { flex: 1 } }}
               actions={[
                 <Button
                   type="primary"
@@ -166,9 +180,9 @@ const DownloadCenter: React.FC = () => {
                 }
               />
             </Card>
-          </List.Item>
-        )}
-      />
+          </Col>
+        ))}
+      </Row>
     </PageContainer>
   );
 };

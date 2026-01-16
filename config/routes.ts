@@ -155,6 +155,29 @@ export default [
       },
     ],
   },
+
+  {
+    path: "/finance",
+    name: "财务管理",
+    icon: "table",
+    routes: [
+      {
+        path: "/finance",
+        redirect: "/finance/recharge",
+      },
+      {
+        path: "/finance/recharge",
+        name: "充值列表",
+        component: "./finance/recharge",
+      },
+      {
+        path: "/finance/consume",
+        name: "消费列表",
+        component: "./finance/consume",
+      },
+
+    ]
+  },
   {
     path: "/config",
     name: "配置管理",
@@ -281,11 +304,11 @@ export default [
             name: "订单退款列表",
             component: "./refund/order/list",
           },
-          // {
-          //   path: "/refund/order/goods-list",
-          //   name: "商品退货列表",
-          //   component: "./refund/order/goods-list",
-          // },
+          {
+            path: "/refund/order/goods-list",
+            name: "商品退货列表",
+            component: "./refund/order/goods-list",
+          },
         ],
       },
       // {

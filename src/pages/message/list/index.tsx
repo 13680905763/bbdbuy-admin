@@ -277,46 +277,58 @@ const MessageList: React.FC = () => {
             const isImage = msg.type === "IMAGE";
 
             return (
-              <div
-                key={msg.id}
-                style={{
+              <>
+                <span style={{
                   display: "flex",
                   justifyContent: isServer ? "flex-end" : "flex-start",
                   alignItems: "flex-end",
                   gap: 8,
-                }}
-              >
-                {isCustomer && <Avatar src={activeUser?.avatar || null} />}
-
+                }}>
+                  {msg.createTime ?? msg.sendTime}
+                </span>
                 <div
+                  key={msg.id}
                   style={{
-                    background: isServer ? "#e6f7ff" : "#f5f5f5",
-                    padding: isImage ? 0 : "8px 12px",
-                    borderRadius: 8,
-                    maxWidth: isImage ? "200px" : "60%",
-                    wordBreak: "break-word",
+                    display: "flex",
+                    justifyContent: isServer ? "flex-end" : "flex-start",
+                    alignItems: "flex-end",
+                    gap: 8,
                   }}
                 >
-                  {isImage ? (
-                    <Image
-                      src={msg.text || undefined} // 图片地址存放在 msg.text
-                      alt="图片消息"
-                      style={{
-                        width: "200px",
-                        height: "auto",
-                        borderRadius: 8,
-                        display: "block",
-                      }}
-                    />
-                  ) : (
-                    msg.text
+                  {isCustomer && <Avatar src={activeUser?.avatar || null} />}
+
+                  <div
+                    style={{
+                      background: isServer ? "#e6f7ff" : "#f5f5f5",
+                      padding: isImage ? 0 : "8px 12px",
+                      borderRadius: 8,
+                      maxWidth: isImage ? "200px" : "60%",
+                      wordBreak: "break-word",
+                    }}
+                  >
+                    {isImage ? (
+                      <Image
+                        src={msg.text || undefined} // 图片地址存放在 msg.text
+                        alt="图片消息"
+                        style={{
+                          width: "200px",
+                          height: "auto",
+                          borderRadius: 8,
+                          display: "block",
+                        }}
+                      />
+                    ) : (
+                      msg.text
+                    )}
+                  </div>
+
+                  {isServer && (
+                    <Avatar src={currentUser?.avatarFilePath || null} />
                   )}
                 </div>
 
-                {isServer && (
-                  <Avatar src={currentUser?.avatarFilePath || null} />
-                )}
-              </div>
+
+              </>
             );
           })}
 

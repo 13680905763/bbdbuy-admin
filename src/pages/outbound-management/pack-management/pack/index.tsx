@@ -1,5 +1,6 @@
 // src/pages/inventory/ScanIn/index.tsx
 import { getPackScan, PackSubmit } from "@/services";
+import { CheckCircleOutlined, CloseCircleOutlined } from "@ant-design/icons";
 import { PageContainer } from "@ant-design/pro-components";
 import ProTable, { ProColumns } from "@ant-design/pro-table";
 import { Button, Card, Input, message } from "antd";
@@ -7,9 +8,11 @@ import React, { useRef, useState } from "react";
 
 const ParticularPaper: React.FC = () => {
   const [scanValue, setScanValue] = useState("");
+  const [verifyScanValue, setVerifyScanValue] = useState("");
   const [tableData, setTableData] = useState<any[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const inputRef = useRef(null);
+  const verifyInputRef = useRef(null);
 
   const handleScan = async () => {
     if (!scanValue.trim()) {
@@ -18,8 +21,43 @@ const ParticularPaper: React.FC = () => {
     }
     const res = await getPackScan(scanValue);
     if (res.success) {
-      setTableData([res?.data]);
-      console.log("tableData", res?.data);
+      // 初始化状态为未打包
+      const newData = { ...res?.data, status: "未打包" };
+      setTableData([newData]);
+      console.log("tableData", newData);
+      // 自动聚焦到校验输入框
+      setTimeout(() => {
+        (verifyInputRef.current as any)?.focus();
+      }, 100);
+    }
+  };
+
+  const handleVerifyScan = () => {
+    if (!verifyScanValue.trim()) {
+      message.warning("请输入包裹号");
+      return;
+    }
+
+    let found = false;
+    const newTableData = tableData.map((record) => {
+      // 检查记录中的 items 是否包含扫描的包裹号
+      const hasPackage = record.items?.some(
+        (item: any) => item.packageCode === verifyScanValue.trim()
+      );
+
+      if (hasPackage) {
+        found = true;
+        return { ...record, status: "已打包" };
+      }
+      return record;
+    });
+
+    if (found) {
+      setTableData(newTableData);
+      message.success("校验成功，状态已更新");
+      setVerifyScanValue("");
+    } else {
+      message.error("未找到该包裹或不在当前列表中");
     }
   };
 
@@ -28,6 +66,13 @@ const ParticularPaper: React.FC = () => {
       message.warning("没有数据可提交");
       return;
     }
+    // Check if there are any unpacked items
+    const hasUnpacked = tableData.some((item) => item.status !== "已打包");
+    if (hasUnpacked) {
+      message.warning("请对所有包裹完成状态扫码");
+      return;
+    }
+
     setSubmitting(true); // 开始 loading
     try {
       const data: any = {
@@ -150,6 +195,19 @@ const ParticularPaper: React.FC = () => {
         />
       ),
     },
+    {
+      title: "状态",
+      dataIndex: "status",
+      render: (text, record, index) => (
+        <span style={{ fontSize: 24 }}>
+          {text === "已打包" ? (
+            <CheckCircleOutlined style={{ color: "green" }} />
+          ) : (
+            <CloseCircleOutlined style={{ color: "red" }} />
+          )}
+        </span>
+      ),
+    },
   ];
 
   return (
@@ -175,7 +233,7 @@ const ParticularPaper: React.FC = () => {
         <div style={{ marginBottom: 24 }}>
           <Input
             ref={inputRef}
-            placeholder="请扫描或输入商品条码后回车"
+            placeholder="请扫描拣货条码"
             value={scanValue}
             onChange={(e) => setScanValue(e.target.value)}
             onPressEnter={handleScan}
@@ -186,6 +244,24 @@ const ParticularPaper: React.FC = () => {
               backgroundColor: "#fffbe6",
               border: "2px solid #f0700c",
               boxShadow: "0 0 5px rgba(240, 112, 12, 0.6)",
+              paddingLeft: 16,
+            }}
+          />
+        </div>
+        <div style={{ marginBottom: 24 }}>
+          <Input
+            ref={verifyInputRef}
+            placeholder="请扫描包裹号校验"
+            value={verifyScanValue}
+            onChange={(e) => setVerifyScanValue(e.target.value)}
+            onPressEnter={handleVerifyScan}
+            style={{
+              width: 480,
+              height: 60,
+              fontSize: 20,
+              backgroundColor: "#f6ffed",
+              border: "2px solid #52c41a",
+              boxShadow: "0 0 5px rgba(82, 196, 26, 0.6)",
               paddingLeft: 16,
             }}
           />

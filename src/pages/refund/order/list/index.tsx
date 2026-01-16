@@ -321,7 +321,7 @@ const TableList: React.FC = () => {
                   dataIndex: "skuPicUrl",
                   render: (url, records: any) => (
                     <Image
-                      src={url || records?.picUrl}
+                      src={records?.skuPicUrl || records?.picUrl}
                       width={50}
                       referrerPolicy="no-referrer"
                     />
@@ -486,7 +486,7 @@ const TableList: React.FC = () => {
             <Input />
           </Form.Item>
           {/* 只读展示字段 */}
-          <Form.Item label="客户名" name="customerName">
+          <Form.Item label="客户昵称" name="customerName">
             <Input disabled />
           </Form.Item>
           <Form.Item label="退款理由" name="applyRemark">

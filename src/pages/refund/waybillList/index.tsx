@@ -50,7 +50,7 @@ const TableList: React.FC = () => {
     }
   };
 
-  const columns: ProColumns<OrderProductRow>[] = [
+  const columns: any = [
     {
       title: "退款单号",
       dataIndex: "refundCode",
@@ -123,7 +123,7 @@ const TableList: React.FC = () => {
       dataIndex: "updateTime",
       hideInSearch: true,
 
-      render: (_, record: any) => {
+      render: (_:any, record: any) => {
         const statusCode = record.statusCode;
         const updateTime = record.updateTime;
         if (statusCode === 1) return "--";
@@ -222,7 +222,7 @@ const TableList: React.FC = () => {
   }, []);
   return (
     <PageContainer>
-      <ProTable<OrderProductRow>
+      <ProTable
         bordered
         actionRef={actionRef}
         formRef={formRef}
@@ -288,7 +288,7 @@ const TableList: React.FC = () => {
             <Input />
           </Form.Item>
           {/* 只读展示字段 */}
-          <Form.Item label="客户名" name="customerName">
+          <Form.Item label="客户昵称" name="customerName">
             <Input disabled />
           </Form.Item>
           {/* 状态选择 */}

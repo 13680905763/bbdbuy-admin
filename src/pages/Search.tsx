@@ -62,7 +62,7 @@ const ConfigList: React.FC = () => {
         dataIndex: "skuPicUrl",
         render: (url: any, records: any) => (
           <Image
-            src={url || records?.picUrl}
+            src={records?.skuPicUrl || records?.picUrl}
             width={50}
             referrerPolicy="no-referrer"
           />

@@ -68,7 +68,7 @@ const TableList: React.FC = () => {
   };
   /** 操作 */
   const handleClose = (record: any) => {
-    let closeReason = "用户关闭订单"; // 默认原因
+    let closeReason = ""; // 默认原因
 
     Modal.confirm({
       title: "关闭订单",
@@ -83,10 +83,10 @@ const TableList: React.FC = () => {
               closeReason = value;
             }}
             options={[
-              { value: "用户关闭订单", label: "用户关闭订单" },
-              { value: "缺货", label: "缺货" },
-              { value: "买家要求退款", label: "买家要求退款" },
-              { value: "其他原因", label: "其他原因" },
+              { value: "库存不足", label: "库存不足" },
+              { value: "失效商品", label: "失效商品" },
+              { value: "骗货", label: "骗货" },
+              { value: "黑名单", label: "黑名单" },
             ]}
             // 允许输入不在列表中的值
             filterOption={(inputValue, option) =>
@@ -114,7 +114,7 @@ const TableList: React.FC = () => {
   };
   const columns: ProColumns<any>[] = [
     { title: "订单号", dataIndex: "orderCode" },
-    { title: "客户名", dataIndex: "customerName" },
+    { title: "客户昵称", dataIndex: "customerName" },
     { title: "商品金额", dataIndex: "productFee", hideInSearch: true },
     { title: "运费金额", dataIndex: "postFee", hideInSearch: true },
     { title: "服务费金额", dataIndex: "serviceFee", hideInSearch: true },

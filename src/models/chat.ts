@@ -28,6 +28,7 @@ export interface ChatMessage {
   sender: "SERVER" | "CUSTOMER";
   text: string;
   sendTime?: string;
+  createTime?: string;
   type?: string;
 }
 
@@ -53,6 +54,18 @@ export default function useChatModel() {
   const wsRef = useRef<WebSocket | null>(null);
   const activeUserRef = useRef<ChatUser | null>(null);
 
+  function formatLocalDateTime(date = new Date()) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const seconds = String(date.getSeconds()).padStart(2, '0');
+
+    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+  }
+
+
   // 同步 activeUserRef
   useEffect(() => {
     activeUserRef.current = activeUser;
@@ -74,7 +87,7 @@ export default function useChatModel() {
       type,
       content,
       receiverId: user.id,
-      sendTime: new Date().toISOString(),
+      sendTime: formatLocalDateTime(),
     };
 
     const newMsg: ChatMessage = {
@@ -122,6 +135,7 @@ export default function useChatModel() {
           sender: it.sender,
           text: it.content ?? it.text ?? "",
           sendTime: it.sendTime ?? it.createTime ?? "",
+          createTime: it.createTime ?? "",
           type: it.contentType ?? "TEXT",
         }));
 
@@ -220,7 +234,7 @@ export default function useChatModel() {
       id: raw.id ?? `srv-${Date.now()}`,
       sender: raw.sender === "CUSTOMER" ? "CUSTOMER" : "SERVER",
       text: raw.content ?? "",
-      sendTime: raw.sendTime ?? new Date().toISOString(),
+      sendTime: raw.sendTime ?? formatLocalDateTime(),
       type: raw.type ?? "TEXT",
     };
 
@@ -248,14 +262,14 @@ export default function useChatModel() {
         return prev.map((u) =>
           String(u.id) === uid
             ? {
-                ...u,
-                lastMessage: chatMsg.text,
-                msgtype: chatMsg.type,
-                unread:
-                  String(activeUserRef.current?.id) !== uid
-                    ? (u.unread ?? 0) + 1
-                    : 0,
-              }
+              ...u,
+              lastMessage: chatMsg.text,
+              msgtype: chatMsg.type,
+              unread:
+                String(activeUserRef.current?.id) !== uid
+                  ? (u.unread ?? 0) + 1
+                  : 0,
+            }
             : u
         );
       } else {

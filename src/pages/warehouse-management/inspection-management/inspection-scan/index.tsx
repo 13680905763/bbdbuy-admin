@@ -227,14 +227,13 @@ const ParticularPaper: React.FC = () => {
           return;
         }
       }
-      console.log("data", data);
 
-      // const res = await InspectionSubmit(data);
-      // if (res.success) {
-      //   message.success("提交成功");
-      //   setTableData([]);
-      //   setScanValue("");
-      // }
+      const res = await InspectionSubmit(data);
+      if (res.success) {
+        message.success("提交成功");
+        setTableData([]);
+        setScanValue("");
+      }
     } finally {
       setSubmitting(false); // 无论成功失败都关闭 loading
     }
