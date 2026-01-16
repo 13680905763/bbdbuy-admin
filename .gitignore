@@ -8,9 +8,8 @@ _roadhog-api-doc
 
 # production
 /dist
-dist.zip
 /deploy.sh
-/admin-dist.zip
+*dist.zip
 
 # misc
 .DS_Store
