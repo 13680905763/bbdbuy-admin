@@ -29,10 +29,18 @@ const softwareList: SoftwareItem[] = [
         style={{ width: 48, height: 48, borderRadius: 8, objectFit: "cover" }}
       />
     ),
-    version: "v1.0.0",
+    version: "v1.0.1",
     description: "专为仓库管理人员设计的辅助工具，提升入库、出库效率。",
-    updateTime: "2025-12-27",
-    updateLog: ["1. 拍照连拍", "2. 登录页面环境切换", "3. 修复已知bug"],
+    updateTime: "2026-01-19",
+    updateLog: [
+      "2026-01-19 更新：",
+      "1. 修复入库拍照sku报错问题",
+      "-------------------",
+      "2025-12-27 更新：",
+      "1. 拍照连拍",
+      "2. 登录页面环境切换",
+      "3. 修复已知bug",
+    ],
     downloadUrl: "/download/apk", // 标识调用 APK 下载接口
   },
   {
@@ -54,6 +62,15 @@ const softwareList: SoftwareItem[] = [
 ];
 
 const DownloadCenter: React.FC = () => {
+
+  const [expandedLogs, setExpandedLogs] = React.useState<Record<string, boolean>>({});
+
+  const toggleExpand = (id: string) => {
+    setExpandedLogs((prev) => ({
+      ...prev,
+      [id]: !prev[id],
+    }));
+  };
 
   const handleDownload = async (item: SoftwareItem) => {
       const hide = message.loading('请求下载地址中...', 0);
@@ -159,15 +176,28 @@ const DownloadCenter: React.FC = () => {
                         更新时间: {item.updateTime}
                       </Text>
                       <div style={{ marginTop: 8 }}>
-                        <Text strong style={{ fontSize: 12 }}>
-                          更新内容：
-                        </Text>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <Text strong style={{ fontSize: 12 }}>
+                            更新内容：
+                          </Text>
+                          <Button 
+                            type="link" 
+                            size="small" 
+                            style={{ padding: 0, fontSize: 12 }}
+                            onClick={() => toggleExpand(item.id)}
+                          >
+                            {expandedLogs[item.id] ? '收起' : '展开'}
+                          </Button>
+                        </div>
                         <ul
                           style={{
                             paddingLeft: 20,
                             margin: "4px 0",
                             fontSize: 12,
                             color: "#666",
+                            maxHeight: expandedLogs[item.id] ? 'none' : '40px',
+                            overflow: 'hidden',
+                            transition: 'max-height 0.3s ease',
                           }}
                         >
                           {item.updateLog.map((log, index) => (

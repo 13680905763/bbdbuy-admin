@@ -286,7 +286,7 @@ const ParticularPaper: React.FC = () => {
               </div>
 
               {/* 属性 */}
-              {product.sku?.propName_valueName && (
+              {product.propAndValue?.propName_valueName && (
                 <div
                   style={{
                     fontSize: 12,
@@ -297,7 +297,7 @@ const ParticularPaper: React.FC = () => {
                     whiteSpace: "nowrap",
                   }}
                 >
-                  {product.sku.propName_valueName}
+                  {product.propAndValue.propName_valueName}
                 </div>
               )}
 
