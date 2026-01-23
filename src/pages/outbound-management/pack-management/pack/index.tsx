@@ -41,15 +41,22 @@ const ParticularPaper: React.FC = () => {
     let found = false;
     const newTableData = tableData.map((record) => {
       // 检查记录中的 items 是否包含扫描的包裹号
-      const hasPackage = record.items?.some(
-        (item: any) => item.packageCode === verifyScanValue.trim()
-      );
+      const newItems = record.items?.map((item: any) => {
+        if (item.packageCode === verifyScanValue.trim()) {
+          found = true;
+          return { ...item, status: "已打包" };
+        }
+        return item;
+      });
 
-      if (hasPackage) {
-        found = true;
-        return { ...record, status: "已打包" };
-      }
-      return record;
+      // 如果 items 中所有包裹都已打包，则整个记录状态为已打包
+      const allPacked = newItems?.every((item: any) => item.status === "已打包");
+      
+      return { 
+        ...record, 
+        items: newItems,
+        status: allPacked ? "已打包" : record.status // 更新主记录状态
+      };
     });
 
     if (found) {
@@ -102,8 +109,17 @@ const ParticularPaper: React.FC = () => {
       title: "包裹信息",
       dataIndex: "items",
       render: (items: any) => {
-        return items.map((items: any) => {
-          return <p>{items.packageCode}</p>;
+        return items.map((item: any) => {
+          return (
+            <div key={item.packageCode} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span>{item.packageCode}</span>
+              {item.status === "已打包" ? (
+                <CheckCircleOutlined style={{ color: "green" }} />
+              ) : (
+                <CloseCircleOutlined style={{ color: "red" }} />
+              )}
+            </div>
+          );
         });
       },
     },

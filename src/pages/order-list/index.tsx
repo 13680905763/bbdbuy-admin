@@ -68,30 +68,28 @@ const TableList: React.FC = () => {
   };
   /** 操作 */
   const handleClose = (record: any) => {
-    let closeReason = ""; // 默认原因
+    let reasonCode = ""; // 默认原因
 
     Modal.confirm({
       title: "关闭订单",
       content: (
         <div style={{ marginTop: 12 }}>
           <div style={{ marginBottom: 8 }}>确认关闭订单吗？</div>
-          <AutoComplete
+          <Select
             style={{ width: "100%" }}
-            placeholder="请选择或输入关闭原因"
-            defaultValue={closeReason}
+            placeholder="请选择关闭原因"
+            defaultValue={reasonCode}
             onChange={(value) => {
-              closeReason = value;
+              reasonCode = value;
             }}
             options={[
-              { value: "库存不足", label: "库存不足" },
-              { value: "失效商品", label: "失效商品" },
-              { value: "骗货", label: "骗货" },
-              { value: "黑名单", label: "黑名单" },
+              { value: "INSUFFICIENT_STOCK", label: "库存不足" },
+              { value: "EXPIRED_GOODS", label: "失效商品" },
+              { value: "SCAM", label: "骗货" },
+              { value: "BLACKLIST", label: "黑名单" },
+              { value: "FALSE_SHIPMENT", label: "虚假发货" },
+              { value: "OTHER", label: "其他" },
             ]}
-            // 允许输入不在列表中的值
-            filterOption={(inputValue, option) =>
-              option!.value.toUpperCase().indexOf(inputValue.toUpperCase()) !== -1
-            }
           />
 
         </div>
@@ -104,7 +102,7 @@ const TableList: React.FC = () => {
         },
       },
       onOk: async () => {
-        const res = await closeOrder(record.id, closeReason);
+        const res = await closeOrder(record.id, reasonCode);
         if (res.success) {
           message.success("关闭成功");
           fetchData();
@@ -114,7 +112,16 @@ const TableList: React.FC = () => {
   };
   const columns: ProColumns<any>[] = [
     { title: "订单号", dataIndex: "orderCode" },
-    { title: "客户昵称", dataIndex: "customerName" },
+    {
+      title: "客户昵称", dataIndex: "customerName",
+      // render: (customerName, records) => {
+      //   return <div>用户id{records.customerId}</div>
+      // }
+    },
+    // {
+    //   title: "客户id", dataIndex: "customerId",hideInSearch: true,
+
+    // },
     { title: "商品金额", dataIndex: "productFee", hideInSearch: true },
     { title: "运费金额", dataIndex: "postFee", hideInSearch: true },
     { title: "服务费金额", dataIndex: "serviceFee", hideInSearch: true },
@@ -178,7 +185,13 @@ const TableList: React.FC = () => {
         );
       },
     },
-    { title: "备注", dataIndex: "remark", hideInSearch: true, width: 200 },
+    {
+      title: "备注",
+      dataIndex: "remark",
+      hideInSearch: true,
+      ellipsis: true, // 超过宽度自动显示省略号
+      width: 200, // 设置列宽
+    },
     {
       title: "下单时间",
       dataIndex: "createTime",
@@ -232,6 +245,8 @@ const TableList: React.FC = () => {
       orderCode: values.orderCode,
       statusCode: values.statusCode,
       customerName: values.customerName,
+      customerId: values.customerId,
+
       createTimeFrom: startTime
         ? moment(startTime).format("YYYY-MM-DD HH:mm:ss")
         : undefined,
@@ -255,12 +270,38 @@ const TableList: React.FC = () => {
     setFilters({});
     setCurrent(1);
     formRef.current?.resetFields();
+
+    // 清空URL参数
+    const newUrl = window.location.pathname;
+    window.history.replaceState({}, '', newUrl);
+
     fetchData({ current: 1 });
   };
 
   /** ✅ 初始化加载 */
   useEffect(() => {
-    fetchData();
+    // 获取 URL 参数
+    const urlParams = new URLSearchParams(window.location.search);
+    const orderCode = urlParams.get("orderCode");
+    const customerId = urlParams.get("customerId");
+    const customerName = urlParams.get("customerName");
+
+    if (orderCode) {
+      // 如果有 orderCode，设置 filters 并搜索
+      const initialFilters = { orderCode };
+      setFilters(initialFilters);
+      formRef.current?.setFieldsValue(initialFilters);
+      fetchData({ current: 1, ...initialFilters });
+    } else if (customerId || customerName) {
+      // 如果有 orderCode，设置 filters 并搜索
+      const initialFilters = { customerId, customerName };
+      setFilters(initialFilters);
+      formRef.current?.setFieldsValue(initialFilters);
+      fetchData({ current: 1, ...initialFilters });
+    } else {
+      // 否则正常加载
+      fetchData();
+    }
   }, []);
   return (
     <PageContainer>

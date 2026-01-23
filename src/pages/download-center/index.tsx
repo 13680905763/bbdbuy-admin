@@ -24,15 +24,17 @@ const softwareList: SoftwareItem[] = [
     name: "仓库小助手",
     icon: (
       <img
-        src="/warehouse_assistant.jpg"
+        src="/warehouse_assistant.png"
         alt="仓库小助手"
         style={{ width: 48, height: 48, borderRadius: 8, objectFit: "cover" }}
       />
     ),
-    version: "v1.0.1",
+    version: "v1.2.2",
     description: "专为仓库管理人员设计的辅助工具，提升入库、出库效率。",
-    updateTime: "2026-01-19",
+    updateTime: "2026-01-22",
     updateLog: [
+      "2026-01-22 更新：",
+      "1. 支持连续扫码",
       "2026-01-19 更新：",
       "1. 修复入库拍照sku报错问题",
       "-------------------",
@@ -73,56 +75,56 @@ const DownloadCenter: React.FC = () => {
   };
 
   const handleDownload = async (item: SoftwareItem) => {
-      const hide = message.loading('请求下载地址中...', 0);
-      try {
-          let res:any;
-          let extension = '';
-          
-          if (item.downloadUrl === '/download/apk') {
-              res = await downloadApk();
-              extension = '.apk';
-          } else if (item.downloadUrl === '/download/plugin') {
-              res = await downloadPlugin();
-              extension = '.zip'; 
-          } else {
-              if (item.downloadUrl) {
-                  window.open(item.downloadUrl, "_blank");
-              }
-              hide();
-              return;
-          }
+    const hide = message.loading('下载中...', 0);
+    try {
+      let res: any;
+      let extension = '';
 
-          // 假设后端直接返回文件流
-          if (res?.data) {
-             const blob = new Blob([res?.data]);
-             const url = window.URL.createObjectURL(blob);
-             const link = document.createElement('a');
-             link.style.display = 'none';
-             link.href = url;
-             // 尝试从响应头获取文件名，如果没有则使用默认名
-             // const contentDisposition = res.response?.headers?.get('content-disposition');
-             // let fileName = item.name + extension;
-             // if (contentDisposition) {
-             //     const match = contentDisposition.match(/filename="?([^"]+)"?/);
-             //     if (match && match[1]) fileName = match[1];
-             // }
-             
-             link.setAttribute('download', item.name + extension);
-             document.body.appendChild(link);
-             link.click();
-             document.body.removeChild(link);
-             window.URL.revokeObjectURL(url);
-             message.success('开始下载');
-          } else {
-             message.error('文件流获取失败');
-          }
-
-      } catch (error) {
-          console.error(error);
-          message.error('下载请求失败');
-      } finally {
-          hide();
+      if (item.downloadUrl === '/download/apk') {
+        res = await downloadApk();
+        extension = '.apk';
+      } else if (item.downloadUrl === '/download/plugin') {
+        res = await downloadPlugin();
+        extension = '.zip';
+      } else {
+        if (item.downloadUrl) {
+          window.open(item.downloadUrl, "_blank");
+        }
+        hide();
+        return;
       }
+
+      // 假设后端直接返回文件流
+      if (res?.data) {
+        const blob = new Blob([res?.data]);
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.style.display = 'none';
+        link.href = url;
+        // 尝试从响应头获取文件名，如果没有则使用默认名
+        // const contentDisposition = res.response?.headers?.get('content-disposition');
+        // let fileName = item.name + extension;
+        // if (contentDisposition) {
+        //     const match = contentDisposition.match(/filename="?([^"]+)"?/);
+        //     if (match && match[1]) fileName = match[1];
+        // }
+
+        link.setAttribute('download', item.name + extension);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+        message.success('开始下载');
+      } else {
+        message.error('文件流获取失败');
+      }
+
+    } catch (error) {
+      console.error(error);
+      message.error('下载请求失败');
+    } finally {
+      hide();
+    }
   };
 
   return (
@@ -180,9 +182,9 @@ const DownloadCenter: React.FC = () => {
                           <Text strong style={{ fontSize: 12 }}>
                             更新内容：
                           </Text>
-                          <Button 
-                            type="link" 
-                            size="small" 
+                          <Button
+                            type="link"
+                            size="small"
                             style={{ padding: 0, fontSize: 12 }}
                             onClick={() => toggleExpand(item.id)}
                           >

@@ -8,8 +8,8 @@ export async function getOrderListByPage(data: any) {
   });
 }
 /** 关闭订单 POST /orders/close */
-export async function closeOrder(orderId: any,remark:any) {
-  return request<API.RuleList>("/orders/close?orderId=" + orderId + "&remark=" + remark, {
+export async function closeOrder(orderId: any, reasonCode: any) {
+  return request<API.RuleList>("/orders/close?orderId=" + orderId + "&reasonCode=" + reasonCode, {
     method: "put",
   });
 }

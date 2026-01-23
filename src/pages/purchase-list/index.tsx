@@ -30,7 +30,6 @@ import {
 import moment from "moment";
 import React, { useEffect, useRef, useState } from "react";
 import EditModal, { EditModalRef } from "./editmodal";
-import { log } from "console";
 const { RangePicker } = DatePicker;
 export interface ProcureStatusItem {
   label: string; // 显示文字
@@ -560,18 +559,37 @@ const TableList: React.FC = () => {
     setFilters({});
     setCurrent(1);
     formRef.current?.resetFields();
+    // 清空URL参数
+    const newUrl = window.location.pathname;
+    window.history.replaceState({}, '', newUrl);
+
     fetchData({ current: 1 });
   };
 
   /** ✅ 初始化加载 */
   useEffect(() => {
-    fetchData();
+    // 获取 URL 参数
+    const urlParams = new URLSearchParams(window.location.search);
+    const orderCode = urlParams.get("orderCode");
+
+    if (orderCode) {
+      // 如果有 orderCode，设置 filters 并搜索
+      const initialFilters = { orderCode };
+      setFilters(initialFilters);
+      formRef.current?.setFieldsValue({ orderCode });
+      fetchData({ current: 1, ...initialFilters });
+    } else {
+      // 否则正常加载
+      fetchData();
+    }
   }, []);
+
   return (
     <PageContainer>
       <ProTable
         bordered
         size="small"
+        formRef={formRef}
         actionRef={actionRef}
         rowKey="id"
         pagination={false} // ❗️我们自己控制分页
@@ -680,17 +698,27 @@ const TableList: React.FC = () => {
           <Button
             type="primary"
             onClick={async () => {
-              const ids = selectedRowsState.map((item: any) => item.id);
-
-              if (!ids.length) {
+              if (!selectedRowsState.length) {
                 message.error("请选择需要采购的商品！");
                 return;
               }
-
-              const hasRemarkData = dataSource.filter(
-                (item: any) => ids.includes(item.id) && item.orderRemark
+              const canManualData = selectedRowsState.filter((item: any) => item.id && item.manualFlag);
+              console.log('canManualData', canManualData);
+              if (canManualData.length !== selectedRowsState.length) {
+                message.error("请只勾选支持采购的商品！");
+                return;
+              }
+              const hasRemarkData = selectedRowsState.filter(
+                (item: any) => canManualData.map(
+                  (item: any) => item?.id
+                ).includes(item.id) && item.orderRemark
               );
+              console.log('selectedRowsState', selectedRowsState);
+              console.log('hasRemarkData', hasRemarkData);
 
+              const ids = hasRemarkData.map(
+                (item: any) => item?.id
+              );
               if (hasRemarkData.length) {
                 Modal.confirm({
                   title: "确认操作",
@@ -747,7 +775,7 @@ const TableList: React.FC = () => {
                   },
                 },
                 onOk: async () => {
-                  const res:any = await batchSyncOrder({ idSet: ids });
+                  const res: any = await batchSyncOrder({ idSet: ids });
                   if (res.success) {
                     message.error(res?.msg || "同步失败");
                     return;

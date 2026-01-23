@@ -3,6 +3,7 @@ import { renderStatusTag } from "@/utils/status-render";
 import { SearchOutlined } from "@ant-design/icons";
 import { PageContainer } from "@ant-design/pro-components";
 import ProTable, { ActionType } from "@ant-design/pro-table";
+import { history } from "@umijs/max";
 import { Card, Image, Input, message, Tabs } from "antd";
 import React, { useRef, useState } from "react";
 
@@ -15,7 +16,7 @@ const ConfigList: React.FC = () => {
     | "inboundReceive"
     | "inboundInspection"
     | "inboundPutaway"
-    // | "packageItem"
+  // | "packageItem"
   >("order");
 
   const [loading, setLoading] = useState(false);
@@ -34,8 +35,36 @@ const ConfigList: React.FC = () => {
   /** 定义每个tab的列配置 */
   const tabColumns: Record<string, any[]> = {
     order: [
-      { title: "订单号", dataIndex: "orderCode" },
-      { title: "用户名", dataIndex: "customerName", hideInSearch: true },
+      {
+        title: "订单号",
+        dataIndex: "orderCode",
+        render: (text: string) => (
+          <a
+            onClick={() => {
+              window.open(`/order-list?orderCode=${text}`, "_blank");
+            }}
+          >
+            {text}
+          </a>
+        ),
+      },
+      {
+        title: "用户名",
+        dataIndex: "customerName",
+        hideInSearch: true,
+        render: (text: string, records: any) => (
+          <a
+            onClick={() => {
+              window.open(
+                `/order-list?customerId=${records.customerId}&customerName=${text}`,
+                "_blank"
+              );
+            }}
+          >
+            {text}
+          </a>
+        ),
+      },
       { title: "商品金额", dataIndex: "productFee", hideInSearch: true },
       { title: "运费金额", dataIndex: "postFee", hideInSearch: true },
       { title: "服务费金额", dataIndex: "serviceFee", hideInSearch: true },
@@ -46,7 +75,11 @@ const ConfigList: React.FC = () => {
         dataIndex: "statusCode",
         render: (value: any) => renderStatusTag("order", value),
       },
-      { title: "备注", dataIndex: "remark", hideInSearch: true },
+      {
+        title: "备注", dataIndex: "remark", hideInSearch: true,
+        ellipsis: true, // 超过宽度自动显示省略号
+        width: 200, // 设置列宽
+      },
       {
         title: "下单时间",
         dataIndex: "createTime",
@@ -106,6 +139,8 @@ const ConfigList: React.FC = () => {
       {
         title: "备注",
         dataIndex: "remark",
+        ellipsis: true, // 超过宽度自动显示省略号
+        width: 200, // 设置列宽
         render: (remark: any) => (
           <span style={{ color: "#1f2937", fontWeight: 500 }}>
             {remark || "-"}
@@ -122,6 +157,15 @@ const ConfigList: React.FC = () => {
       {
         title: "订单编号",
         dataIndex: "orderCode",
+        render: (text: string) => (
+          <a
+            onClick={() => {
+              window.open(`/purchase-list?orderCode=${text}`, "_blank");
+            }}
+          >
+            {text}
+          </a>
+        ),
       },
 
       {
@@ -179,11 +223,22 @@ const ConfigList: React.FC = () => {
         },
       },
     ],
-
     inboundReceive: [
       {
         title: "订单号",
         dataIndex: "orderCode",
+        render: (text: string) => (
+          <a
+            onClick={() => {
+              window.open(
+                `/warehouse-management/delivery-management/delivery-list?orderCode=${text}`,
+                "_blank"
+              );
+            }}
+          >
+            {text}
+          </a>
+        ),
       },
       {
         title: "采购编号",
@@ -231,6 +286,19 @@ const ConfigList: React.FC = () => {
       {
         title: "订单号",
         dataIndex: "orderCode",
+        render: (text: string) => (
+          <a
+            onClick={() => {
+              window.open(
+                `/warehouse-management/inspection-management/inspection-list?orderCode=${text}`,
+                "_blank"
+              );
+            }}
+          >
+            {text}
+          </a>
+        ),
+
       },
       {
         title: "快递单号",
@@ -298,6 +366,18 @@ const ConfigList: React.FC = () => {
       {
         title: "订单号",
         dataIndex: "orderCode",
+        render: (text: string) => (
+          <a
+            onClick={() => {
+              window.open(
+                `/warehouse-management/putaway-list?orderCode=${text}`,
+                "_blank"
+              );
+            }}
+          >
+            {text}
+          </a>
+        ),
       },
       {
         title: "入库单号",
@@ -326,23 +406,6 @@ const ConfigList: React.FC = () => {
         },
       },
     ],
-    // packageItem: [
-    //   { title: "包裹号", dataIndex: "packageNo", key: "packageNo", width: 150 },
-    //   {
-    //     title: "运单号",
-    //     dataIndex: "trackingNo",
-    //     key: "trackingNo",
-    //     width: 150,
-    //   },
-    //   {
-    //     title: "物流公司",
-    //     dataIndex: "logistics",
-    //     key: "logistics",
-    //     width: 120,
-    //   },
-    //   { title: "重量", dataIndex: "weight", key: "weight", width: 80 },
-    //   { title: "状态", dataIndex: "status", key: "status", width: 80 },
-    // ],
   };
 
   /** 拉取数据 - 一次获取所有tab数据 */
@@ -462,9 +525,8 @@ const ConfigList: React.FC = () => {
                 key: "inboundReceive",
               },
               {
-                label: `验货列表 (${
-                  allTabData.inboundInspection?.length || 0
-                })`,
+                label: `验货列表 (${allTabData.inboundInspection?.length || 0
+                  })`,
                 key: "inboundInspection",
               },
               {
@@ -531,8 +593,8 @@ const ConfigList: React.FC = () => {
               <p className="text-gray-400">
                 {searchKeyword
                   ? `在${getTabChineseName(
-                      activeTab
-                    )}中未找到包含 "${searchKeyword}" 的相关数据`
+                    activeTab
+                  )}中未找到包含 "${searchKeyword}" 的相关数据`
                   : `当前${getTabChineseName(activeTab)}暂无数据`}
               </p>
               <div className="mt-4 text-sm text-gray-400">

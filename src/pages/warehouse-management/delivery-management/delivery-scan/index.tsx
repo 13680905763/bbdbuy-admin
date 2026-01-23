@@ -114,14 +114,27 @@ const ParticularPaper: React.FC = () => {
   const columns: ProColumns<any>[] = [
     { title: "物流公司", dataIndex: "logisticsCompany", width: 150 },
     { title: "快递单号", dataIndex: "logisticsCode", width: 200 },
-    { 
-      title: "识别结果", 
-      dataIndex: "type", 
+    {
+      title: "识别结果",
+      dataIndex: "type",
       width: 100,
-      valueEnum: {
-        0: { text: '未知包裹', status: 'Warning' },
-        1: { text: '识别成功', status: 'Success' },
-      }
+      render: (text, record) => {
+        const isSuccess = record.type === 1;
+        return (
+          <div
+            style={{
+              backgroundColor: isSuccess ? "#52c41a" : "#faad14", // 绿色成功，橙色警告
+              color: "#fff",
+              padding: "4px 8px",
+              borderRadius: "4px",
+              textAlign: "center",
+              fontWeight: "bold",
+            }}
+          >
+            {isSuccess ? "识别成功" : "未知包裹"}
+          </div>
+        );
+      },
     },
     {
       title: "操作",

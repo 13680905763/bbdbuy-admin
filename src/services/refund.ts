@@ -29,7 +29,7 @@ export async function updateRefund(data: any) {
 }
 // 退货列表
 export async function getOrderRefundGoodsList(data: any) {
-  return request<API.RuleList>("/return-goods/list", {
+  return request<API.RuleList>("/return-goods/page", {
     method: "POST",
     data,
   });

@@ -95,6 +95,15 @@ const TableList: React.FC = () => {
     try {
       const res: any = await getOrderRefundGoodsReason(params);
       console.log("res", res);
+      if (res.data && Array.isArray(res.data)) {
+        const options = res.data.map((item: any) => ({
+          label: item.reasonDesc,
+          value: item.reasonId,
+          canRefundCarriage: item.canRefundCarriage, // 可选：如果后续逻辑需要用到
+          needVoucher: item.needVoucher, // 可选：如果后续逻辑需要用到
+        }));
+        setReasonOptions(options);
+      }
     } catch (e) {
       message.error("加载失败");
     }
@@ -387,7 +396,7 @@ const TableList: React.FC = () => {
         fieldProps: (form: any, { entity }: any) => {
           return {
             min: 1,
-            max: entity?.quantity, // 🔥 动态使用当前行数量作为最大值
+            // max: entity?.quantity, // 🔥 动态使用当前行数量作为最大值
             precision: 0,
           };
         },
@@ -399,7 +408,7 @@ const TableList: React.FC = () => {
         },
       },
       {
-        title: "refundShippingFee",
+        title: "退款运费",
         dataIndex: "refundShippingFee",
         width: 50,
         align: "center",
@@ -408,7 +417,7 @@ const TableList: React.FC = () => {
         fieldProps: (form: any, { entity }: any) => {
           return {
             min: 1,
-            max: entity?.quantity, // 🔥 动态使用当前行数量作为最大值
+            // max: entity?.quantity, // 🔥 动态使用当前行数量作为最大值
             precision: 0,
           };
         },
@@ -542,7 +551,7 @@ const TableList: React.FC = () => {
     console.log("record", record);
     if (modalType === "applyFlag") {
       fetchRefundGoodsReason({
-        id: record?.orderId,
+        orderId: record?.orderId,
         refundType: 2,
         goodsStatus: 12,
       });

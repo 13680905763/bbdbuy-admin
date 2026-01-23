@@ -148,13 +148,31 @@ const TableList: React.FC = () => {
     setFilters({});
     setCurrent(1);
     formRef.current?.resetFields();
+    // 清空URL参数
+    const newUrl = window.location.pathname;
+    window.history.replaceState({}, '', newUrl);
     fetchData({ current: 1 });
   };
 
   /** ✅ 初始化加载 */
   useEffect(() => {
-    fetchData();
+    // 获取 URL 参数
+    const urlParams = new URLSearchParams(window.location.search);
+    const orderCode = urlParams.get("orderCode");
+
+    if (orderCode) {
+      // 如果有 orderCode，设置 filters 并搜索
+      const initialFilters = { orderCode };
+      setFilters(initialFilters);
+      formRef.current?.setFieldsValue(initialFilters);
+      fetchData({ current: 1, ...initialFilters });
+    } else {
+      // 否则正常加载
+      fetchData();
+    }
   }, []);
+
+
   return (
     <PageContainer>
       <ProTable

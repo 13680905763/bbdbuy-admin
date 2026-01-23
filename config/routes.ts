@@ -144,6 +144,11 @@ export default [
         ],
       },
       {
+        path: "/outbound-management/photo-list",
+        name: "拍照列表",
+        component: "./outbound-management/photo-list",
+      },
+      {
         path: "/outbound-management/putaway-list",
         name: "上架列表",
         component: "./outbound-management/putaway-list",
@@ -304,11 +309,11 @@ export default [
             name: "订单退款列表",
             component: "./refund/order/list",
           },
-          {
-            path: "/refund/order/goods-list",
-            name: "商品退货列表",
-            component: "./refund/order/goods-list",
-          },
+          // {
+          //   path: "/refund/order/goods-list",
+          //   name: "商品退货列表",
+          //   component: "./refund/order/goods-list",
+          // },
         ],
       },
       // {

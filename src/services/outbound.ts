@@ -36,7 +36,13 @@ export async function PackSubmit(data: any) {
     data,
   });
 }
-
+/** 获取拍照列表 POST /orders/page */
+export async function getOutboundPhotoList(data: any) {
+  return request("/outbound-service/page", {
+    method: "POST",
+    data,
+  });
+}
 /** 获取出库上架列表 POST /orders/page */
 export async function getOutboundPutawayListByPage(data: any) {
   return request<API.RuleList>("/outbound-putaway/page", {

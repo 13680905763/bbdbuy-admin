@@ -101,11 +101,7 @@ const TableList: React.FC = () => {
       dataIndex: "customerName",
       hideInSearch: true,
     },
-    {
-      title: "来源",
-      dataIndex: "source",
-      hideInSearch: true,
-    },
+
 
     {
       title: "商品信息",
@@ -153,7 +149,44 @@ const TableList: React.FC = () => {
     },
 
 
+    {
+      title: "来源",
+      dataIndex: "source",
+      hideInSearch: true,
+    },
+    {
+      title: "平台采购单号",
+      dataIndex: "sourceOrderId",
+      hideInSearch: true,
 
+    },
+     {
+      title: "采购状态",
+      dataIndex: "purchaseStatus",
+      hideInSearch: true,
+    
+    },
+    {
+      title: "快递单号",
+      dataIndex: "logisticsList",
+      hideInSearch: true,
+      render: (logisticsList: any) => {
+        if (!logisticsList || !Array.isArray(logisticsList) || logisticsList.length === 0) {
+          return "-";
+        }
+        return (
+          <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+            {logisticsList.map((item: any, index: number) => (
+              <div key={index}>
+                <span style={{ fontWeight: 500 }}>{item.logisticsCompany}</span>
+                : {item.logisticsCode}
+              </div>
+            ))}
+          </div>
+        );
+      },
+    },
+    
     {
       title: "状态",
       dataIndex: "handleStatus",

@@ -137,8 +137,8 @@ export const request: RequestConfig = {
   baseURL: isDev
     ? "http://api.bbdtest.local:8080"
     // ? "http://fe.bbdtest.local:8080"
-    // :  "https://admin.bbdbuy1.com/api",
-    : "https://dev.bbdbuy1.com/admin-api",
+    :  "https://admin.bbdbuy1.com/api",
+    // : "https://dev.bbdbuy1.com/admin-api",
   // baseURL: process.env.UMI_APP_BASE_API,
   withCredentials: true,
   timeout: 500000,
