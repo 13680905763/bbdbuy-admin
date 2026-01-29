@@ -571,12 +571,19 @@ const TableList: React.FC = () => {
     // 获取 URL 参数
     const urlParams = new URLSearchParams(window.location.search);
     const orderCode = urlParams.get("orderCode");
+    const sourceOrderId = urlParams.get("sourceOrderId");
 
     if (orderCode) {
       // 如果有 orderCode，设置 filters 并搜索
       const initialFilters = { orderCode };
       setFilters(initialFilters);
       formRef.current?.setFieldsValue({ orderCode });
+      fetchData({ current: 1, ...initialFilters });
+    } else if (sourceOrderId) {
+      // 如果有 sourceOrderId，设置 filters 并搜索
+      const initialFilters = { sourceOrderId };
+      setFilters(initialFilters);
+      formRef.current?.setFieldsValue({ sourceOrderId });
       fetchData({ current: 1, ...initialFilters });
     } else {
       // 否则正常加载

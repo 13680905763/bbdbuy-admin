@@ -3,12 +3,13 @@ import { getPackScan, PackSubmit } from "@/services";
 import { CheckCircleOutlined, CloseCircleOutlined } from "@ant-design/icons";
 import { PageContainer } from "@ant-design/pro-components";
 import ProTable, { ProColumns } from "@ant-design/pro-table";
-import { Button, Card, Input, message } from "antd";
+import { Button, Card, Input, message, Switch, Space } from "antd";
 import React, { useRef, useState } from "react";
 
 const ParticularPaper: React.FC = () => {
   const [scanValue, setScanValue] = useState("");
   const [verifyScanValue, setVerifyScanValue] = useState("");
+  const [isStrictPackingMode, setIsStrictPackingMode] = useState(false); // 默认开启严格模式
   const [tableData, setTableData] = useState<any[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const inputRef = useRef(null);
@@ -73,11 +74,14 @@ const ParticularPaper: React.FC = () => {
       message.warning("没有数据可提交");
       return;
     }
-    // Check if there are any unpacked items
-    const hasUnpacked = tableData.some((item) => item.status !== "已打包");
-    if (hasUnpacked) {
-      message.warning("请对所有包裹完成状态扫码");
-      return;
+    
+    // 严格模式下才校验包裹状态
+    if (isStrictPackingMode) {
+      const hasUnpacked = tableData.some((item) => item.status !== "已打包");
+      if (hasUnpacked) {
+        message.warning("请对所有包裹完成状态扫码");
+        return;
+      }
     }
 
     setSubmitting(true); // 开始 loading
@@ -113,10 +117,12 @@ const ParticularPaper: React.FC = () => {
           return (
             <div key={item.packageCode} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <span>{item.packageCode}</span>
-              {item.status === "已打包" ? (
-                <CheckCircleOutlined style={{ color: "green" }} />
-              ) : (
-                <CloseCircleOutlined style={{ color: "red" }} />
+              {isStrictPackingMode && (
+                item.status === "已打包" ? (
+                  <CheckCircleOutlined style={{ color: "green" }} />
+                ) : (
+                  <CloseCircleOutlined style={{ color: "red" }} />
+                )
               )}
             </div>
           );
@@ -214,6 +220,7 @@ const ParticularPaper: React.FC = () => {
     {
       title: "状态",
       dataIndex: "status",
+      hideInTable: !isStrictPackingMode, // 普通模式下隐藏
       render: (text, record, index) => (
         <span style={{ fontSize: 24 }}>
           {text === "已打包" ? (
@@ -247,6 +254,23 @@ const ParticularPaper: React.FC = () => {
         </div>
 
         <div style={{ marginBottom: 24 }}>
+          <Space>
+            <span>打包模式：</span>
+            <Switch
+              checkedChildren="严格"
+              unCheckedChildren="普通"
+              checked={isStrictPackingMode}
+              onChange={setIsStrictPackingMode}
+            />
+            <span style={{ color: "#999", fontSize: 12 }}>
+              {isStrictPackingMode
+                ? "（需扫描包裹号进行校验）"
+                : "（无需校验直接提交）"}
+            </span>
+          </Space>
+        </div>
+
+        <div style={{ marginBottom: 24 }}>
           <Input
             ref={inputRef}
             placeholder="请扫描拣货条码"
@@ -264,24 +288,27 @@ const ParticularPaper: React.FC = () => {
             }}
           />
         </div>
-        <div style={{ marginBottom: 24 }}>
-          <Input
-            ref={verifyInputRef}
-            placeholder="请扫描包裹号校验"
-            value={verifyScanValue}
-            onChange={(e) => setVerifyScanValue(e.target.value)}
-            onPressEnter={handleVerifyScan}
-            style={{
-              width: 480,
-              height: 60,
-              fontSize: 20,
-              backgroundColor: "#f6ffed",
-              border: "2px solid #52c41a",
-              boxShadow: "0 0 5px rgba(82, 196, 26, 0.6)",
-              paddingLeft: 16,
-            }}
-          />
-        </div>
+        
+        {isStrictPackingMode && (
+          <div style={{ marginBottom: 24 }}>
+            <Input
+              ref={verifyInputRef}
+              placeholder="请扫描包裹号校验"
+              value={verifyScanValue}
+              onChange={(e) => setVerifyScanValue(e.target.value)}
+              onPressEnter={handleVerifyScan}
+              style={{
+                width: 480,
+                height: 60,
+                fontSize: 20,
+                backgroundColor: "#f6ffed",
+                border: "2px solid #52c41a",
+                boxShadow: "0 0 5px rgba(82, 196, 26, 0.6)",
+                paddingLeft: 16,
+              }}
+            />
+          </div>
+        )}
 
         <ProTable
           rowKey="id"

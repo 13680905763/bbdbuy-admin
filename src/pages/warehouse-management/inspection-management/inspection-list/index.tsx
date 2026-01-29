@@ -201,6 +201,7 @@ const TableList: React.FC = () => {
               尺寸：{record?.packageItem?.length} x {record?.packageItem?.width}{" "}
               x {record?.packageItem?.height} cm
             </div>
+            <div>体积：{record?.packageItem?.volume} cm³</div>
             <div>重量：{record?.packageItem?.weight} g</div>
             <div>数量：{record?.packageItem?.quantity}</div>
           </div>
@@ -348,6 +349,10 @@ const TableList: React.FC = () => {
     // 获取 URL 参数
     const urlParams = new URLSearchParams(window.location.search);
     const orderCode = urlParams.get("orderCode");
+    const logisticsCode = urlParams.get("logisticsCode");
+    const packageCode = urlParams.get("packageCode");
+
+
 
     if (orderCode) {
       // 如果有 orderCode，设置 filters 并搜索
@@ -355,7 +360,19 @@ const TableList: React.FC = () => {
       setFilters(initialFilters);
       formRef.current?.setFieldsValue(initialFilters);
       fetchData({ current: 1, ...initialFilters });
-    }  else {
+    } else if (logisticsCode) {
+      // 如果有 logisticsCode，设置 filters 并搜索
+      const initialFilters = { logisticsCode };
+      setFilters(initialFilters);
+      formRef.current?.setFieldsValue(initialFilters);
+      fetchData({ current: 1, ...initialFilters });
+    } else if (packageCode) {
+      // 如果有 packageCode，设置 filters 并搜索
+      const initialFilters = { packageCode };
+      setFilters(initialFilters);
+      formRef.current?.setFieldsValue(initialFilters);
+      fetchData({ current: 1, ...initialFilters });
+    } else {
       // 否则正常加载
       fetchData();
     }

@@ -3,7 +3,7 @@ import { getGoodsType } from "@/services";
 import { getInspectionScan, InspectionSubmit } from "@/services/order";
 import { PageContainer } from "@ant-design/pro-components";
 import ProTable, { ProColumns } from "@ant-design/pro-table";
-import { Button, Card, Image, Input, message, Select } from "antd";
+import { Button, Card, Image, Input, InputNumber, message, Select } from "antd";
 import React, { useEffect, useRef, useState } from "react";
 const inspectionStatusCode: any = [
   { value: 1032, label: "正常" },
@@ -227,7 +227,6 @@ const ParticularPaper: React.FC = () => {
           return;
         }
       }
-
       const res = await InspectionSubmit(data);
       if (res.success) {
         message.success("提交成功");
@@ -245,14 +244,13 @@ const ParticularPaper: React.FC = () => {
     {
       title: "商品详情",
       dataIndex: "product",
-      width: 300,
       render: (product: any) => {
         return (
-          <div style={{ display: "flex", gap: 12, padding: "8px 0" }}>
+          <div style={{ display: "flex", gap: 8, padding: "4px 0" }}>
             {/* 左侧图片 */}
             <Image
-              width={90}
-              height={90}
+              width={60}
+              height={60}
               src={product?.skuPicUrl || product?.picUrl}
               alt={product?.productTitle || "商品图片"}
               preview={product?.picUrl}
@@ -266,21 +264,23 @@ const ParticularPaper: React.FC = () => {
                 display: "flex",
                 flexDirection: "column",
                 justifyContent: "space-between",
+                overflow: "hidden", // 防止子元素撑开
               }}
             >
               {/* 商品标题 */}
               <div
                 style={{
                   fontWeight: 500,
-                  fontSize: 14,
+                  fontSize: 12,
                   color: "#333",
-                  lineHeight: 1.4,
+                  lineHeight: 1.3,
                   display: "-webkit-box",
                   WebkitLineClamp: 2,
                   WebkitBoxOrient: "vertical",
                   overflow: "hidden",
                   textOverflow: "ellipsis",
                 }}
+                title={product.productTitle} // 悬停显示完整内容
               >
                 {product.productTitle}
               </div>
@@ -295,14 +295,16 @@ const ParticularPaper: React.FC = () => {
                     overflow: "hidden",
                     textOverflow: "ellipsis",
                     whiteSpace: "nowrap",
+                    maxWidth: 130, // 限制宽度防止溢出
                   }}
+                  title={product.propAndValue.propName_valueName} // 悬停显示完整内容
                 >
                   {product.propAndValue.propName_valueName}
                 </div>
               )}
 
               {/* 价格与数量 */}
-              <div style={{ fontSize: 14, color: "#e60012", marginTop: 2 }}>
+              <div style={{ fontSize: 12, color: "#e60012", marginTop: 2 }}>
                 ￥{product.price} × {product.quantity}
               </div>
             </div>
@@ -329,17 +331,16 @@ const ParticularPaper: React.FC = () => {
     {
       title: "长（cm）",
       dataIndex: "length",
-      width: 120,
+      width: 200,
       render: (_, __, index) => (
-        <Input
+        <InputNumber
           min={1}
-          type="number"
+          precision={0} // 不允许小数
           defaultValue={42}
-          onChange={(e) => {
-            const newValue = e.target.value;
+          onChange={(value) => {
             setTableData((prev) => {
               const updated = [...prev];
-              updated[index].length = newValue;
+              updated[index].length = value;
               return updated;
             });
           }}
@@ -349,18 +350,16 @@ const ParticularPaper: React.FC = () => {
     {
       title: "宽（cm）",
       dataIndex: "width",
-      width: 120,
-
+      width: 200,
       render: (_, __, index) => (
-        <Input
+        <InputNumber
           min={1}
-          type="number"
+          precision={0} // 不允许小数
           defaultValue={32}
-          onChange={(e) => {
-            const newValue = e.target.value;
+          onChange={(value) => {
             setTableData((prev) => {
               const updated = [...prev];
-              updated[index].width = newValue;
+              updated[index].width = value;
               return updated;
             });
           }}
@@ -370,16 +369,15 @@ const ParticularPaper: React.FC = () => {
     {
       title: "高（cm）",
       dataIndex: "height",
-      width: 120,
+      width: 200,
       render: (_, __, index) => (
-        <Input
+        <InputNumber
           min={1}
-          type="number"
-          onChange={(e) => {
-            const newValue = e.target.value;
+          precision={0} // 不允许小数
+          onChange={(value) => {
             setTableData((prev) => {
               const updated = [...prev];
-              updated[index].height = newValue;
+              updated[index].height = value;
               return updated;
             });
           }}
@@ -387,20 +385,29 @@ const ParticularPaper: React.FC = () => {
       ),
     },
     {
+      title: "体积（cm³）",
+      dataIndex: "volume",
+      width: 200,
+      render: (_, record) => {
+        const { length, width, height } = record;
+        if (length && width && height) {
+          const volume = Number(length) * Number(width) * Number(height);
+          return <span style={{ fontWeight: 600, }}>{volume}</span>;
+        }
+        return <span>-</span>;
+      },
+    },
+    {
       title: "重量（g）",
 
       dataIndex: "weight",
-      width: 120,
+      width: 200,
       render: (_, __, index) => (
-        <Input
-          type="number"
-          min={0.1}
-          step={0.1}
-          onChange={(e) => {
-            const newValue = e.target.value;
+        <InputNumber
+          onChange={(value) => {
             setTableData((prev) => {
               const updated = [...prev];
-              updated[index].weight = newValue;
+              updated[index].weight = value;
               return updated;
             });
           }}
@@ -412,15 +419,13 @@ const ParticularPaper: React.FC = () => {
       dataIndex: "quantity",
       width: 120,
       render: (_, record: any, index) => (
-        <Input
+        <InputNumber
           defaultValue={record?.product?.quantity}
-          type="number"
           min={1}
-          onChange={(e) => {
-            const newValue = e.target.value;
+          onChange={(value) => {
             setTableData((prev) => {
               const updated = [...prev];
-              updated[index].quantity = newValue;
+              updated[index].quantity = value;
               return updated;
             });
           }}
@@ -528,6 +533,7 @@ const ParticularPaper: React.FC = () => {
 
         <ProTable
           rowKey="barcodeImage"
+          size="small"
           columns={columns}
           dataSource={tableData}
           pagination={false}

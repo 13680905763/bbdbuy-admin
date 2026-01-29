@@ -276,11 +276,16 @@ export default [
     routes: [
       {
         path: "/message",
-        redirect: "/message/list",
+        redirect: "/message/system-message",
+      },
+      {
+        path: "/message/system-message",
+        name: "系统消息",
+        component: "./message/system-message",
       },
       {
         path: "/message/list",
-        name: "消息",
+        name: "客户消息",
         component: "./message/list",
       },
       // {

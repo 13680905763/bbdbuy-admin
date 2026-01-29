@@ -1,4 +1,4 @@
-import { getOutboundListByPage } from "@/services";
+import { freeSendOutbound, getOutboundListByPage } from "@/services";
 import { getStatusOptions, renderStatusTag } from "@/utils/status-render";
 import { PlusOutlined } from "@ant-design/icons";
 import type {
@@ -11,6 +11,7 @@ import {
   Button,
   DatePicker,
   Input,
+  Modal,
   Pagination,
   Select,
   Table,
@@ -108,7 +109,43 @@ const TableList: React.FC = () => {
                   title: "状态",
                   dataIndex: "statusCode",
                   key: "statusCode",
-                  render: (value: any) => renderStatusTag("outbound", value),
+                  render: (value: any, record: any) => (
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      {renderStatusTag("outbound", value)}
+                      {value == 203 && (
+                        <Button
+                          size="small"
+                          type="primary"
+                          onClick={() => {
+                            Modal.confirm({
+                              title: "内测客户免费发货",
+                              cancelButtonProps: {
+                                style: { borderColor: "#f0700c", color: "#f0700c" },
+                              },
+                              okButtonProps: {
+                                style: { backgroundColor: "#f0700c" },
+                              },
+                              content:
+                                "请仔细核对该运单是否属于内测客户，点击'确认'即代表该运单免费邮寄。",
+                              onOk: async () => {
+                                try {
+                                  await freeSendOutbound(
+                                    record.packingPackageCode
+                                  );
+                                  message.success("操作成功");
+                                  fetchData({ ...filters, current, size });
+                                } catch (error) {
+                                  console.error("免费发货失败", error);
+                                }
+                              },
+                            });
+                          }}
+                        >
+                          免运费
+                        </Button>
+                      )}
+                    </div>
+                  ),
                 },
               ]}
               pagination={false}

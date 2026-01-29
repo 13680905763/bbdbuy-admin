@@ -171,6 +171,15 @@ const ConfigList: React.FC = () => {
       {
         title: "平台采购单号",
         dataIndex: "sourceOrderId",
+        render: (text: string) => (
+          <a
+            onClick={() => {
+              window.open(`/purchase-list?sourceOrderId=${text}`, "_blank");
+            }}
+          >
+            {text}
+          </a>
+        ),
       },
 
       {
@@ -249,10 +258,23 @@ const ConfigList: React.FC = () => {
         title: "快递公司",
         dataIndex: "logisticsCompany",
         hideInSearch: true,
+
       },
       {
         title: "快递单号",
         dataIndex: "logisticsCode",
+        render: (text: string) => (
+          <a
+            onClick={() => {
+              window.open(
+                `/warehouse-management/delivery-management/delivery-list?logisticsCode=${text}`,
+                "_blank"
+              );
+            }}
+          >
+            {text}
+          </a>
+        ),
       },
       {
         title: "收货人",
@@ -303,10 +325,34 @@ const ConfigList: React.FC = () => {
       {
         title: "快递单号",
         dataIndex: "logisticsCode",
+        render: (text: string) => (
+          <a
+            onClick={() => {
+              window.open(
+                `/warehouse-management/inspection-management/inspection-list?logisticsCode=${text}`,
+                "_blank"
+              );
+            }}
+          >
+            {text}
+          </a>
+        ),
       },
       {
         title: "包裹单号",
         dataIndex: "packageCode",
+        render: (text: string) => (
+          <a
+            onClick={() => {
+              window.open(
+                `/warehouse-management/inspection-management/inspection-list?packageCode=${text}`,
+                "_blank"
+              );
+            }}
+          >
+            {text}
+          </a>
+        ),
       },
 
       {
@@ -386,8 +432,26 @@ const ConfigList: React.FC = () => {
       {
         title: "包裹编号",
         dataIndex: "packageCode",
+        render: (text: string) => (
+          <a
+            onClick={() => {
+              window.open(
+                `/warehouse-management/putaway-list?packageCode=${text}`,
+                "_blank"
+              );
+            }}
+          >
+            {text}
+          </a>
+        ),
       },
-
+      {
+        title: "货位",
+        dataIndex: "location",
+        render: (location: any) => {
+          return location?.locationCode;
+        },
+      },
       {
         title: "状态",
         dataIndex: "putawayStatusCode",

@@ -159,10 +159,17 @@ const TableList: React.FC = () => {
     // 获取 URL 参数
     const urlParams = new URLSearchParams(window.location.search);
     const orderCode = urlParams.get("orderCode");
+    const packageCode = urlParams.get("packageCode");
 
     if (orderCode) {
       // 如果有 orderCode，设置 filters 并搜索
       const initialFilters = { orderCode };
+      setFilters(initialFilters);
+      formRef.current?.setFieldsValue(initialFilters);
+      fetchData({ current: 1, ...initialFilters });
+    } else if (packageCode) {
+      // 如果有 packageCode，设置 filters 并搜索
+      const initialFilters = { packageCode };
       setFilters(initialFilters);
       formRef.current?.setFieldsValue(initialFilters);
       fetchData({ current: 1, ...initialFilters });

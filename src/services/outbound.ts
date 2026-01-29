@@ -7,6 +7,12 @@ export async function getOutboundListByPage(data: any) {
     data,
   });
 }
+// 内测客户免费发货
+export async function freeSendOutbound(code: string) {
+  return request<API.RuleList>(`/waybill/pay/free?code=${code}`, {
+    method: "GET",
+  });
+}
 /** 获取拣货单列表 POST /orders/page */
 export async function getOutboundPickingListByPage(data: any) {
   return request<API.RuleList>("/outbound-picking/page", {

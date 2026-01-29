@@ -16,6 +16,8 @@ export type ModuleType =
   | "refundGoods"
   | "shelf"
   | "payment"
+  | "systemMessage"
+  | "noticeType"
   | "delivery"; // 可根据项目扩展
 
 export interface StatusItem {
@@ -45,7 +47,7 @@ export const STATUS_LIST: StatusItem[] = [
   { label: "待审核", value: 200, module: "purchase", color: "orange" },
   { label: "待采购", value: 201, module: "purchase", color: "blue" },
   { label: "已采购 待付款", value: 202, module: "purchase", color: "cyan" },
-  { label: "已采购 已付款", value: 203, module: "purchase", color: "green" },
+  { label: "已付款 待发货", value: 203, module: "purchase", color: "green" },
   { label: "已发货", value: 204, module: "purchase", color: "purple" },
   { label: "已取消", value: 205, module: "purchase", color: "default" },
   { label: "已退款", value: 206, module: "purchase", color: "red" },
@@ -106,6 +108,20 @@ export const STATUS_LIST: StatusItem[] = [
   // ✅ 支付方式配置 - 布尔类型示例
   { label: "关闭", value: true, module: "payment", color: "red" },
   { label: "启用", value: false, module: "payment", color: "green" },
+
+  // ✅ 系统消息状态
+  { label: "未读", value: 0, module: "systemMessage", color: "red" },
+  { label: "已读", value: 1, module: "systemMessage", color: "green" },
+
+  // ✅ 系统通知类型
+  { label: "超时未采购", value: 102, module: "noticeType", color: "orange" },
+  { label: "超时未发货(采购)", value: 103, module: "noticeType", color: "red" },
+  { label: "超时未收货", value: 104, module: "noticeType", color: "volcano" },
+  { label: "超时未上架(入库)", value: 105, module: "noticeType", color: "cyan" },
+  { label: "超时未拣货", value: 106, module: "noticeType", color: "blue" },
+  { label: "超时未打包", value: 107, module: "noticeType", color: "geekblue" },
+  { label: "超时未上架(出库)", value: 108, module: "noticeType", color: "purple" },
+  { label: "超时未发货(出库)", value: 109, module: "noticeType", color: "magenta" },
 ];
 
 // ======================
