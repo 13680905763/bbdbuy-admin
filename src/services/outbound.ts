@@ -78,6 +78,12 @@ export async function getShippingFeeTemplate(id: string) {
     method: "GET",
   });
 }
+/** 根据路线查询运输模板 */
+export async function getShippingTemplates(serverId: string, lineId: string) {
+  return request<API.RuleList>(`/shipping-line-template/server/line?serverId=${serverId}&lineId=${lineId}`, {
+    method: "GET",
+  });
+}
 
 export async function getOutboundSend(data: any) {
   return request("/outbound-send/export", {
@@ -99,6 +105,19 @@ export async function uploadOutboundSend(file: File) {
 
 export async function rebuildOutboundPacking(data: any) {
   return request("/outbound-packing/rebuild", {
+    method: "POST",
+    data,
+  });
+}
+
+/** 修改国际物流单号 */
+export async function updateOutboundSendShippingCode(data: {
+  id: string;
+  shippingCode: string;
+  templateId?: string;
+  remark?: string;
+}) {
+  return request("/outbound-send/change/shipping-code", {
     method: "POST",
     data,
   });

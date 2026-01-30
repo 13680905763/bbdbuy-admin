@@ -96,9 +96,12 @@ export async function printPickingList(list: PickListOptions[]) {
       </head>
       <body>
         ${list
-          .map(
-            (opt, pageIndex) => `
+      .map(
+        (opt, pageIndex) => `
           <div class="page">
+           <div class="barcode-label" >
+          <span style="font-weight: bold; font-size: 60px;">${opt.packingPackageCode.slice(-6)}</span>
+           </div>
             <svg id="barcode-${pageIndex}" style="max-width: 60%"></svg>
             <div class="barcode-label" >${opt.packingPackageCode}</div>
             <div class="info">用户名：${opt.customerName}</div>
@@ -121,8 +124,8 @@ export async function printPickingList(list: PickListOptions[]) {
               </thead>
               <tbody>
                 ${opt.items
-                  .map(
-                    (item, idx) => `
+            .map(
+              (item, idx) => `
                   <tr>
                     <td>${idx + 1}</td>
                     <td style="font-size:16px">${item.packageCode}</td>
@@ -131,21 +134,21 @@ export async function printPickingList(list: PickListOptions[]) {
                      <div className="page-break"></div>
                   </tr>
                 `
-                  )
-                  .join("")}
+            )
+            .join("")}
               </tbody>
             </table>
           </div>
         `
-          )
-          .join("")}
+      )
+      .join("")}
 
         <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
         <script>
           window.onload = function () {
             ${list
-              .map(
-                (opt, i) => `
+      .map(
+        (opt, i) => `
               JsBarcode("#barcode-${i}", "${opt.packingPackageCode}", {
                 format: "CODE128",
                 width: 1.2,
@@ -154,8 +157,8 @@ export async function printPickingList(list: PickListOptions[]) {
                 margin: 0,
               });
             `
-              )
-              .join("")}
+      )
+      .join("")}
             window.print();
             window.onafterprint = function () {
               window.close();

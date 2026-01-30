@@ -63,7 +63,7 @@ const TableList: React.FC = () => {
 
   const columns: ProColumns<any>[] = [
     {
-      title: "业务单号", dataIndex: "content", width: 300,
+      title: "业务单号", dataIndex: "bizCode", width: 300,
       render: (text: any, record: any) => (
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <a

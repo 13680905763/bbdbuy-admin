@@ -3,21 +3,30 @@ import {
   getOutboundSendListByPage,
   getShippingFeeTemplate,
   getShippingServers,
+  getShippingTemplates,
+  updateOutboundSendShippingCode,
   uploadOutboundSend,
 } from "@/services";
 import { getStatusOptions, renderStatusTag } from "@/utils/status-render";
-import { ArrowDownOutlined, UploadOutlined } from "@ant-design/icons";
+import {
+  ArrowDownOutlined,
+  EditOutlined,
+  UploadOutlined,
+} from "@ant-design/icons";
 import type {
   ActionType,
   ProColumns,
   ProFormInstance,
 } from "@ant-design/pro-components";
 import {
+  ModalForm,
   PageContainer,
   ProFormSelect,
+  ProFormText,
+  ProFormTextArea,
   ProTable,
 } from "@ant-design/pro-components";
-import { Button, Pagination, Select, Upload, message } from "antd";
+import { Button, Form, Pagination, Select, Upload, message } from "antd";
 import React, { useEffect, useRef, useState } from "react";
 
 type OrderProductRow = {
@@ -27,6 +36,168 @@ type OrderProductRow = {
   sendStatus: string;
   sendList: any[];
   shippingList: any[];
+};
+
+const EditShippingModal: React.FC<{
+  record: any;
+  serverOptions: { label: string; value: string }[];
+  onSuccess: () => void;
+}> = ({ record, serverOptions, onSuccess }) => {
+  const [form] = Form.useForm();
+  const [routeOptions, setRouteOptions] = useState<
+    { label: string; value: string }[]
+  >([]);
+  const [templateOptions, setTemplateOptions] = useState<
+    { label: string; value: string }[]
+  >([]);
+
+  const fetchRoutes = async (serverId: string) => {
+    if (!serverId) {
+      setRouteOptions([]);
+      return;
+    }
+    try {
+      const res = await getShippingFeeTemplate(serverId);
+      if (res?.data) {
+        setRouteOptions(
+          res.data.map((item: any) => ({
+            label: item.lineName,
+            value: item.id,
+          }))
+        );
+      }
+    } catch (e) {
+      // ignore
+    }
+  };
+
+  const fetchTemplates = async (serverId: string, lineId: string) => {
+    console.log('serverId', serverId);
+    console.log('lineId', lineId);
+    if (!serverId || !lineId) {
+      setTemplateOptions([]);
+      return;
+    }
+    try {
+      const res = await getShippingTemplates(serverId, lineId);
+      if (res?.data) {
+        setTemplateOptions(
+          res.data.map((item: any) => ({
+            label: item.templateName,
+            value: item.id,
+          }))
+        );
+      }
+    } catch (e) {
+      console.log('e', e);
+      // ignore
+    }
+  };
+
+  return (
+    <ModalForm<{
+      shippingCode: string;
+      serverId: string;
+      lineId: string;
+      templateId: string;
+      remark: string;
+    }>
+      title="修改国际物流单号"
+      trigger={<EditOutlined style={{ cursor: "pointer", color: "orange" }} />}
+      width={400}
+      form={form}
+      modalProps={{
+        destroyOnClose: true,
+        maskClosable: false,
+      }}
+      onOpenChange={async (visible) => {
+        if (visible) {
+          const serverId = record?.shipping?.serverId;
+          const lineId = record?.shipping?.lineId; // 这里的取值逻辑可能需要根据实际字段调整
+          if (serverId) {
+            await fetchRoutes(serverId);
+            if (lineId) {
+              await fetchTemplates(serverId, lineId);
+            }
+          }
+          form.setFieldsValue({
+            shippingCode: record?.shipping?.shippingCode,
+            serverId: serverId,
+            lineId: lineId,
+            templateId: record?.shipping?.templateId,
+            remark: record?.remark,
+          });
+        }
+      }}
+      onFinish={async (values) => {
+        try {
+          const res = await updateOutboundSendShippingCode({
+            id: record.id,
+            shippingCode: values.shippingCode,
+            templateId: values.templateId,
+            remark: values.remark,
+          });
+          // @ts-ignore
+          if (res?.success) {
+            message.success("修改成功");
+            onSuccess();
+            return true;
+          }
+          return false;
+        } catch (error) {
+          message.error("修改失败");
+          return false;
+        }
+      }}
+    >
+      <ProFormText
+        name="shippingCode"
+        label="国际物流单号"
+        placeholder="请输入国际物流单号"
+        rules={[{ required: true, message: "请输入国际物流单号" }]}
+      />
+      <ProFormSelect
+        name="serverId"
+        label="承运商"
+        placeholder="请选择承运商"
+        allowClear
+        options={serverOptions}
+        fieldProps={{
+          onChange: (val: any) => {
+            form.setFieldValue("lineId", undefined);
+            form.setFieldValue("templateId", undefined);
+            fetchRoutes(val);
+            setTemplateOptions([]);
+          },
+        }}
+        rules={[{ required: true, message: "请选择承运商" }]}
+      />
+      <ProFormSelect
+        name="lineId"
+        label="运输路线"
+        placeholder="请选择路线"
+        allowClear
+        options={routeOptions}
+        fieldProps={{
+          onChange: (val: any) => {
+            form.setFieldValue("templateId", undefined);
+            const serverId = form.getFieldValue("serverId");
+            fetchTemplates(serverId, val);
+          },
+        }}
+        rules={[{ required: true, message: "请选择路线" }]}
+      />
+      <ProFormSelect
+        name="templateId"
+        label="运输模板"
+        placeholder="请选择运输模板"
+        allowClear
+        options={templateOptions}
+        rules={[{ required: true, message: "请选择运输模板" }]}
+      />
+      <ProFormTextArea name="remark" label="备注" placeholder="请输入备注" />
+    </ModalForm>
+  );
 };
 
 const TableList: React.FC = () => {
@@ -142,7 +313,6 @@ const TableList: React.FC = () => {
       title: "尺寸/重量",
       dataIndex: "packing",
       minWidth: 200,
-
       hideInSearch: true,
       render: (row: any) => {
         if (!row) return "--";
@@ -235,7 +405,25 @@ const TableList: React.FC = () => {
       title: "国际物流单号",
       dataIndex: "shippingCode",
       width: 150,
-      render: (_, records: any) => records?.shipping?.shippingCode,
+      render: (_, record: any) => {
+        return (
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span>{record?.shipping?.shippingCode || "--"}</span>
+
+            {record?.shipping?.shippingCode && (
+              <EditShippingModal
+                record={record}
+                serverOptions={serverOptions}
+                onSuccess={() => actionRef.current?.reload()}
+              />)}
+          </div>
+        );
+      },
+    },
+    {
+      title: "备注",
+      dataIndex: "remark",
+      hideInSearch: true,
     },
     {
       title: "发货状态",

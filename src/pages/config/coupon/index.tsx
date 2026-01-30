@@ -112,6 +112,7 @@ const ConfigList: React.FC = () => {
     { title: "面额", dataIndex: "denomination" },
     { title: "折扣", dataIndex: "discount" },
     { title: "使用门槛", dataIndex: "thresholdAmount" },
+    { title: "兑换所需积分", dataIndex: "exchangePoints" },
     { title: "有效期", dataIndex: "expirationDate" },
     { title: "VIP等级", dataIndex: "vipLv" },
     { title: "更新时间", dataIndex: "updateTime" },
@@ -282,6 +283,19 @@ const ConfigList: React.FC = () => {
                 min={0}
                 style={{ width: "100%" }}
                 placeholder="请输入VIP等级"
+              />
+            </Form.Item>
+          )}
+          {srcType === 2 && (
+            <Form.Item
+              name="exchangePoints"
+              label="兑换所需积分"
+              rules={[{ required: true, message: "请输入兑换所需积分" }]}
+            >
+              <InputNumber
+                min={0}
+                style={{ width: "100%" }}
+                placeholder="请输入兑换所需积分"
               />
             </Form.Item>
           )}
