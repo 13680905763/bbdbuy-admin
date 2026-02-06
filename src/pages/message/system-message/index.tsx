@@ -150,6 +150,7 @@ const TableList: React.FC = () => {
     console.log("values", values);
     const [startTime, endTime] = values.createTime || [];
     const filterParams = {
+      bizCode: values.bizCode,
       noticeTypeCode: values.noticeTypeCode,
       content: values.content,
       statusCode: values.statusCode,

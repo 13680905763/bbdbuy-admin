@@ -139,11 +139,6 @@ const TableList: React.FC = () => {
                 referrerPolicy="no-referrer"
               />
             ))}
-            {
-              record?.orderRemark && (
-                <Tag color="red">客户备注商品</Tag>
-              )
-            }
             {/* 若超过3张则显示数量标签 */}
             {products?.length > 3 && (
               <Tag color="blue">+{products.length - 3}</Tag>
@@ -152,11 +147,7 @@ const TableList: React.FC = () => {
         );
       },
     },
-    // {
-    //   title: "商品备注",
-    //   hideInSearch: true,
-    //   dataIndex: "orderRemark",
-    // },
+ 
     {
       title: "平台",
       hideInSearch: true,
@@ -208,6 +199,18 @@ const TableList: React.FC = () => {
       title: "采购备注",
       dataIndex: "remark",
       hideInSearch: true,
+      render: (text: any, record: any) => {
+        console.log('record.purchaseLimited', record.purchaseLimited,record.purchaseLimited && record.purchaseLimited != 0);
+        
+        return (
+          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+            {!!record.purchaseLimited && record.purchaseLimited != 0 && (
+              <div>{renderStatusTag("purchaseLimited", record.purchaseLimited)}</div>
+            )}
+            <div>{text}</div>
+          </div>
+        );
+      },
     },
 
     {
@@ -747,7 +750,7 @@ const TableList: React.FC = () => {
               // ✅ 没备注，直接执行
               console.log("采购");
 
-              await doSubmit(ids);
+              await doSubmit(canManualData.map((item: any) => item?.id));
             }}
           >
             批量采购
@@ -783,11 +786,11 @@ const TableList: React.FC = () => {
                 },
                 onOk: async () => {
                   const res: any = await batchSyncOrder({ idSet: ids });
-                  if (res.success) {
+                  if (!res.success) {
                     message.error(res?.msg || "同步失败");
                     return;
                   }
-                  message.success("同步成功");
+                  message.success(res?.msg || "同步成功");
                   actionRef.current?.reload();
                 }, // ✅ 确认后继续
               });

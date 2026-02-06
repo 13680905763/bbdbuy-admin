@@ -18,7 +18,8 @@ export type ModuleType =
   | "payment"
   | "systemMessage"
   | "noticeType"
-  | "delivery"; // 可根据项目扩展
+  | "delivery" // 可根据项目扩展
+  | "purchaseLimited";
 
 export interface StatusItem {
   label: string;
@@ -122,6 +123,11 @@ export const STATUS_LIST: StatusItem[] = [
   { label: "超时未打包", value: 107, module: "noticeType", color: "geekblue" },
   { label: "超时未上架(出库)", value: 108, module: "noticeType", color: "purple" },
   { label: "超时未发货(出库)", value: 109, module: "noticeType", color: "magenta" },
+
+  // ✅ 采购标识
+  { label: "客户备注", value: 1, module: "purchaseLimited", color: "red" },
+  { label: "平台控货", value: 2, module: "purchaseLimited", color: "red" },
+  { label: "DIY订单", value: 3, module: "purchaseLimited", color: "red" },
 ];
 
 // ======================
