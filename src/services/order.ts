@@ -144,3 +144,10 @@ export async function getInboundPutaway(data: any) {
     data,
   });
 }
+
+/** 获取DIY订单详情 GET /order-diy/{orderId} */
+export async function getDiyOrderDetail(orderId: any) {
+  return request(`/order-diy/${orderId}`, {
+    method: "GET",
+  });
+}

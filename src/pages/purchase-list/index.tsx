@@ -5,6 +5,7 @@ import {
   PurchaseManual,
   putPurchaseSync,
   updatePurchaseLogistics,
+  getDiyOrderDetail,
 } from "@/services/order";
 import { getStatusOptions, renderStatusTag } from "@/utils/status-render";
 import { DownOutlined, RightOutlined } from "@ant-design/icons";
@@ -30,6 +31,7 @@ import {
 import moment from "moment";
 import React, { useEffect, useRef, useState } from "react";
 import EditModal, { EditModalRef } from "./editmodal";
+import DiyDetailModal from "./DiyDetailModal";
 const { RangePicker } = DatePicker;
 export interface ProcureStatusItem {
   label: string; // 显示文字
@@ -61,6 +63,28 @@ const TableList: React.FC = () => {
   const [editModalData, setEditModalData] = useState<any[]>([]);
   const [editModalRemark, setEditModalRemark] = useState("");
 
+  // DIY Modal State
+  const [diyModalOpen, setDiyModalOpen] = useState(false);
+  const [diyModalData, setDiyModalData] = useState<any>(null);
+  const [diyModalLoading, setDiyModalLoading] = useState(false);
+
+  const handleDiyDetail = async (orderId: string) => {
+    setDiyModalOpen(true);
+    setDiyModalLoading(true);
+    try {
+      const res: any = await getDiyOrderDetail(orderId);
+      if (res.success) {
+        setDiyModalData(res.data);
+      } else {
+        message.error(res.msg || "获取详情失败");
+      }
+    } catch (error) {
+      message.error("获取详情失败");
+    } finally {
+      setDiyModalLoading(false);
+    }
+  };
+
   const fetchData = async (params?: any) => {
     const query = {
       current,
@@ -91,11 +115,11 @@ const TableList: React.FC = () => {
   };
 
   const columns: ProColumns<any>[] = [
-    {
-      title: "采购编号",
-      dataIndex: "purchaseCode",
-      hideInSearch: true,
-    },
+    // {
+    //   title: "采购编号",
+    //   dataIndex: "purchaseCode",
+    //   hideInSearch: true,
+    // },
     {
       title: "订单编号",
       dataIndex: "orderCode",
@@ -147,7 +171,7 @@ const TableList: React.FC = () => {
         );
       },
     },
- 
+
     {
       title: "平台",
       hideInSearch: true,
@@ -196,18 +220,20 @@ const TableList: React.FC = () => {
       hideInSearch: true,
     },
     {
-      title: "采购备注",
+      title: "限制/备注",
       dataIndex: "remark",
       hideInSearch: true,
       render: (text: any, record: any) => {
-        console.log('record.purchaseLimited', record.purchaseLimited,record.purchaseLimited && record.purchaseLimited != 0);
-        
+        console.log('record.purchaseLimited', record.purchaseLimited, record.purchaseLimited && record.purchaseLimited != 0);
+
         return (
           <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+
             {!!record.purchaseLimited && record.purchaseLimited != 0 && (
               <div>{renderStatusTag("purchaseLimited", record.purchaseLimited)}</div>
             )}
             <div>{text}</div>
+
           </div>
         );
       },
@@ -298,10 +324,19 @@ const TableList: React.FC = () => {
             style={{
               display: "flex",
               gap: 4,
+              flexDirection: "column",
               justifyContent: "center",
               alignItems: "center",
             }}
           >
+            {record?.purchaseLimited === 3 && (
+              <Button
+                size="small"
+                onClick={() => handleDiyDetail(record.orderId)}
+              >
+                DIY详情
+              </Button>
+            )}
             {record?.manualFlag && (
               <Button
                 type="primary"
@@ -844,7 +879,17 @@ const TableList: React.FC = () => {
           </Form>
         )}
       </Modal>
-    </PageContainer >
+
+      <DiyDetailModal
+        open={diyModalOpen}
+        onCancel={() => {
+          setDiyModalOpen(false);
+          setDiyModalData(null);
+        }}
+        data={diyModalData}
+        loading={diyModalLoading}
+      />
+    </PageContainer>
   );
 };
 

@@ -323,6 +323,12 @@ const ConfigList: React.FC = () => {
 
       },
       {
+        title: "用户名",
+        dataIndex: "customerName",
+        hideInSearch: true,
+        width: 100,
+      },
+      {
         title: "快递单号",
         dataIndex: "logisticsCode",
         render: (text: string) => (
@@ -354,13 +360,104 @@ const ConfigList: React.FC = () => {
           </a>
         ),
       },
-
       {
-        title: "用户名",
-        dataIndex: "customerName",
+        title: "商品名称",
+        dataIndex: "orderProduct",
         hideInSearch: true,
-        width: 100,
+        width: 300,
+        render: (orderProduct: any) => {
+          return (
+            <div style={{ display: "flex", gap: 12, padding: "8px 0" }}>
+              {/* 左侧图片 */}
+              <Image
+                width={90}
+                height={90}
+                src={orderProduct?.skuPicUrl || orderProduct?.picUrl}
+                alt={orderProduct?.productTitle || "商品图片"}
+                preview={orderProduct?.picUrl}
+                style={{ objectFit: "cover", borderRadius: 4 }}
+                referrerPolicy="no-referrer"
+              />
+              {/* 右侧内容 */}
+              <div
+                style={{
+                  flex: 1,
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "space-between",
+                }}
+              >
+                {/* 商品标题 */}
+                <div
+                  style={{
+                    fontWeight: 500,
+                    fontSize: 14,
+                    color: "#333",
+                    lineHeight: 1.4,
+                    display: "-webkit-box",
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: "vertical",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                  }}
+                >
+                  {orderProduct.productTitle}
+                </div>
+
+                {/* 属性 */}
+                {orderProduct.propAndValue?.propName_valueName && (
+                  <div
+                    style={{
+                      fontSize: 12,
+                      color: "#999",
+                      marginTop: 2,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {orderProduct.propAndValue.propName_valueName}
+                  </div>
+                )}
+
+                {/* 价格与数量 */}
+                <div style={{ fontSize: 14, color: "#e60012", marginTop: 2 }}>
+                  ￥{orderProduct.price} × {orderProduct.quantity}
+                </div>
+              </div>
+            </div>
+          );
+        },
       },
+      {
+        title: "商品类型",
+        dataIndex: "packageItem.categoryName",
+        hideInSearch: true,
+        render: (_: any, record: any) => {
+          return <div>{record?.packageItem?.categoryName}</div>;
+        },
+      },
+      {
+        title: "验货详情",
+        dataIndex: "packageItem.id",
+        hideInSearch: true,
+        render: (_: any, record: any) => {
+          return (
+            <div style={{ fontSize: 13, color: "#555", lineHeight: "20px" }}>
+              <div>
+                尺寸：{record?.packageItem?.length} x {record?.packageItem?.width}{" "}
+                x {record?.packageItem?.height} cm
+              </div>
+              <div>体积：{record?.packageItem?.volume} cm³</div>
+              <div>重量：{record?.packageItem?.weight} g</div>
+              <div>数量：{record?.packageItem?.quantity}</div>
+            </div>
+          );
+        },
+      },
+
+
+
 
       {
         title: "验货状态",

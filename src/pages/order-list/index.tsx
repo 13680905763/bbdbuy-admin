@@ -123,8 +123,8 @@ const TableList: React.FC = () => {
 
     // },
     { title: "商品金额", dataIndex: "productFee", hideInSearch: true },
-    { title: "运费金额", dataIndex: "postFee", hideInSearch: true },
-    { title: "服务费金额", dataIndex: "serviceFee", hideInSearch: true },
+    { title: "运费", dataIndex: "postFee", hideInSearch: true },
+    { title: "服务费", dataIndex: "serviceFee", hideInSearch: true },
     { title: "退款金额", dataIndex: "refundAmount", hideInSearch: true },
     { title: "订单总金额", dataIndex: "totalFee", hideInSearch: true },
     {
