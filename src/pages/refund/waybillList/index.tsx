@@ -26,7 +26,7 @@ const TableList: React.FC = () => {
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [currentRow, setCurrentRow] = useState<any>(null);
   const [form] = Form.useForm();
-  const [statusCode, setStatusCode] = useState<number>(2); // 默认固定值
+  const [statusCode, setStatusCode] = useState<number>(20); // 默认固定值
   // 新增 state
   const [confirmLoading, setConfirmLoading] = useState(false);
 
@@ -126,7 +126,7 @@ const TableList: React.FC = () => {
       render: (_:any, record: any) => {
         const statusCode = record.statusCode;
         const updateTime = record.updateTime;
-        if (statusCode === 1) return "--";
+        if (statusCode === 10) return "--";
         return updateTime;
       },
     },
@@ -299,10 +299,10 @@ const TableList: React.FC = () => {
           >
             <Select
               options={[
-                { label: "待审核", value: 1 }, //不显示数量和金额，只显示状态选择
-                { label: "处理中", value: 2 },
-                { label: "已退款", value: 3 }, //数量、金额必填
-                { label: "已驳回", value: 4 },
+                { label: "待受理", value: 10 }, //不显示数量和金额，只显示状态选择
+                { label: "协商中", value: 20 },
+                { label: "已退款", value: 40 }, //数量、金额必填
+                { label: "已驳回", value: 50 },
               ]}
               onChange={(value) => {
                 setStatusCode(value);
@@ -310,7 +310,7 @@ const TableList: React.FC = () => {
             />
           </Form.Item>
           {/* 备注：在“处理中”和“已驳回”状态下必填 */}
-          {statusCode === 3 && (
+          {statusCode === 40 && (
             <>
               <Form.Item label="退款数量" name="quantity">
                 <Input />
@@ -320,7 +320,7 @@ const TableList: React.FC = () => {
               </Form.Item>
             </>
           )}
-          {statusCode !== 1 && (
+          {statusCode !== 10 && (
             <Form.Item
               label="备注"
               name="remark"

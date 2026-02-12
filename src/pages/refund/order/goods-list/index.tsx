@@ -1,6 +1,5 @@
 import {
   getOrderRefundGoodsList,
-  getOrderRefundGoodsReason,
   getOrderRefundGoodsSign,
   putOrderRefundGoodsSend,
   putOrderRefundGoodsUpdate,
@@ -20,6 +19,9 @@ import {
 import { Button, Image, Modal, Pagination, Tag, message } from "antd";
 import { log } from "console";
 import React, { useEffect, useRef, useState } from "react";
+import TaobaoRefundModal from "./TaobaoRefundModal";
+import A1688RefundModal from "./A1688RefundModal";
+import WeidianRefundModal from "./WeidianRefundModal";
 
 type OrderProductRow = {
   id: string;
@@ -50,7 +52,6 @@ const TableList: React.FC = () => {
   const [total, setTotal] = useState(0);
 
   const [filters, setFilters] = useState<Record<string, any>>({});
-  // 弹窗状态
   const [confirmLoading, setConfirmLoading] = useState(false);
 
   const [expandedRowKeys, setExpandedRowKeys] = useState<React.Key[]>([]); // ✅ 展开行控制
@@ -62,7 +63,10 @@ const TableList: React.FC = () => {
   const [modalType, setModalType] = useState<"applyFlag" | "returnFlag" | null>(
     null
   );
-  const [reasonOptions, setReasonOptions] = useState<any[]>([]);
+  const [applyModalOpen, setApplyModalOpen] = useState(false);
+  const [apply1688ModalOpen, setApply1688ModalOpen] = useState(false);
+  const [applyWeidianModalOpen, setApplyWeidianModalOpen] = useState(false);
+  // const [reasonOptions, setReasonOptions] = useState<any[]>([]);
 
   const handleExpand = (record: any) => {
     setExpandedRowKeys((prev) =>
@@ -91,23 +95,7 @@ const TableList: React.FC = () => {
       setLoading(false);
     }
   };
-  const fetchRefundGoodsReason = async (params?: any) => {
-    try {
-      const res: any = await getOrderRefundGoodsReason(params);
-      console.log("res", res);
-      if (res.data && Array.isArray(res.data)) {
-        const options = res.data.map((item: any) => ({
-          label: item.reasonDesc,
-          value: item.reasonId,
-          canRefundCarriage: item.canRefundCarriage, // 可选：如果后续逻辑需要用到
-          needVoucher: item.needVoucher, // 可选：如果后续逻辑需要用到
-        }));
-        setReasonOptions(options);
-      }
-    } catch (e) {
-      message.error("加载失败");
-    }
-  };
+
 
   const columns: ProColumns<OrderProductRow>[] = [
     {
@@ -122,7 +110,7 @@ const TableList: React.FC = () => {
 
     {
       title: "商品信息",
-      dataIndex: "items",
+      dataIndex: "returnGoodsList",
       hideInSearch: true,
       render: (products: any = [], record: any) => {
         const preview = products?.slice(0, 3);
@@ -436,7 +424,7 @@ const TableList: React.FC = () => {
 
           return {
             placeholder: "选择退款原因",
-            options: reasonOptions,
+            // options: reasonOptions,
             style: { maxWidth: 130, minWidth: 130 }, // 限制输入框宽度
             dropdownMatchSelectWidth: false, // 下拉框不要跟随宽度
           };
@@ -546,17 +534,25 @@ const TableList: React.FC = () => {
   };
   /** 修改 */
   const handleEdit = (record: any, modalType: any) => {
-    setModalType(modalType);
     setCurrentRow(record);
-    console.log("record", record);
+    // console.log("record", record);
     if (modalType === "applyFlag") {
-      fetchRefundGoodsReason({
-        orderId: record?.orderId,
-        refundType: 2,
-        goodsStatus: 12,
-      });
+      if (record?.source === "TAOBAO") {
+        handleExpand(record);
+      } else if (record?.source === "1688") {
+        setApply1688ModalOpen(true);
+      } else if (record?.source === "WEIDIAN") {
+        handleExpand(record);
+      } else {
+        // setApplyModalOpen(true);
+      }
+    } else {
+      setModalType(modalType);
     }
   };
+
+
+
   /** 保存（新增 / 修改） */
   const handleSave = async () => {
     try {
@@ -564,9 +560,7 @@ const TableList: React.FC = () => {
       console.log("modalType", modalType);
       let values: any = [];
       setLoading(true);
-      if (modalType == "applyFlag") {
-        console.log("提交申请");
-      } else if (modalType == "returnFlag") {
+      if (modalType == "returnFlag") {
         values = tableData.map((item: any) => ({
           id: item.id,
           logisticsCompany: item.logisticsCompany?.trim(),
@@ -655,7 +649,7 @@ const TableList: React.FC = () => {
                 size="small"
                 pagination={false}
                 showHeader={false}
-                value={record.items || []}
+                value={record.returnGoodsList || []}
                 rowKey="id"
                 recordCreatorProps={false}
                 editable={{
@@ -729,7 +723,9 @@ const TableList: React.FC = () => {
                     width: 60,
                     editable: false,
                     align: "center",
-                    render: (q) => <span>×{q}</span>,
+                    render: (q, record) => (
+                      <span> ￥{record.price}×{q}</span>
+                    ),
                   },
                   {
                     title: "快递公司",
@@ -783,9 +779,9 @@ const TableList: React.FC = () => {
                     render: (text, item, _, action) => {
                       console.log("editableKeys", editableKeys);
                       console.log("item", item);
-                      if (item?.statusCode == 0 || item?.statusCode == 1) {
-                        return null;
-                      }
+                      // if (item?.statusCode == 0 || item?.statusCode == 1) {
+                      //   return null;
+                      // }
                       const isEditing = editableKeys.includes(item.id);
 
                       if (isEditing) {
@@ -794,17 +790,37 @@ const TableList: React.FC = () => {
 
                       return (
                         <div style={{ display: "flex", gap: "5px" }}>
-                          <Button
-                            key="edit"
-                            type="default"
-                            size="small"
-                            onClick={() => {
-                              // 开始编辑这一行
-                              action?.startEditable?.(item.id);
-                            }}
-                          >
-                            {item.logisticsCompany ? "修改" : "发货"}
-                          </Button>
+                          {item?.statusCode == 0 && (record?.source === "TAOBAO" || record?.source === "WEIDIAN") && (
+                            <Button
+                              key="apply"
+                              type="primary"
+                              size="small"
+                              onClick={() => {
+                                // 申请
+                                if (record?.source === "WEIDIAN") {
+                                  setApplyWeidianModalOpen(true);
+                                } else {
+                                  setApplyModalOpen(true);
+                                }
+                                setCurrentRow(item);
+                              }}
+                            >
+                              申请
+                            </Button>
+                          )}
+                          {item?.statusCode !== 0 && (
+                            <Button
+                              key="edit"
+                              type="default"
+                              size="small"
+                              onClick={() => {
+                                // 开始编辑这一行
+                                action?.startEditable?.(item.id);
+                              }}
+                            >
+                              {item.logisticsCompany ? "修改" : "发货"}
+                            </Button>
+                          )}
                           {item?.statusCode == 2 && (
                             <Button
                               key="submit"
@@ -860,11 +876,11 @@ const TableList: React.FC = () => {
           expandIcon: () => null,
           expandIconColumnIndex: -1,
           expandRowByClick: false,
-          rowExpandable: (record: any) => record.items?.length > 0,
+          rowExpandable: (record: any) => record.returnGoodsList?.length > 0,
         }}
       />
       <Modal
-        title={modalType == "applyFlag" ? "向平台退货申请" : "发货"}
+        title="发货"
         open={!!modalType}
         onCancel={() => setModalType(null)}
         onOk={handleSave}
@@ -875,16 +891,12 @@ const TableList: React.FC = () => {
         <EditableProTable
           size="small"
           pagination={false}
-          value={
-            modalType == "applyFlag"
-              ? currentRow?.items.filter((item: any) => item?.statusCode == 0)
-              : currentRow?.items.filter((item: any) => item?.statusCode == 1)
-          }
+          value={currentRow?.returnGoodsList?.filter((item: any) => item?.statusCode == 1) || []}
           rowKey="id"
           recordCreatorProps={false}
           editable={{
             type: "single",
-            editableKeys: currentRow?.items.map((i: any) => i.id) || [],
+            editableKeys: currentRow?.returnGoodsList?.map((i: any) => i.id) || [],
             onChange: setEditableKeys,
             onValuesChange: (record, recordList: any) => {
               setTableData(recordList); // ⭐ 必须同步，否则 handleSave 拿不到最新值
@@ -893,9 +905,30 @@ const TableList: React.FC = () => {
               return [defaultDom.save, defaultDom.cancel];
             },
           }}
-          columns={modalColumns[modalType as keyof typeof modalColumns]}
+          columns={modalColumns.returnFlag}
         />
       </Modal>
+
+      <TaobaoRefundModal
+        open={applyModalOpen}
+        onCancel={() => setApplyModalOpen(false)}
+        onOk={() => fetchData()}
+        data={currentRow}
+      />
+
+      <A1688RefundModal
+        open={apply1688ModalOpen}
+        onCancel={() => setApply1688ModalOpen(false)}
+        data={currentRow}
+      />
+
+      <WeidianRefundModal
+        open={applyWeidianModalOpen}
+        onCancel={() => setApplyWeidianModalOpen(false)}
+        onOk={() => fetchData()}
+        data={currentRow}
+      />
+
       <div style={{ padding: 16, textAlign: "right" }}>
         <Pagination
           current={current}

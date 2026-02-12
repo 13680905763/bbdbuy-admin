@@ -57,7 +57,7 @@ const TableList: React.FC = () => {
   const [currentRow, setCurrentRow] = useState<any>(null);
   const [currentItem, setCurrentItem] = useState<any>(null);
   const [form] = Form.useForm();
-  const [statusCode, setStatusCode] = useState<number>(2); // 默认固定值
+  const [statusCode, setStatusCode] = useState<number>(20); // 默认固定值
   // 新增 state
   const [confirmLoading, setConfirmLoading] = useState(false);
 
@@ -411,7 +411,7 @@ const TableList: React.FC = () => {
                     return (
                       <>
                         {renderStatusTag("refund", value)}
-                        {value == 4 && `¥${record?.refundAmount}`}
+                        {value == 40 && `¥${record?.refundAmount}`}
                       </>
                     );
                   },
@@ -425,19 +425,28 @@ const TableList: React.FC = () => {
                   dataIndex: "options",
                   render: (_: any, record: any) => (
                     <div style={{ display: "flex", gap: 8 }}>
-                      {record.canProcessing && (
+                      {record.canAcceptance && (
                         <Button
                           type="link"
-                          onClick={() => handleEdit(record, 2)}
+                          onClick={() => handleEdit(record, 20)}
                           style={{ padding: 0 }}
                         >
-                          处理中
+                          受理
+                        </Button>
+                      )}
+                      {record.canSellerAgree && (
+                        <Button
+                          type="link"
+                          onClick={() => handleEdit(record, 25)}
+                          style={{ padding: 0 }}
+                        >
+                          商家同意
                         </Button>
                       )}
                       {record.canRefund && (
                         <Button
                           type="link"
-                          onClick={() => handleEdit(record, 4)}
+                          onClick={() => handleEdit(record, 40)}
                           style={{ padding: 0 }}
                         >
                           退款
@@ -446,7 +455,7 @@ const TableList: React.FC = () => {
                       {record.canRejected && (
                         <Button
                           type="link"
-                          onClick={() => handleEdit(record, 5)}
+                          onClick={() => handleEdit(record, 50)}
                           style={{ padding: 0 }}
                         >
                           驳回
@@ -527,7 +536,7 @@ const TableList: React.FC = () => {
           </Form.Item>
 
           {/* 备注：在“处理中”和“已驳回”状态下必填 */}
-          {statusCode == 4 && (
+          {statusCode == 40 && (
             <>
               <div
                 style={{
@@ -713,7 +722,7 @@ const TableList: React.FC = () => {
             name="handleRemark"
             rules={[
               {
-                required: statusCode == 5 ? true : false,
+                required: statusCode == 50 ? true : false,
                 message: "请输入备注",
               },
             ]}

@@ -93,12 +93,13 @@ export const STATUS_LIST: StatusItem[] = [
   { label: "已发货", value: 2042, module: "delivery", color: "green" },
 
   // 退款单状态
-  { label: "待审核", value: 1, module: "refund", color: "orange" },
-  { label: "处理中", value: 2, module: "refund", color: "blue" },
-  { label: "待退款", value: 3, module: "refund", color: "red" },
-  { label: "已退款", value: 4, module: "refund", color: "green" },
-  { label: "已驳回", value: 5, module: "refund", color: "red" },
-  { label: "已取消", value: 6, module: "refund", color: "default" },
+  { label: "待受理", value: 10, module: "refund", color: "orange" },
+  { label: "协商中", value: 20, module: "refund", color: "blue" },
+  { label: "待申请", value: 25, module: "refund", color: "geekblue" },
+  { label: "待退款", value: 30, module: "refund", color: "volcano" },
+  { label: "已退款", value: 40, module: "refund", color: "green" },
+  { label: "已驳回", value: 50, module: "refund", color: "red" },
+  { label: "已取消", value: 60, module: "refund", color: "default" },
   // 退货商品
   { label: "待申请", value: 0, module: "refundGoods", color: "geekblue" },
   { label: "待退货", value: 1, module: "refundGoods", color: "cyan" },

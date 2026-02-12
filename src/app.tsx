@@ -4,6 +4,7 @@ import { SettingDrawer } from "@ant-design/pro-components";
 import "@ant-design/v5-patch-for-react-19";
 import type { RequestConfig, RunTimeLayoutConfig } from "@umijs/max";
 import { history } from "@umijs/max";
+import { List, Modal, Typography } from "antd";
 import { useEffect } from "react";
 import defaultSettings from "../config/defaultSettings";
 import { errorConfig } from "./requestErrorConfig";
@@ -137,10 +138,43 @@ export const request: RequestConfig = {
   baseURL: isDev
     ? "http://api.bbdtest.local:8080"
     // ? "http://fe.bbdtest.local:8080"
-    :  "https://admin.bbdbuy1.com/api",
-    // : "https://dev.bbdbuy1.com/admin-api",
+    // :  "https://admin.bbdbuy1.com/api",
+    : "https://dev.bbdbuy1.com/admin-api",
   // baseURL: process.env.UMI_APP_BASE_API,
   withCredentials: true,
   timeout: 500000,
   ...errorConfig,
+  // responseInterceptors: [
+  //   ...(errorConfig.responseInterceptors || []),
+  //   (response) => {
+  //     const { data } = response as any;
+  //     if ( data?.type === "panel") {
+  //       Modal.info({
+  //         title: data.msg || "提示",
+  //         content: (
+  //           <div style={{ maxHeight: "60vh", overflowY: "auto" }}>
+  //             <List
+  //               bordered
+  //               size="small"
+  //               dataSource={Array.isArray(data.data) ? data.data : []}
+  //               renderItem={(item: any) => (
+  //                 <List.Item>
+  //                   <Typography.Text type="danger">
+  //                     {typeof item === "object"
+  //                       ? item.msg || item.message || JSON.stringify(item)
+  //                       : item}
+  //                   </Typography.Text>
+  //                 </List.Item>
+  //               )}
+  //             />
+  //           </div>
+  //         ),
+  //         width: 600,
+  //         okText: "关闭",
+  //         maskClosable: true,
+  //       });
+  //     }
+  //     return response;
+  //   },
+  // ],
 };

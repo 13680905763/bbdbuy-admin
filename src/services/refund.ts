@@ -58,3 +58,46 @@ export async function getOrderRefundGoodsReason(data: any) {
     data,
   });
 }
+
+/** 申请退货退款预览 */
+export async function applyTaobaoRefund(data: any) {
+  return request<API.RuleList>("/return-goods/render/taobao", {
+    method: "POST",
+    data,
+  });
+}
+
+/** 1688 申请退货退款 */
+export async function apply1688Refund(data: any) {
+  return request<API.RuleList>("/return-goods/render/1688", {
+    method: "POST",
+    data,
+  });
+}
+
+/** 1688 申请货物状态预览 */
+export async function get1688GoodsStatus(data: any) {
+  return request<API.RuleList>("/return-goods/render/1688/goods-status", {
+
+
+    
+    method: "POST",
+    data,
+  });
+}
+
+/** 微店 申请退货退款 */
+export async function applyWeidianRefund(data: any) {
+  return request<API.RuleList>("/return-goods/render/weidian", {
+    method: "POST",
+    data,
+  });
+}
+
+/** 提交申请退货退款 */
+export async function submitRefundApply(data: any) {
+  return request<API.RuleList>("/return-goods/apply", {
+    method: "post",
+    data,
+  });
+}
