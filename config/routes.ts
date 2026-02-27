@@ -184,6 +184,12 @@ export default [
     ]
   },
   {
+    path: "/member",
+    name: "会员管理",
+    icon: "ShoppingCartOutlined",
+    component: "./member",
+  },
+  {
     path: "/config",
     name: "配置管理",
     icon: "BankOutlined",
@@ -338,6 +344,7 @@ export default [
       // },
     ],
   },
+
   {
     path: "/mock-list",
     name: "测试数据模拟",

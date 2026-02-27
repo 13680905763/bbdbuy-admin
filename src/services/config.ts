@@ -66,9 +66,10 @@ export async function delPromotion(id: string | number) {
 }
 
 /** 获取优惠券配置 */
-export async function getCouponList() {
+export async function getCouponList(params?: any) {
   return request("/coupon", {
     method: "GET",
+    params,
   });
 }
 export async function putCoupon(data: any) {

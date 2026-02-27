@@ -8,7 +8,7 @@ import {
   getDiyOrderDetail,
 } from "@/services/order";
 import { getStatusOptions, renderStatusTag } from "@/utils/status-render";
-import { DownOutlined, RightOutlined } from "@ant-design/icons";
+import { EditOutlined, DownOutlined, RightOutlined } from "@ant-design/icons";
 import type {
   ActionType,
   ProColumns,
@@ -54,7 +54,7 @@ const TableList: React.FC = () => {
   const [filters, setFilters] = useState<Record<string, any>>({});
   const [expandedRowKeys, setExpandedRowKeys] = useState<React.Key[]>([]); // ✅ 展开行控制
   // 弹窗状态
-  const [modalType, setModalType] = useState<"edit" | "manual" | null>(null);
+  const [modalType, setModalType] = useState<"edit" | "manual" | "modify" | null>(null);
   const [currentRow, setCurrentRow] = useState<any>(null);
 
   const [form] = Form.useForm();
@@ -181,6 +181,20 @@ const TableList: React.FC = () => {
     {
       title: "平台采购单号",
       dataIndex: "sourceOrderId",
+      render: (text: any, record: any) => {
+        return (
+          <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+            {text}
+            {
+              text != '-' && <EditOutlined
+                style={{ color: "#f0700c", cursor: "pointer" }}
+                onClick={() => handleOption(record, "modify")}
+              />
+            }
+
+          </div>
+        );
+      },
     },
 
     {
@@ -371,7 +385,7 @@ const TableList: React.FC = () => {
   ];
 
   /** 操作 */
-  const handleOption = (record: any, type: "edit" | "manual") => {
+  const handleOption = (record: any, type: "edit" | "manual" | "modify") => {
     setCurrentRow(record);
     if (type === "edit") {
       // 初始化 EditModal 数据 (这里假设如果已有 packages，需要转换成 EditModal 需要的格式)
@@ -400,7 +414,7 @@ const TableList: React.FC = () => {
     setModalType(type);
     console.log("record", record);
 
-    if (type === "manual") {
+    if (type === "manual" || type === "modify") {
       form.setFieldsValue({
         sourceOrderId: record?.sourceOrderId || "",
         remark: record?.remark || "",
@@ -845,7 +859,13 @@ const TableList: React.FC = () => {
         />
       </div>
       <Modal
-        title={modalType === "edit" ? "修改采购单" : "手动采购"}
+        title={
+          modalType === "edit"
+            ? "修改采购单"
+            : modalType === "modify"
+              ? "修改采购单"
+              : "手动采购"
+        }
         open={modalType !== null}
         onCancel={() => setModalType(null)}
         onOk={handleSave}
@@ -873,9 +893,11 @@ const TableList: React.FC = () => {
             >
               <Input placeholder="请输入平台采购单号" />
             </Form.Item>
-            <Form.Item name="remark" label="备注">
-              <Input.TextArea placeholder="请输入备注" />
-            </Form.Item>
+            {modalType !== "modify" && (
+              <Form.Item name="remark" label="备注">
+                <Input.TextArea placeholder="请输入备注" />
+              </Form.Item>
+            )}
           </Form>
         )}
       </Modal>

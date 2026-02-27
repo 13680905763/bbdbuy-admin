@@ -153,7 +153,7 @@ const TableList: React.FC = () => {
       },
     },
     {
-      title: "物流单号",
+      title: "物流单号/状态",
       dataIndex: "logistics",
       width: 240,
       render: (logisticsList, record) => {
@@ -248,7 +248,7 @@ const TableList: React.FC = () => {
             )}
             {record?.returnFlag && (
               <Button
-                type="default"
+                type="primary"
                 size="small"
                 onClick={() => handleEdit(record, "returnFlag")}
               >
@@ -261,7 +261,16 @@ const TableList: React.FC = () => {
                 size="small"
                 onClick={() => handleExpand(record)}
               >
-                修改/签收
+                修改
+              </Button>
+            )}
+            {record?.signFlag && (
+              <Button
+                type="primary"
+                size="small"
+                onClick={() => handleExpand(record)}
+              >
+                签收
               </Button>
             )}
           </div>
@@ -790,7 +799,7 @@ const TableList: React.FC = () => {
 
                       return (
                         <div style={{ display: "flex", gap: "5px" }}>
-                          {item?.statusCode == 0 && (record?.source === "TAOBAO" || record?.source === "WEIDIAN") && (
+                          {item?.applyFlag && (
                             <Button
                               key="apply"
                               type="primary"
@@ -808,20 +817,33 @@ const TableList: React.FC = () => {
                               申请
                             </Button>
                           )}
-                          {item?.statusCode !== 0 && (
+                          {item?.updateFlag && (
                             <Button
                               key="edit"
-                              type="default"
+                              type="primary"
                               size="small"
                               onClick={() => {
                                 // 开始编辑这一行
                                 action?.startEditable?.(item.id);
                               }}
                             >
-                              {item.logisticsCompany ? "修改" : "发货"}
+                              修改
                             </Button>
                           )}
-                          {item?.statusCode == 2 && (
+                          {item?.refundFlag && (
+                            <Button
+                              key="edit"
+                              type="primary"
+                              size="small"
+                              onClick={() => {
+                                // 开始编辑这一行
+                                action?.startEditable?.(item.id);
+                              }}
+                            >
+                              发货
+                            </Button>
+                          )}
+                          {item?.signFlag && (
                             <Button
                               key="submit"
                               size="small"

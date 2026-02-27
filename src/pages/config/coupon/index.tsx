@@ -199,6 +199,7 @@ const ConfigList: React.FC = () => {
             <Select placeholder="请选择来源">
               <Select.Option value={1}>注册</Select.Option>
               <Select.Option value={2}>积分兑换</Select.Option>
+              <Select.Option value={3}>后台发放</Select.Option>
             </Select>
           </Form.Item>
 
