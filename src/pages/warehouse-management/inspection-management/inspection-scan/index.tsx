@@ -1,20 +1,21 @@
 // src/pages/inventory/ScanIn/index.tsx
+import { CopyOutlined } from "@ant-design/icons";
 import { getGoodsType } from "@/services";
 import { getInspectionScan, InspectionSubmit } from "@/services/order";
 import { PageContainer } from "@ant-design/pro-components";
 import ProTable, { ProColumns } from "@ant-design/pro-table";
-import { Button, Card, Image, Input, InputNumber, message, Select } from "antd";
+import { Button, Card, Image, Input, InputNumber, Modal, message, Select } from "antd";
 import React, { useEffect, useRef, useState } from "react";
 const inspectionStatusCode: any = [
-  { value: 1032, label: "正常" },
-  { value: 10331, label: "破损" },
-  { value: 10332, label: "质量问题" },
-  { value: 10333, label: "少发" },
-  { value: 10334, label: "错发" },
-  { value: 10335, label: "少买" },
-  { value: 10336, label: "错买" },
-  { value: 10337, label: "多发" },
-  { value: 10338, label: "多买" },
+  { value: "10339", label: "未发货" },
+  { value: "10333", label: "少发" },
+  { value: "10335", label: "少买" },
+  { value: "10331", label: "破损" },
+  { value: "10332", label: "质量问题" },
+  { value: "10334", label: "错发" },
+  { value: "10336", label: "错买" },
+  { value: "10337", label: "多发" },
+  { value: "10338", label: "多买" },
 ];
 const ParticularPaper: React.FC = () => {
   const [scanValue, setScanValue] = useState("");
@@ -57,12 +58,18 @@ const ParticularPaper: React.FC = () => {
 
       if (res.success) {
         setTableData(
-          res?.data?.inspectionList.map((row: any) => ({
+          res?.data?.map((row: any) => ({
             ...row,
             categoryId: categoryOptions.find((opt: any) => opt.isDefault)
               ?.value,
             quantity: row?.product?.quantity,
-            inspectionStatusCode: 1032,
+            inspectionStatusCode:
+              row.inspectionStatusCode == "1033"
+                ? "1033"
+                : "1032",
+            abnormalCode:
+              row.abnormalCode ||
+              "",
             length: 42,
             width: 32,
           }))
@@ -172,12 +179,38 @@ const ParticularPaper: React.FC = () => {
 
     printWindow.document.close();
   };
+
   const handleSubmit = async () => {
     if (!tableData.length) {
       message.warning("暂无数据可提交");
       return;
     }
 
+    // 检查是否有异常
+    const hasAbnormal = tableData.some(
+      (item) => item.inspectionStatusCode === "1033"
+    );
+
+    if (hasAbnormal) {
+      Modal.confirm({
+        title: "提交确认",
+        content: "当前存在异常商品，是否确认提交？",
+        okText: "确认",
+        cancelText: "取消",
+        onOk: () => doSubmit(),
+        cancelButtonProps: {
+          style: { borderColor: "#f0700c", color: "#f0700c" },
+        },
+        okButtonProps: {
+          style: { backgroundColor: "#f0700c" },
+        },
+      });
+    } else {
+      doSubmit();
+    }
+  };
+
+  const doSubmit = async () => {
     setSubmitting(true); // 开始 loading
     try {
       const data: any = tableData.map((item) => {
@@ -189,7 +222,7 @@ const ParticularPaper: React.FC = () => {
           height: item.height,
           quantity: item.quantity,
           logisticsCode: item.logisticsCode,
-          inspectionStatusCode: item.inspectionStatusCode,
+          inspectionStatusCode: !item.abnormalCode ? "1032" : '1033',
           abnormalCode: item.abnormalCode || "",
           categoryId: item.categoryId,
         };
@@ -221,7 +254,7 @@ const ParticularPaper: React.FC = () => {
             return;
           }
         }
-        if (item.inspectionStatusCode !== 1032 && !item.abnormalCode) {
+        if (item.inspectionStatusCode !== "1032" && !item.abnormalCode) {
           message.warning(`第 ${i + 1} 行状态未填写`);
           setSubmitting(false);
           return;
@@ -240,9 +273,31 @@ const ParticularPaper: React.FC = () => {
   console.log('tableData', tableData);
 
   const columns: ProColumns<any>[] = [
-    { title: "入库单号", dataIndex: "inboundId", width: 100 },
+    {
+      title: "平台/平台采购单号/订单号", dataIndex: "orderCode", width: 100,
+      render: (orderCode: any, record: any) =>
+        <div >
+          <div>
+            {record.product.source}
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+            {record.product.sourceOrderId}
+            <CopyOutlined
+              style={{ cursor: "pointer", color: "#f0700c" }}
+              onClick={() => {
+                navigator.clipboard.writeText(record.product.sourceOrderId);
+                message.success("复制成功");
+              }}
+            />
+          </div>
+          <div>
+            {orderCode}
+          </div>
+        </div>
+    },
     {
       title: "商品详情",
+      width: 250,
       dataIndex: "product",
       render: (product: any) => {
         return (
@@ -290,12 +345,13 @@ const ParticularPaper: React.FC = () => {
                 <div
                   style={{
                     fontSize: 12,
-                    color: "#999",
+                    color: "red",
                     marginTop: 2,
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                    maxWidth: 130, // 限制宽度防止溢出
+                    // overflow: "hidden",
+                    // textOverflow: "ellipsis",
+                    // whiteSpace: "nowrap",
+                    maxWidth: 150, // 限制宽度防止溢出
+                    wordBreak: "break-all", // 允许换行
                   }}
                   title={product.propAndValue.propName_valueName} // 悬停显示完整内容
                 >
@@ -331,12 +387,13 @@ const ParticularPaper: React.FC = () => {
     {
       title: "长（cm）",
       dataIndex: "length",
-      width: 200,
+      width: 100,
       render: (_, __, index) => (
         <InputNumber
           min={1}
           precision={0} // 不允许小数
           defaultValue={42}
+          style={{ width: "100%" }}
           onChange={(value) => {
             setTableData((prev) => {
               const updated = [...prev];
@@ -350,12 +407,13 @@ const ParticularPaper: React.FC = () => {
     {
       title: "宽（cm）",
       dataIndex: "width",
-      width: 200,
+      width: 100,
       render: (_, __, index) => (
         <InputNumber
           min={1}
           precision={0} // 不允许小数
           defaultValue={32}
+          style={{ width: "100%" }}
           onChange={(value) => {
             setTableData((prev) => {
               const updated = [...prev];
@@ -369,11 +427,12 @@ const ParticularPaper: React.FC = () => {
     {
       title: "高（cm）",
       dataIndex: "height",
-      width: 200,
+      width: 100,
       render: (_, __, index) => (
         <InputNumber
           min={1}
           precision={0} // 不允许小数
+          style={{ width: "100%" }}
           onChange={(value) => {
             setTableData((prev) => {
               const updated = [...prev];
@@ -387,7 +446,7 @@ const ParticularPaper: React.FC = () => {
     {
       title: "体积（cm³）",
       dataIndex: "volume",
-      width: 200,
+      width: 100,
       render: (_, record) => {
         const { length, width, height } = record;
         if (length && width && height) {
@@ -401,9 +460,10 @@ const ParticularPaper: React.FC = () => {
       title: "重量（g）",
 
       dataIndex: "weight",
-      width: 200,
+      width: 100,
       render: (_, __, index) => (
         <InputNumber
+          style={{ width: "100%" }}
           onChange={(value) => {
             setTableData((prev) => {
               const updated = [...prev];
@@ -417,11 +477,12 @@ const ParticularPaper: React.FC = () => {
     {
       title: "数量",
       dataIndex: "quantity",
-      width: 120,
+      width: 100,
       render: (_, record: any, index) => (
         <InputNumber
           defaultValue={record?.product?.quantity}
           min={1}
+          style={{ width: "100%" }}
           onChange={(value) => {
             setTableData((prev) => {
               const updated = [...prev];
@@ -458,29 +519,41 @@ const ParticularPaper: React.FC = () => {
       dataIndex: "inspectionStatusCode",
       render: (text, record, index) => {
         return (
-          <Select
-            value={record.abnormalCode || record.inspectionStatusCode || 1032}
-            style={{ width: 120 }}
-            onChange={(v) => {
-              console.log(v);
-              if (v === 1032) {
+          <div >
+            <Select
+              value={record.inspectionStatusCode || "1032"}
+              style={{ width: 100, marginBottom: 8 }}
+              onChange={(v) => {
                 setTableData((prev) => {
                   const updated = [...prev];
-                  updated[index].inspectionStatusCode = 1032;
-                  updated[index].abnormalCode = "";
+                  updated[index].inspectionStatusCode = v;
+                  if (v === "1032") {
+                    updated[index].abnormalCode = ""; // 切换为正常时清空异常原因
+                  }
                   return updated;
                 });
-              } else {
-                setTableData((prev) => {
-                  const updated = [...prev];
-                  updated[index].inspectionStatusCode = 1033;
-                  updated[index].abnormalCode = v;
-                  return updated;
-                });
-              }
-            }}
-            options={inspectionStatusCode}
-          />
+              }}
+              options={[
+                { label: "正常", value: "1032" },
+                { label: "异常", value: "1033" },
+              ]}
+            />
+            {record.inspectionStatusCode === "1033" && (
+              <Select
+                value={record.abnormalCode}
+                style={{ width: 100 }}
+                placeholder="选择异常原因"
+                onChange={(v) => {
+                  setTableData((prev) => {
+                    const updated = [...prev];
+                    updated[index].abnormalCode = v;
+                    return updated;
+                  });
+                }}
+                options={inspectionStatusCode}
+              />
+            )}
+          </div>
         );
       },
     },
@@ -488,6 +561,17 @@ const ParticularPaper: React.FC = () => {
 
   return (
     <PageContainer>
+      <style>{`
+        .ant-table-tbody > tr.error-row > td {
+          background-color: #fff1f0 !important;
+        }
+        .ant-table-tbody > tr:hover > td {
+          background-color: transparent !important;
+        }
+        .ant-table-tbody > tr.error-row:hover > td {
+          background-color: #fff1f0 !important;
+        }
+      `}</style>
       <Card
         extra={
           <Button type="primary" onClick={handleBatchPrint}>
@@ -541,6 +625,9 @@ const ParticularPaper: React.FC = () => {
           options={false}
           loading={isLoading}
           bordered
+          rowClassName={(record) =>
+            record.inspectionStatusCode === "1033" ? "error-row" : ""
+          }
         />
         <div style={{ textAlign: "right", marginTop: 16 }}>
           <Button

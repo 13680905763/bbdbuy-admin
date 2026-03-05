@@ -208,7 +208,6 @@ const TableList: React.FC = () => {
         );
       },
     },
-
     {
       title: "验货状态",
       dataIndex: "inspectionStatus",
@@ -279,10 +278,9 @@ const TableList: React.FC = () => {
         return (
           <Button
             type="link"
-            style={{ color: "#1890ff", padding: 0 }}
+            style={{ color: "#f0700c", padding: 0 }}
             onClick={() => {
               setEditingRecord(records);
-
               setInspectionStatus(records?.inspectionStatusCode);
               form.setFieldsValue({
                 ...records,
@@ -306,7 +304,6 @@ const TableList: React.FC = () => {
   /** ✅ 搜索提交 */
   const onSubmitSearch = (values: any) => {
     console.log("values", values);
-
     const [startTime, endTime] = values.updateTime || [];
     const filterParams = {
       orderCode: values.orderCode,

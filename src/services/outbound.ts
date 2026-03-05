@@ -115,6 +115,7 @@ export async function updateOutboundSendShippingCode(data: {
   id: string;
   shippingCode: string;
   templateId?: string;
+  countryId?: string;
   remark?: string;
 }) {
   return request("/outbound-send/change/shipping-code", {

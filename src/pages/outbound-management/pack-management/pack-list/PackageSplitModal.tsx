@@ -81,7 +81,7 @@ export const PackageSplitModal: React.FC<PackageSplitModalProps> = ({
     pkg: PackageItem;
     fromBoxId?: string;
   }> = ({ pkg, fromBoxId }) => {
-    const [{ isDragging }, drag] = useDrag(
+    const [{ isDragging }, drag]: any = useDrag(
       () => ({
         type,
         item: { pkg, fromBoxId },
@@ -126,7 +126,7 @@ export const PackageSplitModal: React.FC<PackageSplitModalProps> = ({
 
   // ---------------- 箱子 ----------------
   const TargetBoxComponent: React.FC<{ box: TargetBox }> = ({ box }) => {
-    const [, drop] = useDrop({
+    const [, drop]: any = useDrop({
       accept: type,
       drop: (item: any) => {
         movePackage(item.pkg, item.fromBoxId, box.id);
@@ -139,6 +139,12 @@ export const PackageSplitModal: React.FC<PackageSplitModalProps> = ({
         onOk: () => {
           setPackagePool((prev) => [...prev, ...box.packages]);
           setTargetBoxes((prev) => prev.filter((b) => b.id !== box.id));
+        },
+        cancelButtonProps: {
+          style: { borderColor: "#f0700c", color: "#f0700c" },
+        },
+        okButtonProps: {
+          style: { backgroundColor: "#f0700c" },
         },
       });
     };
@@ -180,7 +186,7 @@ export const PackageSplitModal: React.FC<PackageSplitModalProps> = ({
 
   // ---------------- 包裹池 ----------------
   const Pool: React.FC = () => {
-    const [, drop] = useDrop({
+    const [, drop]: any = useDrop({
       accept: type,
       drop: (item: any) => {
         movePackage(item.pkg, item.fromBoxId, null);

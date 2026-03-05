@@ -109,10 +109,14 @@ const ConfigList: React.FC = () => {
     { title: "标题", dataIndex: "title" },
     { title: "来源", dataIndex: "srcMsg" },
     { title: "优惠券类型", dataIndex: "typeMsg" },
+    { title: "使用范围", dataIndex: "usedForMsg" },
     { title: "面额", dataIndex: "denomination" },
     { title: "折扣", dataIndex: "discount" },
     { title: "使用门槛", dataIndex: "thresholdAmount" },
     { title: "兑换所需积分", dataIndex: "exchangePoints" },
+    { title: "兑换码", dataIndex: "redemptionCode" },
+    { title: "兑换数量", dataIndex: "redemptionCodeQuantity" },
+    
     { title: "有效期", dataIndex: "expirationDate" },
     { title: "VIP等级", dataIndex: "vipLv" },
     { title: "更新时间", dataIndex: "updateTime" },
@@ -200,6 +204,7 @@ const ConfigList: React.FC = () => {
               <Select.Option value={1}>注册</Select.Option>
               <Select.Option value={2}>积分兑换</Select.Option>
               <Select.Option value={3}>后台发放</Select.Option>
+              <Select.Option value={4}>兑换码</Select.Option>
             </Select>
           </Form.Item>
 
@@ -287,6 +292,7 @@ const ConfigList: React.FC = () => {
               />
             </Form.Item>
           )}
+          {/* 兑换所需积分（仅来源=积分兑换时必传） */}
           {srcType === 2 && (
             <Form.Item
               name="exchangePoints"
@@ -299,6 +305,29 @@ const ConfigList: React.FC = () => {
                 placeholder="请输入兑换所需积分"
               />
             </Form.Item>
+          )}
+
+          {srcType === 4 && (
+            <>
+              <Form.Item
+                name="redemptionCode"
+                label="兑换码"
+                rules={[{ required: true, message: "请输入兑换码" }]}
+              >
+                <Input placeholder="请输入兑换码" />
+              </Form.Item>
+              <Form.Item
+                name="redemptionCodeQuantity"
+                label="兑换码数量"
+                rules={[{ required: true, message: "请输入兑换码数量" }]}
+              >
+                <InputNumber
+                  min={1}
+                  style={{ width: "100%" }}
+                  placeholder="请输入兑换码数量"
+                />
+              </Form.Item>
+            </>
           )}
         </Form>
       </Modal>

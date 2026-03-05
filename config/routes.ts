@@ -180,6 +180,11 @@ export default [
         name: "消费列表",
         component: "./finance/consume",
       },
+      {
+        path: "/finance/withdrawal",
+        name: "提现列表",
+        component: "./finance/withdrawal",
+      },
 
     ]
   },

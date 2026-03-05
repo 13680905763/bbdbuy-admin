@@ -94,12 +94,11 @@ const TableList: React.FC = () => {
 
         </div>
       ),
+      cancelButtonProps: {
+        style: { borderColor: "#f0700c", color: "#f0700c" },
+      },
       okButtonProps: {
-        type: "primary",
-        style: {
-          backgroundColor: "#f0700c",
-          borderColor: "#f0700c",
-        },
+        style: { backgroundColor: "#f0700c" },
       },
       onOk: async () => {
         const res = await closeOrder(record.id, reasonCode);

@@ -250,27 +250,33 @@ const TableList: React.FC = () => {
               console.log("点击了打印拣货单按钮", selectedRows);
               const printData = selectedRows
                 .map((packing: any) => {
-                  return packing.packing.map((item: any) => {
-                    return {
-                      packingPackageCode: item?.packingPackageCode,
-                      customerName: item?.customerName,
-                      methodName: item?.shipping?.methodName,
-                      remark: packing?.remark,
-                      services: item?.services.map((service: any) => {
-                        return service?.serviceName;
-                      }),
-                      items: item.items.map((pag: any) => {
-                        return {
-                          packageCode: pag?.packageCode,
-                          locationCode: pag?.location?.locationCode,
-                          quantity: pag.quantity,
-                        };
-                      }),
-                    };
-                  });
+                  return packing.packing
+                    .filter((item: any) => item.statusCode != 200) // 过滤掉已取消 (200)
+                    .map((item: any) => {
+                      return {
+                        packingPackageCode: item?.packingPackageCode,
+                        customerName: item?.customerName,
+                        methodName: item?.shipping?.methodName,
+                        remark: packing?.remark,
+                        services: item?.services.map((service: any) => {
+                          return service?.serviceName;
+                        }),
+                        items: item.items.map((pag: any) => {
+                          return {
+                            packageCode: pag?.packageCode,
+                            locationCode: pag?.location?.locationCode,
+                            quantity: pag.quantity,
+                          };
+                        }),
+                      };
+                    });
                 })
                 .flat();
               console.log("printData", printData);
+              if (printData.length === 0) {
+                message.warning("所选订单中没有可打印的包裹");
+                return;
+              }
               printPickingList(printData);
             }}
           >

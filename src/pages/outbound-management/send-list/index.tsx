@@ -1,4 +1,5 @@
 import {
+  getCountries,
   getOutboundSend,
   getOutboundSendListByPage,
   getShippingFeeTemplate,
@@ -50,6 +51,20 @@ const EditShippingModal: React.FC<{
   const [templateOptions, setTemplateOptions] = useState<
     { label: string; value: string }[]
   >([]);
+  const [countryOptions, setCountryOptions] = useState<
+    { label: string; value: string }[]
+  >([]);
+
+  useEffect(() => {
+    getCountries().then((res: any) => {
+      setCountryOptions(
+        res.data.map((item: any) => ({
+          label: item.name,
+          value: item.id,
+        }))
+      );
+    });
+  }, []);
 
   const fetchRoutes = async (serverId: string) => {
     if (!serverId) {
@@ -101,6 +116,7 @@ const EditShippingModal: React.FC<{
       lineId: string;
       templateId: string;
       remark: string;
+      countryId: string;
     }>
       title="修改国际物流单号"
       trigger={<EditOutlined style={{ cursor: "pointer", color: "orange" }} />}
@@ -126,6 +142,7 @@ const EditShippingModal: React.FC<{
             lineId: lineId,
             templateId: record?.shipping?.templateId,
             remark: record?.remark,
+            countryCode: record?.countryCode,
           });
         }
       }}
@@ -136,6 +153,7 @@ const EditShippingModal: React.FC<{
             shippingCode: values.shippingCode,
             templateId: values.templateId,
             remark: values.remark,
+            countryId: values.countryId,
           });
           // @ts-ignore
           if (res?.success) {
@@ -150,6 +168,18 @@ const EditShippingModal: React.FC<{
         }
       }}
     >
+      <ProFormSelect
+        name="countryId"
+        label="国家"
+        placeholder="请选择国家"
+        showSearch
+        fieldProps={{
+          filterOption: (input, option: any) =>
+            (option?.label ?? "").toLowerCase().includes(input.toLowerCase()),
+        }}
+        options={countryOptions}
+        rules={[{ required: true, message: "请选择国家" }]}
+      />
       <ProFormText
         name="shippingCode"
         label="国际物流单号"

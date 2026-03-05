@@ -225,6 +225,12 @@ const MessageList: React.FC = () => {
                   content: `结束本次与 ${activeUser.user} 的会话`,
                   okText: "确认",
                   cancelText: "取消",
+                  cancelButtonProps: {
+                    style: { borderColor: "#f0700c", color: "#f0700c" },
+                  },
+                  okButtonProps: {
+                    style: { backgroundColor: "#f0700c" },
+                  },
                   onOk: async () => {
                     console.log("activeUser", activeUser);
 

@@ -426,12 +426,11 @@ const TableList: React.FC = () => {
       title: "手动同步",
       content:
         "该操作以平台数据更新本地数据，可能造成本地数据异常，请谨慎使用！",
+      cancelButtonProps: {
+        style: { borderColor: "#f0700c", color: "#f0700c" },
+      },
       okButtonProps: {
-        type: "primary",
-        style: {
-          backgroundColor: "#f0700c",
-          borderColor: "#f0700c",
-        },
+        style: { backgroundColor: "#f0700c" },
       },
       onOk: async () => {
         const res = await putPurchaseSync(record.id);
@@ -696,7 +695,6 @@ const TableList: React.FC = () => {
                   render: (propAndValue) => (
                     <div
                       style={{
-                        color: "#e60012",
                         fontSize: 13,
                         fontWeight: 500,
                         lineHeight: "1.4",
@@ -784,12 +782,11 @@ const TableList: React.FC = () => {
                   content: "所选采购单中存在商品备注，是否确认继续？",
                   okText: "确认继续",
                   cancelText: "返回检查",
+                  cancelButtonProps: {
+                    style: { borderColor: "#f0700c", color: "#f0700c" },
+                  },
                   okButtonProps: {
-                    type: "primary",
-                    style: {
-                      backgroundColor: "#f0700c",
-                      borderColor: "#f0700c",
-                    },
+                    style: { backgroundColor: "#f0700c" },
                   },
                   onOk: () => doSubmit(ids), // ✅ 确认后继续
                 });
@@ -826,12 +823,11 @@ const TableList: React.FC = () => {
               Modal.confirm({
                 title: "确认操作",
                 content: "是否确认同步选中的采购单？",
+                cancelButtonProps: {
+                  style: { borderColor: "#f0700c", color: "#f0700c" },
+                },
                 okButtonProps: {
-                  type: "primary",
-                  style: {
-                    backgroundColor: "#f0700c",
-                    borderColor: "#f0700c",
-                  },
+                  style: { backgroundColor: "#f0700c" },
                 },
                 onOk: async () => {
                   const res: any = await batchSyncOrder({ idSet: ids });
