@@ -20,6 +20,7 @@ export type ModuleType =
   | "noticeType"
   | "delivery" // 可根据项目扩展
   | "purchaseLimited"
+  | "inspectionAbnormal"
   | "withdrawal";
 
 export interface StatusItem {
@@ -130,6 +131,10 @@ export const STATUS_LIST: StatusItem[] = [
   { label: "客户备注", value: 1, module: "purchaseLimited", color: "red" },
   { label: "平台控货", value: 2, module: "purchaseLimited", color: "red" },
   { label: "DIY订单", value: 3, module: "purchaseLimited", color: "red" },
+
+  // ✅ 验货异常处理状态
+  { label: "未处理", value: 0, module: "inspectionAbnormal", color: "red" },
+  { label: "已处理", value: 1, module: "inspectionAbnormal", color: "green" },
 
   // ✅ 提现状态
   { label: "待付款", value: 101, module: "withdrawal", color: "blue" },

@@ -130,6 +130,31 @@ export async function InspectionSubmit(data: string[]) {
     },
   });
 }
+
+/** 验货异常上架 */
+export async function putawayInspection(data: {
+  id: number;
+  locationCode: string;
+  remark?: string;
+}) {
+  return request("/inbound-inspection/putaway", {
+    method: "POST",
+    data,
+  });
+}
+
+/** 验货异常退货/不退货 */
+export async function returnInspection(data: {
+  id: number;
+  returnFlag: boolean;
+  returnLogisticsCode?: string;
+  remark?: string;
+}) {
+  return request("/inbound-inspection/return", {
+    method: "POST",
+    data,
+  });
+}
 /** 获取拍照列表 POST /orders/page */
 export async function getPhotoList(data: any) {
   return request("/inbound-service/page", {

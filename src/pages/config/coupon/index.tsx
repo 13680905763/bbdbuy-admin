@@ -115,8 +115,17 @@ const ConfigList: React.FC = () => {
     { title: "使用门槛", dataIndex: "thresholdAmount" },
     { title: "兑换所需积分", dataIndex: "exchangePoints" },
     { title: "兑换码", dataIndex: "redemptionCode" },
-    { title: "兑换数量", dataIndex: "redemptionCodeQuantity" },
-    
+    {
+      title: "兑换数量",
+      dataIndex: "redemptionCodeQuantity",
+      render: (_: any, record: any) => (
+        <span>
+          {record.redemptionCodeRemainingQuantity} /{" "}
+          {record.redemptionCodeQuantity}
+        </span>
+      ),
+    },
+
     { title: "有效期", dataIndex: "expirationDate" },
     { title: "VIP等级", dataIndex: "vipLv" },
     { title: "更新时间", dataIndex: "updateTime" },
@@ -192,6 +201,19 @@ const ConfigList: React.FC = () => {
             rules={[{ required: true, message: "请输入标题" }]}
           >
             <Input placeholder="请输入优惠券标题" />
+          </Form.Item>
+
+          {/* 使用范围 */}
+          <Form.Item
+            name="usedFor"
+            label="用途"
+            rules={[{ required: true, message: "请选择用途" }]}
+          >
+            <Select placeholder="请选择用途">
+              <Select.Option value={0}>所有途径</Select.Option>
+              <Select.Option value={1}>运单</Select.Option>
+              <Select.Option value={2}>订单</Select.Option>
+            </Select>
           </Form.Item>
 
           {/* 来源 */}

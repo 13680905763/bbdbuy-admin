@@ -1,12 +1,24 @@
-import { getGoodsType } from "@/services";
-import { getInspectionListByPage, putInspection } from "@/services/order"; // 你自己的接口路径
+import {
+  getGoodsType,
+} from "@/services";
+import {
+  getInspectionListByPage, putInspection,
+  putawayInspection,
+  returnInspection,
+} from "@/services/order"; // 你自己的接口路径
 import { getStatusOptions, renderStatusTag } from "@/utils/status-render";
+import { CopyOutlined } from "@ant-design/icons";
 import type {
   ActionType,
   ProColumns,
   ProFormInstance,
 } from "@ant-design/pro-components";
-import { PageContainer, ProTable } from "@ant-design/pro-components";
+import {
+  ModalForm,
+  PageContainer,
+  ProFormText,
+  ProTable,
+} from "@ant-design/pro-components";
 import {
   Button,
   DatePicker,
@@ -16,6 +28,7 @@ import {
   Modal,
   Pagination,
   Select,
+  Tag,
   message,
 } from "antd";
 import moment from "moment";
@@ -27,11 +40,12 @@ const inspectionStatusOptions = [
 ];
 
 const abnormalOptions = [
+  { value: "10339", label: "未发货" },
+  { value: "10333", label: "少发" },
+  { value: "10335", label: "少买" },
   { value: "10331", label: "破损" },
   { value: "10332", label: "质量问题" },
-  { value: "10333", label: "少发" },
   { value: "10334", label: "错发" },
-  { value: "10335", label: "少买" },
   { value: "10336", label: "错买" },
   { value: "10337", label: "多发" },
   { value: "10338", label: "多买" },
@@ -93,9 +107,35 @@ const TableList: React.FC = () => {
 
   const columns: ProColumns<any>[] = [
     {
-      title: "订单号",
-      dataIndex: "orderCode",
+      title: "平台/平台采购单号/订单号", dataIndex: "orderCode", width: 100,
+      formItemProps: {
+        label: '订单号',
+      },
+      render: (orderCode: any, record: any) =>
+        <div >
+          <div>
+            {record.orderProduct.source}
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+            {record.orderProduct.sourceOrderId}
+            <CopyOutlined
+              style={{ cursor: "pointer", color: "#f0700c" }}
+              onClick={() => {
+                navigator.clipboard.writeText(record.orderProduct.sourceOrderId);
+                message.success("复制成功");
+              }}
+            />
+          </div>
+          <div>
+            {orderCode}
+          </div>
+        </div>,
+
     },
+    // {
+    //   title: "订单号",
+    //   dataIndex: "orderCode",
+    // },
     {
       title: "快递单号",
       dataIndex: "logisticsCode",
@@ -103,6 +143,24 @@ const TableList: React.FC = () => {
     {
       title: "包裹单号",
       dataIndex: "packageCode",
+      render: (_, record: any) => {
+        return (
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 4,
+            }}
+          >
+            <div>{record.packageCode}</div>
+            {record?.locationCode && (
+              <div style={{ display: "flex", gap: 4 }}>
+                货位：<Tag color="orange">{record.locationCode}</Tag>
+              </div>
+            )}
+          </div>
+        );
+      },
     },
 
     {
@@ -214,15 +272,16 @@ const TableList: React.FC = () => {
       render: (_, record: any) => {
         const { inspectionStatus, abnormalMsg, inspectionStatusCode } = record;
         return (
-          <div style={{ display: "flex", justifyContent: "center" }}>
-            <div>
-              {renderStatusTag("inspection", inspectionStatusCode)}
-              {inspectionStatus === "验货异常" && abnormalMsg && (
-                <div style={{ color: "#999", fontSize: 12, marginTop: 4 }}>
-                  异常原因：{abnormalMsg}
-                </div>
-              )}
-            </div>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+            {renderStatusTag("inspection", inspectionStatusCode)}
+            {inspectionStatus === "验货异常" && abnormalMsg && (
+              renderStatusTag("inspectionAbnormal", record?.handleStatus)
+            )}
+            {inspectionStatus === "验货异常" && abnormalMsg && (
+              <div style={{ color: "#999", fontSize: 12, }}>
+                异常原因：{abnormalMsg}
+              </div>
+            )}
           </div>
         );
       },
@@ -235,6 +294,16 @@ const TableList: React.FC = () => {
           />
         );
       },
+    },
+    {
+      title: "异常处理状态",
+      dataIndex: "handleStatus",
+      valueType: "select",
+      valueEnum: {
+        0: { text: "未处理", status: "Error" },
+        1: { text: "已处理", status: "Success" },
+      },
+      hideInTable: true, // 只在搜索栏显示
     },
     {
       title: "验货人",
@@ -276,26 +345,131 @@ const TableList: React.FC = () => {
           return "-";
         }
         return (
-          <Button
-            type="link"
-            style={{ color: "#f0700c", padding: 0 }}
-            onClick={() => {
-              setEditingRecord(records);
-              setInspectionStatus(records?.inspectionStatusCode);
-              form.setFieldsValue({
-                ...records,
-                length: records.packageItem?.length || 0,
-                width: records.packageItem?.width || 0,
-                height: records.packageItem?.height || 0,
-                weight: records.packageItem?.weight || 0,
-                quantity: records.packageItem?.quantity || 0,
-                categoryId: records.packageItem?.categoryId || 0,
-              });
-              setModalVisible(true);
-            }}
-          >
-            修改
-          </Button>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            {records?.updateFlag && (
+              <Button
+                type="primary"
+                size="small"
+                onClick={() => {
+                  setEditingRecord(records);
+                  setInspectionStatus(records?.inspectionStatusCode);
+                  form.setFieldsValue({
+                    ...records,
+                    length: records.packageItem?.length || 0,
+                    width: records.packageItem?.width || 0,
+                    height: records.packageItem?.height || 0,
+                    weight: records.packageItem?.weight || 0,
+                    quantity: records.packageItem?.quantity || 0,
+                    categoryId: records.packageItem?.categoryId || 0,
+                  });
+                  setModalVisible(true);
+                }}
+              >
+                修改
+              </Button>
+            )}
+            {records?.notReturnFlag && (
+              <ModalForm
+                title="留仓"
+                trigger={
+                  <Button type="primary" size="small" style={{ backgroundColor: "#f0700c", borderColor: "#f0700c" }}>
+                    留仓
+                  </Button>
+                }
+                width={500}
+                modalProps={{ destroyOnClose: true }}
+                onFinish={async (values) => {
+                  try {
+                    await returnInspection({
+                      id: records.id,
+                      returnFlag: false,
+                      ...values,
+                    });
+                    message.success("操作成功");
+                    fetchData({ current, size, ...filters });
+                    return true;
+                  } catch (error) {
+                    console.error(error);
+                    return false;
+                  }
+                }}
+              >
+                <ProFormText name="remark" label="备注" />
+              </ModalForm>
+            )}
+            {records?.returnFlag && (
+              <ModalForm
+                title="退货"
+
+                trigger={
+                  <Button type="primary" size="small" style={{ backgroundColor: "#f0700c", borderColor: "#f0700c" }}>
+                    退货
+                  </Button>
+                }
+                width={500}
+                modalProps={{ destroyOnClose: true }}
+                onFinish={async (values) => {
+                  try {
+                    await returnInspection({
+                      id: records.id,
+                      returnFlag: true,
+                      ...values,
+                    });
+                    message.success("操作成功");
+                    fetchData({ current, size, ...filters });
+                    return true;
+                  } catch (error) {
+                    console.error(error);
+                    return false;
+                  }
+                }}
+              >
+                <ProFormText
+                  name="returnLogisticsCode"
+                  label="退货快递单号"
+                  rules={[{ required: true, message: "请输入退货快递单号" }]}
+                />
+                <ProFormText name="remark" label="备注" />
+              </ModalForm>
+            )}
+            {records?.putawayFlag && (
+              <ModalForm
+                title="上架"
+                trigger={
+                  <Button type="primary" size="small"
+                  >
+                    上架
+                  </Button>
+                }
+                width={500}
+                modalProps={{
+                  destroyOnClose: true,
+                  onCancel: () => console.log("run"),
+                }}
+                onFinish={async (values) => {
+                  try {
+                    await putawayInspection({
+                      id: records.id,
+                      ...values,
+                    } as any);
+                    message.success("操作成功");
+                    fetchData({ current, size, ...filters });
+                    return true;
+                  } catch (error) {
+                    console.error(error);
+                    return false;
+                  }
+                }}
+              >
+                <ProFormText
+                  name="locationCode"
+                  label="货位号"
+                  rules={[{ required: true, message: "请输入货位号" }]}
+                />
+                <ProFormText name="remark" label="备注" />
+              </ModalForm>
+            )}
+          </div>
         );
       },
     },
@@ -310,6 +484,7 @@ const TableList: React.FC = () => {
       logisticsCode: values.logisticsCode,
       packageCode: values.packageCode,
       inspectionStatusCode: values.inspectionStatus,
+      handleStatus: Number(values.handleStatus),
       updateTimeFrom: startTime
         ? moment(startTime).format("YYYY-MM-DD HH:mm:ss")
         : undefined,
@@ -374,6 +549,104 @@ const TableList: React.FC = () => {
       fetchData();
     }
   }, []);
+  /** ✅ 不退货 */
+  // const handleNotReturn = (record: any) => {
+  //   const modal = Modal.info({
+  //     title: "确认不退货？",
+  //     content: (
+  //       <Form
+  //         layout="vertical"
+  //         id="notReturnForm"
+  //         onFinish={async (values) => {
+  //           try {
+  //             await returnInspection({
+  //               id: record.id,
+  //               returnFlag: false,
+  //               ...values,
+  //             });
+  //             message.success("操作成功");
+  //             modal.destroy();
+  //             fetchData({ current, size, ...filters });
+  //           } catch (error) {
+  //             console.error(error);
+  //           }
+  //         }}
+  //       >
+  //         <Form.Item label="备注" name="remark">
+  //           <Input.TextArea placeholder="请输入备注" />
+  //         </Form.Item>
+  //         <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+  //           <Button onClick={() => modal.destroy()}>取消</Button>
+  //           <Button
+  //             type="primary"
+  //             htmlType="submit"
+  //             style={{ backgroundColor: "#f0700c", borderColor: "#f0700c" }}
+  //           >
+  //             确认
+  //           </Button>
+  //         </div>
+  //       </Form>
+  //     ),
+  //     icon: null,
+  //     footer: null,
+  //     closable: true,
+  //     maskClosable: true,
+  //   });
+  // };
+
+  /** ✅ 退货 */
+  // const handleReturn = (record: any) => {
+  //   // 弹出 ModalForm 填写退货快递单号和备注
+  //   const modal = Modal.info({
+  //     title: "确认退货？",
+  //     content: (
+  //       <Form
+  //         layout="vertical"
+  //         id="returnForm"
+  //         onFinish={async (values) => {
+  //           try {
+  //             await returnInspection({
+  //               id: record.id,
+  //               returnFlag: true,
+  //               ...values,
+  //             });
+  //             message.success("操作成功");
+  //             modal.destroy();
+  //             fetchData({ current, size, ...filters });
+  //           } catch (error) {
+  //             console.error(error);
+  //           }
+  //         }}
+  //       >
+  //         <Form.Item
+  //           label="退货快递单号"
+  //           name="returnLogisticsCode"
+  //           rules={[{ required: true, message: "请输入退货快递单号" }]}
+  //         >
+  //           <Input placeholder="请输入退货快递单号" />
+  //         </Form.Item>
+  //         <Form.Item label="备注" name="remark">
+  //           <Input.TextArea placeholder="请输入备注" />
+  //         </Form.Item>
+  //         <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+  //           <Button onClick={() => modal.destroy()}>取消</Button>
+  //           <Button
+  //             type="primary"
+  //             htmlType="submit"
+  //             style={{ backgroundColor: "#f0700c", borderColor: "#f0700c" }}
+  //           >
+  //             确认
+  //           </Button>
+  //         </div>
+  //       </Form>
+  //     ),
+  //     icon: null, // 移除 info 图标
+  //     footer: null, // 移除默认 footer
+  //     closable: true,
+  //     maskClosable: true,
+  //   });
+  // };
+
   /** ✅ 保存修改 */
   const handleModalOk = async () => {
     setLoading(true);

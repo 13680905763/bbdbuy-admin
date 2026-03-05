@@ -87,12 +87,16 @@ const ParticularPaper: React.FC = () => {
   };
 
   const handleBatchPrint = () => {
-    if (tableData.length === 0) {
+    const printData = tableData.filter(
+      (item) => item.packageCode !== "UNKNOW_CODE" && item.logisticsCode !== "NO_LOGISTICS"
+    );
+
+    if (printData.length === 0) {
       message.warning("暂无条码可打印");
       return;
     }
 
-    const htmlContent = tableData
+    const htmlContent = printData
       .map(
         (item) => `
       <div class="barcode-container">
