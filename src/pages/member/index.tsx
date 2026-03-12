@@ -1,5 +1,5 @@
 import { getCouponList } from "@/services";
-import { disguiseMember, distributionCoupons, getMemberList, topUpMember } from "@/services/member";
+import { disguiseMember, distributionCoupons, getMemberList, topUpMember, updateMember } from "@/services/member";
 import { closeOrder, getOrderListByPage } from "@/services/order"; // 你的接口路径
 import { getStatusOptions, renderStatusTag } from "@/utils/status-render";
 import { DownOutlined, RightOutlined } from "@ant-design/icons";
@@ -151,6 +151,7 @@ const TableList: React.FC = () => {
       valueType: "money",
     },
     { title: "VIP等级", dataIndex: "vipLv", hideInSearch: true },
+    { title: "积分", dataIndex: "myPoints", hideInSearch: true },
     { title: "邀请码", dataIndex: "inviteCode", hideInSearch: true },
     { title: "邀请数量", dataIndex: "inviteCount", hideInSearch: true },
 
@@ -231,6 +232,47 @@ const TableList: React.FC = () => {
               name="remark"
               label="备注"
               placeholder="请输入备注"
+            />
+          </ModalForm>
+          <ModalForm
+            title="修改会员信息"
+            trigger={
+              <Button type="primary" size="small" ghost>
+                修改
+              </Button>
+            }
+            onFinish={async (values: any) => {
+              try {
+                await updateMember({
+                  customerId: record.id,
+                  ...values,
+                });
+                message.success("修改成功");
+                fetchData({ current, size, ...filters });
+                return true;
+              } catch (error) {
+                console.error(error);
+                return false;
+              }
+            }}
+            initialValues={{
+              vipLv: record.vipLv,
+              points: record.myPoints,
+            }}
+          >
+            <ProFormDigit
+              name="vipLv"
+              label="VIP等级"
+              placeholder="请输入VIP等级"
+              min={0}
+              fieldProps={{ precision: 0 }}
+            />
+            <ProFormDigit
+              name="points"
+              label="可用积分"
+              placeholder="请输入可用积分"
+              min={0}
+              fieldProps={{ precision: 0 }}
             />
           </ModalForm>
         </div >

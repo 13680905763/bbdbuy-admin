@@ -18,11 +18,15 @@ import {
   delPromotion,
   getPromotionList,
   putPromotion,
+  getInviteBonusList,
+  putInviteBonus,
+  createInviteBonus,
+  delInviteBonus,
 } from "@/services";
 
 const ConfigList: React.FC = () => {
   const [activeTab, setActiveTab] = useState<
-    "EXPERIENCE" | "LEVEL" | "POINTS" | "VIP"
+    "EXPERIENCE" | "LEVEL" | "POINTS" | "VIP" | "INVITE"
   >("EXPERIENCE");
   const [dataSource, setDataSource] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -30,6 +34,20 @@ const ConfigList: React.FC = () => {
   const [currentRow, setCurrentRow] = useState<any>(null); // null 表示新建
   const [form] = Form.useForm();
   const actionRef = useRef<ActionType | null>(null);
+
+  const [inviteDataSource, setInviteDataSource] = useState<any>({});
+  const [activeInviteTab, setActiveInviteTab] = useState("1"); // 默认选中第一个子 Tab
+
+  /** 监听 activeInviteTab 变化 */
+  useEffect(() => {
+    if (activeTab === "INVITE" && inviteDataSource) {
+      // 这里只是为了确保 Tab 切换时数据是最新的，如果需要重新请求可以在这里做
+      // 目前 inviteDataSource 是一次性获取的，所以不需要重新请求
+      // 但是如果在 Tab 2 新建了数据，然后切换到 Tab 1，再切回来，需要确保数据是最新的
+      // 最好是在 handleDelete 和 handleSave 成功后重新调用 fetchData
+      // fetchData 已经处理了 activeTab 为 INVITE 的情况
+    }
+  }, [activeInviteTab]);
 
   /** 拉取数据 */
   const fetchData = async (type: string) => {
@@ -53,8 +71,13 @@ const ConfigList: React.FC = () => {
         };
       }
 
-      const res: any = await getPromotionList(query);
-      setDataSource(res?.data || []);
+      if (type === "INVITE") {
+        const res: any = await getInviteBonusList();
+        setInviteDataSource(res?.data || {});
+      } else {
+        const res: any = await getPromotionList(query);
+        setDataSource(res?.data || []);
+      }
     } catch (e) {
       message.error("加载失败");
     } finally {
@@ -70,7 +93,11 @@ const ConfigList: React.FC = () => {
   const handleAdd = () => {
     setCurrentRow(null);
     form.resetFields();
-    form.setFieldsValue({ configType: activeTab });
+    if (activeTab === "INVITE") {
+      form.setFieldsValue({ configType: "INVITE", type: Number(activeInviteTab) });
+    } else {
+      form.setFieldsValue({ configType: activeTab });
+    }
     setEditModalVisible(true);
   };
 
@@ -85,7 +112,11 @@ const ConfigList: React.FC = () => {
   const handleDelete = async (record: any) => {
     setLoading(true);
     try {
-      await delPromotion(record.id);
+      if (activeTab === "INVITE") {
+        await delInviteBonus(record.id);
+      } else {
+        await delPromotion(record.id);
+      }
       message.success("删除成功");
       fetchData(activeTab);
     } catch (e) {
@@ -105,14 +136,22 @@ const ConfigList: React.FC = () => {
       }
       setLoading(true);
 
-      if (currentRow?.id) {
-        // 修改
-        await putPromotion(values);
-        message.success("修改成功");
+      if (activeTab === "INVITE") {
+        if (currentRow?.id) {
+          // 修改
+          await putInviteBonus(values);
+        } else {
+          // 新增
+          await createInviteBonus(values);
+        }
       } else {
-        // 新增
-        await createPromotion(values);
-        message.success("新建成功");
+        if (currentRow?.id) {
+          // 修改
+          await putPromotion(values);
+        } else {
+          // 新增
+          await createPromotion(values);
+        }
       }
 
       message.success(currentRow ? "修改成功" : "新建成功");
@@ -234,6 +273,12 @@ const ConfigList: React.FC = () => {
         ],
       },
     ],
+    INVITE: [
+      { title: "等级", dataIndex: "vipLv" },
+      { title: "邀请奖金", dataIndex: "inviteBonus" },
+      { title: "转运奖金", dataIndex: "transferBonus" },
+      { title: "商城奖金", dataIndex: "shopBonus" },
+    ],
   };
   // /** 表格列 */
   // const columns: any[] = [
@@ -268,19 +313,127 @@ const ConfigList: React.FC = () => {
   //   },
   // ];
 
-  return (
-    <PageContainer>
-      <Tabs
-        activeKey={activeTab}
-        onChange={(key) => setActiveTab(key as any)}
-        items={[
-          { label: "经验等级", key: "EXPERIENCE" },
-          { label: "奖金配置", key: "LEVEL" },
-          { label: "积分配置", key: "POINTS" },
-          { label: "VIP配置", key: "VIP" },
-        ]}
-      />
+  const inviteColumns: any = {
+    "1": [
+      { title: "活跃用户数", dataIndex: "activeUsersNum" },
+      { title: "奖金（美元）", dataIndex: "bonus" },
+      { title: "描述", dataIndex: "remark" },
+      // { title: "创建时间", dataIndex: "createTime", valueType: "dateTime" },
+      {
+        title: "操作",
+        valueType: "option",
+        render: (_: any, record: any) => [
+          <Button
+            type="link"
+            style={{ color: "#1890ff", padding: 0 }}
+            onClick={() => handleEdit(record)}
+          >
+            修改
+          </Button>,
+          <Popconfirm
+            key="delete"
+            title="确定要删除吗？"
+            onConfirm={() => handleDelete(record)}
+          >
+            <a style={{ color: "#ff4d4f" }}>删除</a>
+          </Popconfirm>,
+        ],
+      },
+    ],
+    "2": [
+      { title: "活跃用户数", dataIndex: "activeUsersNum" },
+      { title: "奖金（美元）", dataIndex: "bonus" },
+      { title: "免邮额度(kg)", dataIndex: "freeShipping" },
+      { title: "描述", dataIndex: "remark" },
+      // { title: "创建时间", dataIndex: "createTime", valueType: "dateTime" },
+      {
+        title: "操作",
+        valueType: "option",
+        render: (_: any, record: any) => [
+          <Button
+            type="link"
+            style={{ color: "#1890ff", padding: 0 }}
+            onClick={() => handleEdit(record)}
+          >
+            修改
+          </Button>,
+          <Popconfirm
+            key="delete"
+            title="确定要删除吗？"
+            onConfirm={() => handleDelete(record)}
+          >
+            <a style={{ color: "#ff4d4f" }}>删除</a>
+          </Popconfirm>,
+        ],
+      },
+    ],
+    "3": [
+      { title: "活跃用户数", dataIndex: "activeUsersNum" },
+      { title: "奖金（美元）", dataIndex: "bonus" },
+      { title: "描述", dataIndex: "remark" },
+      // { title: "创建时间", dataIndex: "createTime", valueType: "dateTime" },
+      {
+        title: "操作",
+        valueType: "option",
+        render: (_: any, record: any) => [
+          <Button
+            type="link"
+            style={{ color: "#1890ff", padding: 0 }}
+            onClick={() => handleEdit(record)}
+          >
+            修改
+          </Button>,
+          <Popconfirm
+            key="delete"
+            title="确定要删除吗？"
+            onConfirm={() => handleDelete(record)}
+          >
+            <a style={{ color: "#ff4d4f" }}>删除</a>
+          </Popconfirm>,
+        ],
+      },
+    ],
+  };
 
+  const renderContent = () => {
+    if (activeTab === "INVITE") {
+      return (
+        <>
+          <Tabs
+            activeKey={activeInviteTab}
+            onChange={setActiveInviteTab}
+            type="card"
+            items={[
+              { label: "每名活跃用户的现金奖励", key: "1" },
+              { label: "BBDBuy 余额 + 包邮", key: "2" },
+              { label: "月度工资奖金（固定奖金）", key: "3" },
+            ]}
+          />
+          <ProTable
+            size="small"
+            options={{
+              reload: false,
+              fullScreen: true,
+              density: false,
+            }}
+            bordered
+            rowKey="id"
+            search={false}
+            pagination={false}
+            dataSource={inviteDataSource[activeInviteTab] || []}
+            loading={loading}
+            columns={inviteColumns[activeInviteTab]}
+            toolBarRender={() => [
+              <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
+                新建
+              </Button>,
+            ]}
+          />
+        </>
+      );
+    }
+
+    return (
       <ProTable
         size="small"
         options={{
@@ -302,6 +455,110 @@ const ConfigList: React.FC = () => {
           </Button>,
         ]}
       />
+    );
+  };
+
+  const renderInviteForm = () => {
+    return (
+      <>
+        <Form.Item name="type" label="类型" hidden>
+          <Input />
+        </Form.Item>
+        <Form.Item
+          name="activeUsersNum"
+          label="活跃用户数"
+          rules={[{ required: true, message: "请输入活跃用户数" }]}
+        >
+          <InputNumber style={{ width: "100%" }} min={0} />
+        </Form.Item>
+        <Form.Item
+          name="bonus"
+          label="奖金（美元）"
+          rules={[{ required: true, message: "请输入奖金" }]}
+        >
+          <InputNumber style={{ width: "100%" }} min={0} step={0.01} />
+        </Form.Item>
+        {activeInviteTab === "2" && (
+          <Form.Item
+            name="freeShipping"
+            label="免邮额度(kg)"
+            rules={[{ required: false, message: "请输入免邮额度" }]}
+          >
+            <InputNumber style={{ width: "100%" }} min={0} step={0.1} />
+          </Form.Item>
+        )}
+        <Form.Item name="remark" label="描述">
+          <Input.TextArea rows={2} />
+        </Form.Item>
+      </>
+    );
+  };
+
+  const renderCommonForm = () => {
+    return (
+      <>
+        <Form.Item name="configType" label="配置类型">
+          <Input disabled />
+        </Form.Item>
+
+        <Form.Item
+          name="configCode"
+          label="配置编码"
+          rules={[{ required: true, message: "请输入配置编码" }]}
+        >
+          <Input disabled={currentRow ? true : false} />
+        </Form.Item>
+
+        <Form.Item
+          name="configValue"
+          label="配置值"
+          rules={[{ required: true, message: "请输入配置值" }]}
+        >
+          <Input />
+        </Form.Item>
+
+        <Form.Item name="rangeMin" label="范围最小值">
+          <InputNumber style={{ width: "100%" }} />
+        </Form.Item>
+
+        <Form.Item name="rangeMax" label="范围最大值">
+          <InputNumber style={{ width: "100%" }} />
+        </Form.Item>
+
+        <Form.Item name="rangeCode" label="等级编码">
+          <Input />
+        </Form.Item>
+
+        <Form.Item name="rangeName" label="等级名称">
+          <Input />
+        </Form.Item>
+
+        <Form.Item name="priority" label="优先级">
+          <InputNumber style={{ width: "100%" }} />
+        </Form.Item>
+
+        <Form.Item name="description" label="描述">
+          <Input.TextArea rows={2} />
+        </Form.Item>
+      </>
+    );
+  };
+
+  return (
+    <PageContainer>
+      <Tabs
+        activeKey={activeTab}
+        onChange={(key) => setActiveTab(key as any)}
+        items={[
+          { label: "经验等级", key: "EXPERIENCE" },
+          { label: "奖金配置", key: "LEVEL" },
+          { label: "积分配置", key: "POINTS" },
+          { label: "VIP配置", key: "VIP" },
+          { label: "邀请奖金列表", key: "INVITE" },
+        ]}
+      />
+
+      {renderContent()}
 
       <Modal
         title={currentRow ? "修改配置" : "新建配置"}
@@ -313,49 +570,7 @@ const ConfigList: React.FC = () => {
         centered
       >
         <Form form={form} layout="vertical">
-          <Form.Item name="configType" label="配置类型">
-            <Input disabled />
-          </Form.Item>
-
-          <Form.Item
-            name="configCode"
-            label="配置编码"
-            rules={[{ required: true, message: "请输入配置编码" }]}
-          >
-            <Input disabled={currentRow ? true : false} />
-          </Form.Item>
-
-          <Form.Item
-            name="configValue"
-            label="配置值"
-            rules={[{ required: true, message: "请输入配置值" }]}
-          >
-            <Input />
-          </Form.Item>
-
-          <Form.Item name="rangeMin" label="范围最小值">
-            <InputNumber style={{ width: "100%" }} />
-          </Form.Item>
-
-          <Form.Item name="rangeMax" label="范围最大值">
-            <InputNumber style={{ width: "100%" }} />
-          </Form.Item>
-
-          <Form.Item name="rangeCode" label="等级编码">
-            <Input />
-          </Form.Item>
-
-          <Form.Item name="rangeName" label="等级名称">
-            <Input />
-          </Form.Item>
-
-          <Form.Item name="priority" label="优先级">
-            <InputNumber style={{ width: "100%" }} />
-          </Form.Item>
-
-          <Form.Item name="description" label="描述">
-            <Input.TextArea rows={2} />
-          </Form.Item>
+          {activeTab === "INVITE" ? renderInviteForm() : renderCommonForm()}
         </Form>
       </Modal>
     </PageContainer>

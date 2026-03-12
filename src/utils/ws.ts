@@ -24,7 +24,7 @@ let reconnectCount = 0;
 let allowReconnect = true;
 
 const RECONNECT_INTERVAL = 3000;
-const MAX_RECONNECT = 10;
+const MAX_RECONNECT = 3;
 
 /**
  * 避免重复 new WebSocket
@@ -77,13 +77,19 @@ export function connectWS() {
   ws.onopen = () => {
     console.log("✅ WebSocket 已连接");
     wsConnecting = false;
-    reconnectCount = 0;
     allowReconnect = true;
 
     if (reconnectTimer) {
       clearTimeout(reconnectTimer);
       reconnectTimer = null;
     }
+
+    // 只有连接稳定 5s 后才重置重连次数，防止连接后立即断开导致的死循环
+    setTimeout(() => {
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        reconnectCount = 0;
+      }
+    }, 5000);
 
     reconnectListeners.forEach((cb) => cb());
   };
@@ -103,7 +109,7 @@ export function connectWS() {
     wsConnecting = false;
 
     if (allowReconnect) {
-      message.error("会话连接断开，正在尝试重连...");
+      message.error(`消息会话连接断开，正在尝试第 ${reconnectCount + 1}/${MAX_RECONNECT} 次重连...`);
       tryReconnect();
     }
   };
@@ -124,7 +130,7 @@ function tryReconnect() {
   if (!allowReconnect) return;
   if (reconnectCount >= MAX_RECONNECT) {
     console.warn("⚠️ 重连次数已达上限");
-    message.error("会话连接失败，请刷新页面重试");
+    message.error(`消息会话连接失败（已重试 ${MAX_RECONNECT} 次），请刷新页面`);
     return;
   }
   if (reconnectTimer) return;

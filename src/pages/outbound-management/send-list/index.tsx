@@ -332,19 +332,11 @@ const TableList: React.FC = () => {
       dataIndex: "packingPackageCode",
     },
     {
-      title: "货位",
-      dataIndex: "location",
-      render: (row: any) => {
-        return row?.locationCode;
-      },
-      hideInSearch: true,
-    },
-    {
       title: "尺寸/重量",
       dataIndex: "packing",
       minWidth: 200,
       hideInSearch: true,
-      render: (row: any) => {
+      render: (row: any, record: any) => {
         if (!row) return "--";
 
         const dims = [row.length, row.width, row.height].filter(
@@ -372,6 +364,12 @@ const TableList: React.FC = () => {
                 <span style={{ color: "#999", marginRight: 4 }}>重量：</span>
                 <span>{row.weight}</span>
                 <span style={{ color: "#999", marginLeft: 4 }}>g</span>
+              </div>
+            )}
+             {record.location?.locationCode && (
+              <div style={{ color: "#999", marginRight: 4 ,marginTop:8}}>
+                <span >货位：</span>
+                <span>{record.location.locationCode}</span>
               </div>
             )}
           </div>

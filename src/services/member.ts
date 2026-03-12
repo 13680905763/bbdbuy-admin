@@ -30,3 +30,11 @@ export async function distributionCoupons(data: any) {
         data,
     });
 }
+
+/** 修改会员信息 POST /member/updateMember */
+export async function updateMember(data: { customerId: number; vipLv?: number; points?: number }) {
+    return request<any>("/member/updateMember", {
+        method: "POST",
+        data,
+    });
+}

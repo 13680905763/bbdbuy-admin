@@ -25,10 +25,14 @@ const ConfigList: React.FC = () => {
   const [form] = Form.useForm();
 
   /** 拉取数据 */
-  const fetchData = async () => {
+  const fetchData = async (params: any = {}) => {
     setLoading(true);
     try {
-      const res: any = await getCouponList();
+      const res: any = await getCouponList({
+        // title: params.title,
+        src: params.srcMsg,
+        usedFor: params.usedForMsg,
+      });
       setDataSource(res.data);
     } catch (e) {
       message.error("加载失败");
@@ -106,15 +110,36 @@ const ConfigList: React.FC = () => {
   };
 
   const columns = [
-    { title: "标题", dataIndex: "title" },
-    { title: "来源", dataIndex: "srcMsg" },
-    { title: "优惠券类型", dataIndex: "typeMsg" },
-    { title: "使用范围", dataIndex: "usedForMsg" },
-    { title: "面额", dataIndex: "denomination" },
-    { title: "折扣", dataIndex: "discount" },
-    { title: "使用门槛", dataIndex: "thresholdAmount" },
-    { title: "兑换所需积分", dataIndex: "exchangePoints" },
-    { title: "兑换码", dataIndex: "redemptionCode" },
+    { title: "标题", dataIndex: "title", hideInSearch: true },
+    {
+      title: "来源",
+      dataIndex: "srcMsg",
+      renderFormItem: () => (
+        <Select placeholder="请选择来源" allowClear>
+          <Select.Option value={1}>注册</Select.Option>
+          <Select.Option value={2}>积分兑换</Select.Option>
+          <Select.Option value={3}>后台发放</Select.Option>
+          <Select.Option value={4}>兑换码</Select.Option>
+        </Select>
+      ),
+    },
+    { title: "优惠券类型", dataIndex: "typeMsg", hideInSearch: true },
+    {
+      title: "使用范围",
+      dataIndex: "usedForMsg",
+      renderFormItem: () => (
+        <Select placeholder="请选择使用范围" allowClear>
+          <Select.Option value={0}>所有途径</Select.Option>
+          <Select.Option value={1}>运单</Select.Option>
+          <Select.Option value={2}>订单</Select.Option>
+        </Select>
+      ),
+    },
+    { title: "面额", dataIndex: "denomination" , hideInSearch: true},
+    { title: "折扣", dataIndex: "discount" , hideInSearch: true},
+    { title: "使用门槛", dataIndex: "thresholdAmount" , hideInSearch: true},
+    { title: "兑换所需积分", dataIndex: "exchangePoints", hideInSearch: true},
+    { title: "兑换码", dataIndex: "redemptionCode", hideInSearch: true },
     {
       title: "兑换数量",
       dataIndex: "redemptionCodeQuantity",
@@ -124,11 +149,12 @@ const ConfigList: React.FC = () => {
           {record.redemptionCodeQuantity}
         </span>
       ),
+      hideInSearch: true
     },
-
-    { title: "有效期", dataIndex: "expirationDate" },
-    { title: "VIP等级", dataIndex: "vipLv" },
-    { title: "更新时间", dataIndex: "updateTime" },
+    { title: "有效期", dataIndex: "expirationDate" , hideInSearch: true},
+    { title: "VIP等级", dataIndex: "vipLv" , hideInSearch: true},
+    { title: "备注", dataIndex: "remark" , hideInSearch: true},
+    { title: "更新时间", dataIndex: "updateTime" , hideInSearch: true},
     {
       title: "操作",
       valueType: "option",
@@ -163,7 +189,7 @@ const ConfigList: React.FC = () => {
         bordered
         actionRef={actionRef}
         rowKey="id"
-        search={false}
+        // search={false}
         pagination={false}
         dataSource={dataSource}
         loading={loading}
@@ -173,6 +199,12 @@ const ConfigList: React.FC = () => {
             新建优惠券
           </Button>,
         ]}
+        onSubmit={(params) => {
+          fetchData(params);
+        }}
+        onReset={() => {
+          fetchData();
+        }}
       />
 
       {/* 新增/修改 弹窗 */}
@@ -329,6 +361,7 @@ const ConfigList: React.FC = () => {
             </Form.Item>
           )}
 
+          {/* 兑换码数量（仅来源=兑换码时必传） */}
           {srcType === 4 && (
             <>
               <Form.Item
@@ -351,6 +384,11 @@ const ConfigList: React.FC = () => {
               </Form.Item>
             </>
           )}
+
+          {/* 备注 */}
+          <Form.Item name="remark" label="备注">
+            <Input.TextArea placeholder="请输入备注" />
+          </Form.Item>
         </Form>
       </Modal>
     </PageContainer>

@@ -12,7 +12,7 @@ export default [
     path: "/dashboard",
     name: "控制台",
     icon: "dashboard",
-    component: "./Dashboard",
+    component: "./dashboard/console",
   },
   {
     path: "/search",

@@ -65,6 +65,32 @@ export async function delPromotion(id: string | number) {
   });
 }
 
+/** 获取邀请奖金列表 */
+export async function getInviteBonusList(params?: any) {
+  return request("/invite-bonus", {
+    method: "GET",
+    params,
+  });
+}
+export async function putInviteBonus(data: any) {
+  return request("/invite-bonus", {
+    method: "PUT",
+    data,
+  });
+}
+export async function createInviteBonus(data: any) {
+  return request("/invite-bonus", {
+    method: "POST",
+    data,
+  });
+}
+export async function delInviteBonus(id: string | number) {
+  return request(`/invite-bonus/${id}`, {
+    method: "DELETE",
+  });
+}
+
+
 /** 获取优惠券配置 */
 export async function getCouponList(params?: any) {
   return request("/coupon", {

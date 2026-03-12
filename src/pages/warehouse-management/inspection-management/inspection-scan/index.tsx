@@ -235,6 +235,17 @@ const ParticularPaper: React.FC = () => {
       // 校验
       for (let i = 0; i < data.length; i++) {
         const item = data[i];
+
+        // 如果状态是异常（1033），跳过必填校验
+        if (item.inspectionStatusCode === "1033") {
+          if (!item.abnormalCode) {
+            message.warning(`第 ${i + 1} 行异常原因未选择`);
+            setSubmitting(false);
+            return;
+          }
+          continue; // 跳过后续字段校验
+        }
+
         const requiredFields = [
           "weight",
           "length",
@@ -258,15 +269,15 @@ const ParticularPaper: React.FC = () => {
             return;
           }
         }
-        if (item.inspectionStatusCode !== "1032" && !item.abnormalCode) {
-          message.warning(`第 ${i + 1} 行状态未填写`);
-          setSubmitting(false);
-          return;
-        }
+
       }
       const res = await InspectionSubmit(data);
       if (res.success) {
         message.success("提交成功");
+        
+        // 提交成功后自动触发打印
+        handleBatchPrint();
+        
         setTableData([]);
         setScanValue("");
       }
