@@ -74,6 +74,11 @@ const TableList: React.FC = () => {
       valueType: "money",
     },
     {
+      title: "备注",
+      dataIndex: "remark",
+      hideInSearch: true,
+    },
+    {
       title: "状态",
       dataIndex: "statusCode",
       hideInSearch: false,

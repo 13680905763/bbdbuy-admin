@@ -86,15 +86,16 @@ const EditShippingModal: React.FC<{
     }
   };
 
-  const fetchTemplates = async (serverId: string, lineId: string) => {
+  const fetchTemplates = async (serverId: string, lineId: string, countryId?: string) => {
     console.log('serverId', serverId);
     console.log('lineId', lineId);
-    if (!serverId || !lineId) {
+    console.log('countryId', countryId);
+    if (!serverId || !lineId || !countryId) {
       setTemplateOptions([]);
       return;
     }
     try {
-      const res = await getShippingTemplates(serverId, lineId);
+      const res = await getShippingTemplates(serverId, lineId, countryId);
       if (res?.data) {
         setTemplateOptions(
           res.data.map((item: any) => ({
@@ -130,10 +131,11 @@ const EditShippingModal: React.FC<{
         if (visible) {
           const serverId = record?.shipping?.serverId;
           const lineId = record?.shipping?.lineId; // 这里的取值逻辑可能需要根据实际字段调整
+          const countryId = record?.address?.countryId; // 这里的取值逻辑可能需要根据实际字段调整
           if (serverId) {
             await fetchRoutes(serverId);
             if (lineId) {
-              await fetchTemplates(serverId, lineId);
+              await fetchTemplates(serverId, lineId, countryId);
             }
           }
           form.setFieldsValue({
@@ -142,7 +144,7 @@ const EditShippingModal: React.FC<{
             lineId: lineId,
             templateId: record?.shipping?.templateId,
             remark: record?.remark,
-            countryCode: record?.countryCode,
+            countryId: countryId,
           });
         }
       }}
@@ -153,7 +155,6 @@ const EditShippingModal: React.FC<{
             shippingCode: values.shippingCode,
             templateId: values.templateId,
             remark: values.remark,
-            countryId: values.countryId,
           });
           // @ts-ignore
           if (res?.success) {
@@ -176,6 +177,13 @@ const EditShippingModal: React.FC<{
         fieldProps={{
           filterOption: (input, option: any) =>
             (option?.label ?? "").toLowerCase().includes(input.toLowerCase()),
+          onChange: (val: any) => {
+            const serverId = form.getFieldValue("serverId");
+            const lineId = form.getFieldValue("lineId");
+            if (serverId && lineId) {
+              fetchTemplates(serverId, lineId, val);
+            }
+          }
         }}
         options={countryOptions}
         rules={[{ required: true, message: "请选择国家" }]}
@@ -212,7 +220,8 @@ const EditShippingModal: React.FC<{
           onChange: (val: any) => {
             form.setFieldValue("templateId", undefined);
             const serverId = form.getFieldValue("serverId");
-            fetchTemplates(serverId, val);
+            const countryId = form.getFieldValue("countryId");
+            fetchTemplates(serverId, val, countryId);
           },
         }}
         rules={[{ required: true, message: "请选择路线" }]}
@@ -366,8 +375,8 @@ const TableList: React.FC = () => {
                 <span style={{ color: "#999", marginLeft: 4 }}>g</span>
               </div>
             )}
-             {record.location?.locationCode && (
-              <div style={{ color: "#999", marginRight: 4 ,marginTop:8}}>
+            {record.location?.locationCode && (
+              <div style={{ color: "#999", marginRight: 4, marginTop: 8 }}>
                 <span >货位：</span>
                 <span>{record.location.locationCode}</span>
               </div>

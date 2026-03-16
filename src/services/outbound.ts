@@ -79,8 +79,12 @@ export async function getShippingFeeTemplate(id: string) {
   });
 }
 /** 根据路线查询运输模板 */
-export async function getShippingTemplates(serverId: string, lineId: string) {
-  return request<API.RuleList>(`/shipping-line-template/server/line?serverId=${serverId}&lineId=${lineId}`, {
+export async function getShippingTemplates(serverId: string, lineId: string, countryId?: string) {
+  let url = `/shipping-line-template/server/line?serverId=${serverId}&lineId=${lineId}`;
+  if (countryId) {
+    url += `&countryId=${countryId}`;
+  }
+  return request<API.RuleList>(url, {
     method: "GET",
   });
 }
