@@ -124,7 +124,7 @@ const EditShippingModal: React.FC<{
       width={400}
       form={form}
       modalProps={{
-        destroyOnClose: true,
+        destroyOnHidden: true,
         maskClosable: false,
       }}
       onOpenChange={async (visible) => {
@@ -344,7 +344,7 @@ const TableList: React.FC = () => {
       title: "尺寸/重量",
       dataIndex: "packing",
       minWidth: 200,
-      hideInSearch: true,
+      search: false,
       render: (row: any, record: any) => {
         if (!row) return "--";
 
@@ -388,7 +388,7 @@ const TableList: React.FC = () => {
     {
       title: "收件人",
       dataIndex: "address",
-      hideInSearch: true,
+      search: false,
       render: (record: any) => {
         // record 是每行的完整对象
         return (
@@ -411,7 +411,7 @@ const TableList: React.FC = () => {
       dataIndex: "serverId", // 搜索表单字段名必须是独立字段
       key: "serverId",
       render: (_, record: any) => record.shipping?.serverName || "--",
-      renderFormItem: () => (
+      formItemRender: () => (
         <ProFormSelect
           placeholder="请选择承运商"
           allowClear
@@ -430,7 +430,7 @@ const TableList: React.FC = () => {
       dataIndex: "lineId",
       key: "lineId",
       render: (_, record: any) => record.shipping?.lineName || "--",
-      renderFormItem: () => (
+      formItemRender: () => (
         <ProFormSelect
           placeholder="请选择路线"
           allowClear
@@ -460,13 +460,13 @@ const TableList: React.FC = () => {
     {
       title: "备注",
       dataIndex: "remark",
-      hideInSearch: true,
+      search: false,
     },
     {
       title: "发货状态",
       dataIndex: "sendStatusCode",
       render: (value: any) => renderStatusTag("delivery", value),
-      renderFormItem: () => {
+      formItemRender: () => {
         return (
           <Select
             placeholder="请选择发货状态"
@@ -479,12 +479,12 @@ const TableList: React.FC = () => {
     {
       title: "发货人",
       dataIndex: "updateUserName",
-      hideInSearch: true,
+      search: false,
     },
     {
       title: "发货时间",
       dataIndex: "updateTime",
-      hideInSearch: true,
+      search: false,
       render: (_, record: any) => {
         const sendStatusCode = record.sendStatusCode;
         const updateTime = record.updateTime;

@@ -99,14 +99,14 @@ const TableList: React.FC = () => {
     {
       title: "用户名",
       dataIndex: "customerName",
-      hideInSearch: true,
+      search: false,
     },
 
 
     {
       title: "商品信息",
       dataIndex: "items",
-      hideInSearch: true,
+      search: false,
       render: (products: any = [], record: any) => {
         const preview = products?.slice(0, 9);
         const expanded = expandedRowKeys.includes(record?.id);
@@ -152,24 +152,24 @@ const TableList: React.FC = () => {
     {
       title: "来源",
       dataIndex: "source",
-      hideInSearch: true,
+      search: false,
     },
     {
       title: "平台采购单号",
       dataIndex: "sourceOrderId",
-      hideInSearch: true,
+      search: false,
 
     },
      {
       title: "采购状态",
       dataIndex: "purchaseStatus",
-      hideInSearch: true,
+      search: false,
     
     },
     {
       title: "快递单号",
       dataIndex: "logisticsList",
-      hideInSearch: true,
+      search: false,
       render: (logisticsList: any) => {
         if (!logisticsList || !Array.isArray(logisticsList) || logisticsList.length === 0) {
           return "-";
@@ -191,7 +191,7 @@ const TableList: React.FC = () => {
       title: "状态",
       dataIndex: "handleStatus",
       render: (value: any) => renderStatusTag("refund", value),
-      renderFormItem: () => {
+      formItemRender: () => {
         return (
           <Select
             placeholder="请选择采购状态"
@@ -205,7 +205,7 @@ const TableList: React.FC = () => {
     {
       title: "操作",
       dataIndex: "canHandle",
-      hideInSearch: true,
+      search: false,
       render: (_: any, record: any) => (
         <div style={{ display: "flex", gap: 8 }}>
           {record.canHandle && (

@@ -111,25 +111,16 @@ const TableList: React.FC = () => {
   };
   const columns: ProColumns<any>[] = [
     { title: "订单号", dataIndex: "orderCode" },
-    {
-      title: "客户昵称", dataIndex: "customerName",
-      // render: (customerName, records) => {
-      //   return <div>用户id{records.customerId}</div>
-      // }
-    },
-    // {
-    //   title: "客户id", dataIndex: "customerId",hideInSearch: true,
-
-    // },
-    { title: "商品金额", dataIndex: "productFee", hideInSearch: true },
-    { title: "运费", dataIndex: "postFee", hideInSearch: true },
-    { title: "服务费", dataIndex: "serviceFee", hideInSearch: true },
-    { title: "退款金额", dataIndex: "refundAmount", hideInSearch: true },
-    { title: "订单总金额", dataIndex: "totalFee", hideInSearch: true },
+    { title: "客户昵称", dataIndex: "customerName", },
+    { title: "商品金额", dataIndex: "productFee", search: false },
+    { title: "运费", dataIndex: "postFee", search: false },
+    { title: "服务费", dataIndex: "serviceFee", search: false },
+    { title: "退款金额", dataIndex: "refundAmount", search: false },
+    { title: "订单总金额", dataIndex: "totalFee", search: false },
     {
       title: "商品信息",
       dataIndex: "products",
-      hideInSearch: true,
+      hideInForm: true,
       render: (products: any = [], record) => {
         const preview = products?.slice(0, 3);
         const expanded = expandedRowKeys.includes(record.id);
@@ -174,7 +165,7 @@ const TableList: React.FC = () => {
       title: "订单状态",
       dataIndex: "statusCode",
       render: (value: any) => renderStatusTag("order", value),
-      renderFormItem: (_, { type, defaultRender, ...rest }, form) => {
+      formItemRender: (_, { type, defaultRender, ...rest }, form) => {
         return (
           <Select
             placeholder="请选择订单状态"
@@ -187,7 +178,7 @@ const TableList: React.FC = () => {
     {
       title: "备注",
       dataIndex: "remark",
-      hideInSearch: true,
+      hideInForm: true,
       ellipsis: true, // 超过宽度自动显示省略号
       width: 200, // 设置列宽
     },
@@ -198,7 +189,7 @@ const TableList: React.FC = () => {
       render: (_, records: any) => {
         return records?.createTime;
       },
-      renderFormItem: () => (
+      formItemRender: () => (
         <RangePicker
           showTime
           format="YYYY-MM-DD HH:mm:ss"

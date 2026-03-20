@@ -51,7 +51,7 @@ const ConfigList: React.FC = () => {
       {
         title: "用户名",
         dataIndex: "customerName",
-        hideInSearch: true,
+        search: false,
         render: (text: string, records: any) => (
           <a
             onClick={() => {
@@ -65,18 +65,18 @@ const ConfigList: React.FC = () => {
           </a>
         ),
       },
-      { title: "商品金额", dataIndex: "productFee", hideInSearch: true },
-      { title: "运费金额", dataIndex: "postFee", hideInSearch: true },
-      { title: "服务费金额", dataIndex: "serviceFee", hideInSearch: true },
-      { title: "退款金额", dataIndex: "refundAmount", hideInSearch: true },
-      { title: "订单总金额", dataIndex: "totalFee", hideInSearch: true },
+      { title: "商品金额", dataIndex: "productFee", search: false },
+      { title: "运费金额", dataIndex: "postFee", search: false },
+      { title: "服务费金额", dataIndex: "serviceFee", search: false },
+      { title: "退款金额", dataIndex: "refundAmount", search: false },
+      { title: "订单总金额", dataIndex: "totalFee", search: false },
       {
         title: "订单状态",
         dataIndex: "statusCode",
         render: (value: any) => renderStatusTag("order", value),
       },
       {
-        title: "备注", dataIndex: "remark", hideInSearch: true,
+        title: "备注", dataIndex: "remark", search: false,
         ellipsis: true, // 超过宽度自动显示省略号
         width: 200, // 设置列宽
       },
@@ -152,7 +152,7 @@ const ConfigList: React.FC = () => {
       {
         title: "采购编号",
         dataIndex: "purchaseCode",
-        hideInSearch: true,
+        search: false,
       },
       {
         title: "订单编号",
@@ -192,7 +192,7 @@ const ConfigList: React.FC = () => {
       {
         title: "采购员",
         dataIndex: "dispatchUserName",
-        hideInSearch: true,
+        search: false,
       },
 
       {
@@ -257,7 +257,7 @@ const ConfigList: React.FC = () => {
       {
         title: "快递公司",
         dataIndex: "logisticsCompany",
-        hideInSearch: true,
+        search: false,
 
       },
       {
@@ -279,7 +279,7 @@ const ConfigList: React.FC = () => {
       {
         title: "收货人",
         dataIndex: "userName",
-        hideInSearch: true,
+        search: false,
       },
       {
         title: "收货状态",
@@ -325,7 +325,7 @@ const ConfigList: React.FC = () => {
       {
         title: "用户名",
         dataIndex: "customerName",
-        hideInSearch: true,
+        search: false,
         width: 100,
       },
       {
@@ -363,7 +363,7 @@ const ConfigList: React.FC = () => {
       {
         title: "商品名称",
         dataIndex: "orderProduct",
-        hideInSearch: true,
+        search: false,
         width: 300,
         render: (orderProduct: any) => {
           return (
@@ -432,7 +432,7 @@ const ConfigList: React.FC = () => {
       {
         title: "商品类型",
         dataIndex: "packageItem.categoryName",
-        hideInSearch: true,
+        search: false,
         render: (_: any, record: any) => {
           return <div>{record?.packageItem?.categoryName}</div>;
         },
@@ -440,7 +440,7 @@ const ConfigList: React.FC = () => {
       {
         title: "验货详情",
         dataIndex: "packageItem.id",
-        hideInSearch: true,
+        search: false,
         render: (_: any, record: any) => {
           return (
             <div style={{ fontSize: 13, color: "#555", lineHeight: "20px" }}>
@@ -483,7 +483,7 @@ const ConfigList: React.FC = () => {
         title: "验货人",
         dataIndex: "userName",
         width: 100,
-        hideInSearch: true,
+        search: false,
         render: (userName: any, records: any) => {
           if (records?.inspectionStatus === "待验货") {
             return "-";
@@ -558,7 +558,7 @@ const ConfigList: React.FC = () => {
       {
         title: "上架时间",
         dataIndex: "updateTime",
-        hideInSearch: true,
+        search: false,
         render: (_: any, record: any) => {
           const putawayStatusCode = record.putawayStatusCode;
           const updateTime = record.updateTime;

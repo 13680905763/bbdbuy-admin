@@ -371,7 +371,6 @@ const ConfigList: React.FC = () => {
       { title: "活跃用户数", dataIndex: "activeUsersNum" },
       { title: "奖金（美元）", dataIndex: "bonus" },
       { title: "描述", dataIndex: "remark" },
-      // { title: "创建时间", dataIndex: "createTime", valueType: "dateTime" },
       {
         title: "操作",
         valueType: "option",

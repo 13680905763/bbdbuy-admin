@@ -152,7 +152,7 @@ const ConfigList: React.FC = () => {
         onOk={handleSave}
         confirmLoading={loading}
         width={500}
-        destroyOnClose
+        destroyOnHidden
         centered
       >
         <Form form={form} layout="vertical">

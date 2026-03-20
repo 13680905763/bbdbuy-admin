@@ -54,42 +54,42 @@ const TableList: React.FC = () => {
     {
       title: "业务类型",
       dataIndex: "bizType",
-      hideInSearch: true,
+      search: false,
     },
     {
       title: "币种金额",
       dataIndex: "orderCurrencyAmount",
-      hideInSearch: true,
+      search: false,
     },
     {
       title: "币种",
       dataIndex: "orderCurrency",
-      hideInSearch: true,
+      search: false,
     },
     {
       title: "汇率",
       dataIndex: "orderCurrencyExchangeRate",
-      hideInSearch: true,
+      search: false,
     },
     {
       title: "订单金额",
       dataIndex: "orderAmount",
-      hideInSearch: true,
+      search: false,
     },
     {
       title: "手续费",
       dataIndex: "payHandlingFee",
-      hideInSearch: true,
+      search: false,
     },
     {
       title: "固定费用",
       dataIndex: "payFixedCost",
-      hideInSearch: true,
+      search: false,
     },
     {
       title: "支付金额",
       dataIndex: "payAmount",
-      hideInSearch: true,
+      search: false,
     },
     {
       title: "支付方式",
@@ -104,24 +104,24 @@ const TableList: React.FC = () => {
     {
       title: "支付名称",
       dataIndex: "payName",
-      hideInSearch: true,
+      search: false,
     },
     {
       title: "平台支付单号",
       dataIndex: "paymentReferenceId",
-      hideInSearch: true,
+      search: false,
     },
     {
       title: "业务单号",
       dataIndex: "bizReference",
-      hideInSearch: true,
+      search: false,
     },
 
     {
       title: "时间信息",
       dataIndex: "createTime",
       valueType: "dateTimeRange",
-      hideInSearch: true,
+      search: false,
 
       render: (_, record: any) => {
         return (

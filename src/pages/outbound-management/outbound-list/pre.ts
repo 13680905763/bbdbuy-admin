@@ -21,12 +21,13 @@ export async function printPickingList(list: PickListOptions[]) {
     return;
   }
 
-  // 创建独立打印页面
-  const printWindow = window.open("", "_blank");
-  if (!printWindow) {
-    message.error("无法打开打印窗口");
-    return;
-  }
+  // Create a hidden iframe
+  const iframe = document.createElement("iframe");
+  iframe.style.display = "none";
+  document.body.appendChild(iframe);
+
+  const doc = iframe.contentWindow?.document;
+  if (!doc) return;
 
   // 构造 HTML 内容（多页）
   const htmlContent = `
@@ -159,17 +160,27 @@ export async function printPickingList(list: PickListOptions[]) {
             `
       )
       .join("")}
-            window.print();
-            window.onafterprint = function () {
-              window.close();
-            };
           }
         </script>
       </body>
     </html>
   `;
 
-  printWindow.document.open();
-  printWindow.document.write(htmlContent);
-  printWindow.document.close();
+  doc.open();
+  doc.write(htmlContent);
+  doc.close();
+
+  // Wait for scripts and images to load before printing
+  iframe.onload = () => {
+    // The JsBarcode script needs time to execute after loading
+    setTimeout(() => {
+      iframe.contentWindow?.focus();
+      iframe.contentWindow?.print();
+      
+      // Clean up after printing
+      setTimeout(() => {
+        document.body.removeChild(iframe);
+      }, 1000);
+    }, 500); // 500ms delay to ensure JSBarcode has rendered the SVGs
+  };
 }

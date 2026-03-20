@@ -81,7 +81,7 @@ const TableList: React.FC = () => {
       title: "状态",
       dataIndex: "packingStatusCode",
       render: (value: any) => renderStatusTag("packing", value),
-      renderFormItem: () => {
+      formItemRender: () => {
         return (
           <Select
             placeholder="请选择打包状态"
@@ -99,12 +99,12 @@ const TableList: React.FC = () => {
     {
       title: "打包人",
       dataIndex: "updateUserName",
-      hideInSearch: true,
+      search: false,
     },
     {
       title: "打包时间",
       dataIndex: "updateTime",
-      hideInSearch: true,
+      search: false,
       render: (_, record: any) => {
         const packingStatusCode = record.packingStatusCode;
         const updateTime = record.updateTime;
@@ -125,7 +125,7 @@ const TableList: React.FC = () => {
         }
         return "-"; // 没有按钮时必须返回 null，否则 Table 渲染会报错
       },
-      hideInSearch: true,
+      search: false,
     },
   ];
   /** ✅ 搜索提交 */

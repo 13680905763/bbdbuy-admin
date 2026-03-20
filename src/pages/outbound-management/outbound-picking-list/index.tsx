@@ -75,12 +75,12 @@ const TableList: React.FC = () => {
       }),
     },
     { title: "包裹编号", dataIndex: "packageCode" },
-    { title: "货架位置", dataIndex: "locationCode", hideInSearch: true },
+    { title: "货架位置", dataIndex: "locationCode", search: false },
     {
       title: "拣货状态",
       dataIndex: "pickStatusCode",
       render: (value: any) => renderStatusTag("picking", value),
-      renderFormItem: () => (
+      formItemRender: () => (
         <Select
           placeholder="请选择拣货状态"
           allowClear
@@ -92,7 +92,7 @@ const TableList: React.FC = () => {
       title: "拣货时间",
       dataIndex: "updateTime",
       valueType: "dateTimeRange",
-      hideInSearch: true,
+      search: false,
       render: (_, record: any) =>
         record.pickStatusCode == 2021 ? "--" : record.updateTime,
     },

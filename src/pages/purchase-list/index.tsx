@@ -118,7 +118,7 @@ const TableList: React.FC = () => {
     // {
     //   title: "采购编号",
     //   dataIndex: "purchaseCode",
-    //   hideInSearch: true,
+    //   search: false,
     // },
     {
       title: "订单编号",
@@ -131,7 +131,7 @@ const TableList: React.FC = () => {
     {
       title: "商品信息",
       dataIndex: "products",
-      hideInSearch: true,
+      search: false,
       render: (products: any = [], record) => {
         const preview = products?.slice(0, 3);
         const expanded = expandedRowKeys.includes(record.id);
@@ -174,7 +174,7 @@ const TableList: React.FC = () => {
 
     {
       title: "平台",
-      hideInSearch: true,
+      search: false,
 
       dataIndex: "source",
     },
@@ -217,7 +217,7 @@ const TableList: React.FC = () => {
       dataIndex: "statusCode",
       width: 80,
       render: (value: any) => renderStatusTag("purchase", value),
-      renderFormItem: () => {
+      formItemRender: () => {
         return (
           <Select
             placeholder="请选择采购状态"
@@ -231,12 +231,12 @@ const TableList: React.FC = () => {
     {
       title: "采购员",
       dataIndex: "dispatchUserName",
-      hideInSearch: true,
+      search: false,
     },
     {
       title: "限制/备注",
       dataIndex: "remark",
-      hideInSearch: true,
+      search: false,
       render: (text: any, record: any) => {
         console.log('record.purchaseLimited', record.purchaseLimited, record.purchaseLimited && record.purchaseLimited != 0);
 
@@ -288,7 +288,7 @@ const TableList: React.FC = () => {
           </div>
         );
       },
-      renderFormItem: (_, { type, defaultRender, ...rest }, form) => (
+      formItemRender: (_, { type, defaultRender, ...rest }, form) => (
         <div style={{ display: "flex", gap: 8, flexDirection: "column" }}>
           <Form.Item
             name="purchaseTime"
@@ -456,6 +456,8 @@ const TableList: React.FC = () => {
         const valid = await editModalRef.current?.validate();
         if (!valid) return;
 
+        console.log('editModalData',editModalData);
+        
         values.packageList = editModalData.map((item) => ({
           logisticsCompany: item.logisticsCompany,
           logisticsCode: item.logisticsCode,

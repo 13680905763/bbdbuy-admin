@@ -5,9 +5,12 @@ import {
   getInspectionListByPage, putInspection,
   putawayInspection,
   returnInspection,
+  getInspectionPurchaseInfo,
+  updatePurchaseLogistics,
 } from "@/services/order"; // 你自己的接口路径
 import { getStatusOptions, renderStatusTag } from "@/utils/status-render";
-import { CopyOutlined } from "@ant-design/icons";
+import { CopyOutlined, EditOutlined } from "@ant-design/icons";
+import EditModal, { EditModalRef } from "@/pages/purchase-list/editmodal";
 import type {
   ActionType,
   ProColumns,
@@ -60,12 +63,21 @@ const TableList: React.FC = () => {
   const [size, setSize] = useState(10);
   const [filters, setFilters] = useState<Record<string, any>>({});
   const [modalVisible, setModalVisible] = useState(false);
+  const [purchaseModalVisible, setPurchaseModalVisible] = useState(false);
+  const [purchaseData, setPurchaseData] = useState<any>(null);
   const [editingRecord, setEditingRecord] = useState<any>(null);
   const [inspectionStatus, setInspectionStatus] = useState<any>(null);
   const [categoryOptions, setCategoryOptions] = useState<
     { label: string; value: string | number }[]
   >([]);
   const [form] = Form.useForm();
+  const [purchaseForm] = Form.useForm();
+  const editModalRef = useRef<EditModalRef>(null);
+  const [editModalData, setEditModalData] = useState<any[]>([]);
+  const [editModalRemark, setEditModalRemark] = useState("");
+  const [selectedRows, setSelectedRows] = useState<any[]>([]); // 添加勾选状态
+  const [purchaseLoading, setPurchaseLoading] = useState(false);
+
   // 1️⃣ 初始化商品类型
   useEffect(() => {
     const fetchCategories = async () => {
@@ -98,11 +110,154 @@ const TableList: React.FC = () => {
       const res: any = await getInspectionListByPage(query);
       setDataSource(res.data.records || []);
       setTotal(res.data.total || 0);
+      setSelectedRows([]); // 获取数据后清空勾选
     } catch (e) {
       message.error("加载失败");
     } finally {
       setLoading(false);
     }
+  };
+
+  const handlePurchaseEdit = async (record: any) => {
+    try {
+      const res = await getInspectionPurchaseInfo(record.purchaseId);
+      console.log(res);
+      if (res?.data) {
+        setPurchaseData(res.data);
+
+        // 初始化 EditModal 数据
+        if (res.data.packages && res.data.packages.length > 0) {
+          const initialData = res.data.packages.map((item: any) => ({
+            id: item.id,
+            logisticsCompany: item.logisticsCompany,
+            logisticsCode: item.logisticsCode,
+            productList: item.items.map((prod: any) => ({
+              id: prod.orderProductId,
+              quantity: prod.quantity,
+            })),
+          }));
+          setEditModalData(initialData);
+          setEditModalRemark(res.data.remark || "");
+        } else {
+          setEditModalData([]);
+          setEditModalRemark("");
+        }
+
+        setPurchaseModalVisible(true);
+      } else {
+        message.error(res?.msg || "该验货单不存在采购信息");
+      }
+    } catch (error) {
+      console.log(error);
+      message.error("获取采购信息失败");
+    }
+  };
+
+  const handleBatchPrint = () => {
+    const printData = selectedRows.filter(
+      (item) => item.packageCode && item.packageCode !== "UNKNOW_CODE"
+    );
+
+    if (printData.length === 0) {
+      message.warning("请先勾选需要打印且具有有效包裹单号的数据");
+      return;
+    }
+
+    const htmlContent = printData
+      .map(
+        (item) => `
+      <div class="barcode-container">
+        <img
+          src="https://bwipjs-api.metafloor.com/?bcid=code128&text=${encodeURIComponent(
+          item.packageCode
+        )}&scaleX=3&scaleY=2&paddingwidth=0&paddingheight=0"
+          class="barcode-img"
+        />
+        <div class="barcode-text">${item.packageCode}</div>
+      </div>
+    `
+      )
+      .join("");
+
+    // Create a hidden iframe
+    const iframe = document.createElement("iframe");
+    iframe.style.display = "none";
+    document.body.appendChild(iframe);
+
+    const doc = iframe.contentWindow?.document;
+    if (!doc) return;
+
+    doc.write(`
+    <html>
+      <head>
+        <title>打印条码</title>
+        <style>
+          @media print {
+            @page {
+              size: 80mm 30mm;
+              margin: 0;
+            }
+
+            body {
+              margin: 0;
+              padding: 0;
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+            }
+          }
+
+          body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+          }
+
+          .barcode-container {
+            width: 72mm; /* 留出左右边距确保物理居中 */
+            height: 30mm;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            page-break-after: always;
+            margin-right: 8mm;
+          }
+
+          .barcode-img {
+            width: 100%;
+            height: 20mm;
+            object-fit: contain;
+          }
+
+          .barcode-text {
+            font-size: 12pt;
+            font-weight: bold;
+            text-align: center;
+            margin-top: 2mm;
+          }
+        </style>
+      </head>
+      <body>
+        ${htmlContent}
+      </body>
+    </html>
+  `);
+
+    doc.close();
+
+    // Wait for images to load before printing
+    iframe.onload = () => {
+      setTimeout(() => {
+        iframe.contentWindow?.focus();
+        iframe.contentWindow?.print();
+        // Remove the iframe after printing (or when the print dialog is closed)
+        setTimeout(() => {
+          document.body.removeChild(iframe);
+        }, 1000);
+      }, 500); // Give it a small delay to ensure rendering
+    };
   };
 
   const columns: ProColumns<any>[] = [
@@ -132,13 +287,23 @@ const TableList: React.FC = () => {
         </div>,
 
     },
-    // {
-    //   title: "订单号",
-    //   dataIndex: "orderCode",
-    // },
     {
       title: "快递单号",
       dataIndex: "logisticsCode",
+      render: (logisticsCode: any, record: any) => {
+        return (
+          <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+            {logisticsCode}
+            {
+              record?.purchaseFlag && <EditOutlined
+                style={{ cursor: "pointer", color: "#1890ff" }}
+                onClick={() => handlePurchaseEdit(record)}
+              />
+            }
+
+          </div>
+        );
+      },
     },
     {
       title: "包裹单号",
@@ -152,7 +317,9 @@ const TableList: React.FC = () => {
               gap: 4,
             }}
           >
-            <div>{record.packageCode}</div>
+            <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+              {record.packageCode}
+            </div>
             {record?.locationCode && (
               <div style={{ display: "flex", gap: 4 }}>
                 货位：<Tag color="orange">{record.locationCode}</Tag>
@@ -166,7 +333,7 @@ const TableList: React.FC = () => {
     {
       title: "商品名称",
       dataIndex: "orderProduct",
-      hideInSearch: true,
+      search: false,
       width: 300,
       render: (orderProduct: any) => {
         return (
@@ -236,7 +403,7 @@ const TableList: React.FC = () => {
       title: "商品类型",
       dataIndex: "packageItem.categoryName",
       width: 300,
-      hideInSearch: true,
+      search: false,
       render: (_: any, record: any) => {
         return <div>{record?.packageItem?.categoryName}</div>;
       },
@@ -244,14 +411,14 @@ const TableList: React.FC = () => {
     {
       title: "用户名",
       dataIndex: "customerName",
-      hideInSearch: true,
+      search: false,
       width: 100,
     },
     {
       title: "验货详情",
       dataIndex: "packageItem.id",
       width: 400,
-      hideInSearch: true,
+      search: false,
       render: (_: any, record: any) => {
         return (
           <div style={{ fontSize: 13, color: "#555", lineHeight: "20px" }}>
@@ -285,7 +452,7 @@ const TableList: React.FC = () => {
           </div>
         );
       },
-      renderFormItem: () => {
+      formItemRender: () => {
         return (
           <Select
             placeholder="请选择验货状态"
@@ -309,7 +476,7 @@ const TableList: React.FC = () => {
       title: "验货人",
       dataIndex: "userName",
       width: 100,
-      hideInSearch: true,
+      search: false,
       render: (userName, records: any) => {
         if (records?.inspectionStatus === "待验货") {
           return "-";
@@ -329,7 +496,7 @@ const TableList: React.FC = () => {
         }
         return records?.updateTime;
       },
-      renderFormItem: () => (
+      formItemRender: () => (
         <RangePicker
           showTime
           format="YYYY-MM-DD HH:mm:ss"
@@ -377,7 +544,6 @@ const TableList: React.FC = () => {
                   </Button>
                 }
                 width={500}
-                modalProps={{ destroyOnClose: true }}
                 onFinish={async (values) => {
                   try {
                     await returnInspection({
@@ -407,7 +573,6 @@ const TableList: React.FC = () => {
                   </Button>
                 }
                 width={500}
-                modalProps={{ destroyOnClose: true }}
                 onFinish={async (values) => {
                   try {
                     await returnInspection({
@@ -443,7 +608,6 @@ const TableList: React.FC = () => {
                 }
                 width={500}
                 modalProps={{
-                  destroyOnClose: true,
                   onCancel: () => console.log("run"),
                 }}
                 onFinish={async (values) => {
@@ -668,6 +832,40 @@ const TableList: React.FC = () => {
     }
   };
 
+  const handlePurchaseSave = async () => {
+    try {
+      const valid = await editModalRef.current?.validate();
+      if (!valid) return;
+
+      setPurchaseLoading(true);
+
+      const values: any = {
+        id: purchaseData.id,
+      };
+
+      values.packageList = editModalData.map((item) => ({
+        logisticsCompany: item.logisticsCompany,
+        logisticsCode: item.logisticsCode,
+        productList: item.productList,
+      }));
+      values.remark = editModalRemark;
+
+      const res = await updatePurchaseLogistics(values);
+
+      if (res.success) {
+        message.success("修改成功");
+        setPurchaseModalVisible(false);
+        fetchData({ current, size, ...filters });
+      } else {
+        message.error(res.message || "操作失败")
+      }
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setPurchaseLoading(false);
+    }
+  };
+
   return (
     <PageContainer>
       <ProTable
@@ -680,6 +878,16 @@ const TableList: React.FC = () => {
         dataSource={dataSource}
         loading={loading}
         columns={columns}
+        rowSelection={{
+          onChange: (_, selectedRows) => {
+            setSelectedRows(selectedRows);
+          },
+        }}
+        toolBarRender={() => [
+          <Button type="primary" onClick={handleBatchPrint} key="print">
+            补打包裹条码
+          </Button>,
+        ]}
         onSubmit={onSubmitSearch}
         onReset={handleReset}
         search={{
@@ -785,6 +993,25 @@ const TableList: React.FC = () => {
           </Form.Item>
         </Form>
       </Modal>
+      <Modal
+        title="修改采购信息"
+        open={purchaseModalVisible}
+        onCancel={() => setPurchaseModalVisible(false)}
+        onOk={handlePurchaseSave}
+        confirmLoading={purchaseLoading}
+        width={1200}
+        destroyOnHidden
+      >
+        <EditModal
+          ref={editModalRef}
+          products={purchaseData?.products || []}
+          value={editModalData}
+          onChange={setEditModalData}
+          remark={editModalRemark}
+          onRemarkChange={setEditModalRemark}
+        />
+      </Modal>
+
     </PageContainer>
   );
 };

@@ -127,7 +127,7 @@ const TableList: React.FC = () => {
     {
       title: "头像",
       dataIndex: "avatarUrl",
-      hideInSearch: true,
+      search: false,
       render: (_, record) => (
         <Image
           src={
@@ -142,24 +142,24 @@ const TableList: React.FC = () => {
     },
     { title: "姓名", dataIndex: "name" },
     { title: "昵称", dataIndex: "nickName" },
-    { title: "电话", dataIndex: "mobile", hideInSearch: true },
+    { title: "电话", dataIndex: "mobile", search: false },
     { title: "邮箱", dataIndex: "email" },
     {
       title: "余额",
       dataIndex: "balance",
-      hideInSearch: true,
+      search: false,
       valueType: "money",
     },
-    { title: "VIP等级", dataIndex: "vipLv", hideInSearch: true },
-    { title: "积分", dataIndex: "myPoints", hideInSearch: true },
-    { title: "邀请码", dataIndex: "inviteCode", hideInSearch: true },
-    { title: "邀请数量", dataIndex: "inviteCount", hideInSearch: true },
+    { title: "VIP等级", dataIndex: "vipLv", search: false },
+    { title: "积分", dataIndex: "myPoints", search: false },
+    { title: "邀请码", dataIndex: "inviteCode", search: false },
+    { title: "邀请数量", dataIndex: "inviteCount", search: false },
 
     {
       title: "注册时间",
       dataIndex: "createTime",
       valueType: "dateTime",
-      hideInSearch: true,
+      search: false,
     },
     {
       title: "操作",

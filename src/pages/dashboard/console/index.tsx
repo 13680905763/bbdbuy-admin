@@ -54,8 +54,8 @@ const Console: React.FC = () => {
   ) => (
     <ProCard
       loading={loading}
-      style={{ background: "transparent" }}
-      bodyStyle={{ padding: "0" }}
+      headerBordered={false}
+      style={{ background: "transparent", padding: "0", border: 0 }}
     >
       <div
         style={{
@@ -163,10 +163,10 @@ const Console: React.FC = () => {
       style={{
         backgroundColor: "#fff",
       }}
-      // bodyStyle={{
-      //   backgroundColor: "#fff",
-      //   padding: 24,
-      // }}
+    // bodyStyle={{
+    //   backgroundColor: "#fff",
+    //   padding: 24,
+    // }}
     >
       <Row gutter={[24, 24]}>
         {/* 总览数据 */}
@@ -206,11 +206,10 @@ const Console: React.FC = () => {
         {/* 下方区域：折线图 + 今日数据 */}
         <Col span={18}>
           <ProCard
+            split={'horizontal'}
             loading={loading}
-            bordered
             headerBordered
-            style={{ borderRadius: 8, height: 270 }}
-            bodyStyle={{ padding: "24px 24px 0 24px" }}
+            style={{ borderRadius: 8, height: 270, padding: "0", }}
           >
             <div style={{ height: 250 }}>
               <Line {...config} />
@@ -262,9 +261,9 @@ const Console: React.FC = () => {
                 renderItem={(item: any) => (
                   <List.Item
                     style={{ padding: "8px 0", cursor: "pointer" }}
-                    // onClick={() => {
-                    //   window.open("https://bbdbuy1.com/chat", "_blank");
-                    // }}
+                  // onClick={() => {
+                  //   window.open("https://bbdbuy1.com/chat", "_blank");
+                  // }}
                   >
                     <List.Item.Meta
                       avatar={
@@ -286,6 +285,7 @@ const Console: React.FC = () => {
                         </div>
                       }
                       description={
+                        
                         <div
                           style={{
                             fontSize: 12,

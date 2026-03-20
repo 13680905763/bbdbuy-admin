@@ -137,6 +137,11 @@ const ConfigList: React.FC = () => {
       setLogoUrl([]); // 清空上传状态，防止残留
 
       let res;
+      if(values.chargeType === 1){
+        values.ratio = 0;
+      }else if(values.chargeType === 2){
+        values.price = 0;
+      }
       if (currentRow?.id) {
         values.id = currentRow.id;
         res = await putServicesList(values);
@@ -160,7 +165,9 @@ const ConfigList: React.FC = () => {
 
   const columns = [
     { title: "服务编码", dataIndex: "serviceCode" },
-    { title: "服务类型", dataIndex: "serviceLevelDesc" },
+    { title: "服务类型", dataIndex: "serviceTypeDesc" },
+
+    { title: "服务级别", dataIndex: "serviceLevelDesc" },
     { title: "服务名", dataIndex: "serviceName" },
     {
       title: "样例",
@@ -175,9 +182,10 @@ const ConfigList: React.FC = () => {
         </div>
       ),
     },
-    { title: "服务描述", dataIndex: "serviceTypeDesc" },
     { title: "服务介绍", dataIndex: "introduction" },
-    { title: "价格", dataIndex: "price" },
+    { title: "收费类型", dataIndex: "chargeType", render: (val: any) => val === 1 ? "固定费用" : val === 2 ? "比例收费" : "--" },
+    { title: "服务费", dataIndex: "price" },
+    { title: "收费比例", dataIndex: "ratio" },
     { title: "是否可叠加", dataIndex: "stackedDesc" },
 
     { title: "更新时间", dataIndex: "updateTime" },
@@ -239,6 +247,12 @@ const ConfigList: React.FC = () => {
         confirmLoading={loading}
         width={500}
         centered
+        styles={{
+          body: {
+            maxHeight: '70vh',
+            overflowY: 'auto',
+          },
+        }}
       >
         <Form form={form} layout="vertical">
           <Form.Item
@@ -285,12 +299,16 @@ const ConfigList: React.FC = () => {
               placeholder="请选择服务级别"
               options={[
                 {
-                  label: "订单服务",
+                  label: "商品级服务",
                   value: 1,
                 },
                 {
-                  label: "运单服务",
+                  label: "包裹级服务",
                   value: 2,
+                },
+                {
+                  label: "保险服务",
+                  value: 3,
                 },
               ]}
               showSearch
@@ -300,7 +318,7 @@ const ConfigList: React.FC = () => {
           <Form.Item name="introduction" label="服务介绍">
             <Input.TextArea rows={3} placeholder="请输入服务介绍" />
           </Form.Item>
-          <Form.Item name="sample" label="服务示例">
+          <Form.Item name="sample" label="服务示例" rules={[{ required: true, message: "请上传服务示例" }]}>
             <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
               <Upload
                 name="sample"
@@ -362,11 +380,70 @@ const ConfigList: React.FC = () => {
             </div>
           </Form.Item>
           <Form.Item
-            name="price"
-            label="服务费"
-            rules={[{ required: true, message: "请输入服务费" }]}
+            name="chargeType"
+            label="收费类型"
+            rules={[{ required: true, message: "请选择收费类型" }]}
           >
-            <Input type="number" placeholder="请输入服务费" />
+            <Select
+              placeholder="请选择收费类型"
+              options={[
+                {
+                  label: "固定费用",
+                  value: 1,
+                },
+                {
+                  label: "比例收费",
+                  value: 2,
+                },
+              ]}
+              showSearch
+              allowClear
+            />
+          </Form.Item>
+
+          <Form.Item
+            noStyle
+            shouldUpdate={(prevValues, currentValues) => prevValues.chargeType !== currentValues.chargeType}
+          >
+            {({ getFieldValue }) => {
+              const chargeType = getFieldValue("chargeType");
+              if (chargeType === 1) {
+                return (
+                  <Form.Item
+                    name="price"
+                    label="服务费(单位：元)"
+                    rules={[{ required: true, message: "请输入服务费" }]}
+                  >
+                    <Input type="number" placeholder="请输入服务费" />
+                  </Form.Item>
+                );
+              }
+              if (chargeType === 2) {
+                return (
+                  <Form.Item
+                    name="ratio"
+                    label="收费比例"
+                    rules={[
+                      { required: true, message: "请输入收费比例" },
+                      {
+                        validator: async (_, value) => {
+                          if (value && Number(value) > 1) {
+                            return Promise.reject(new Error("收费比例不能大于1"));
+                          }
+                          if (value && Number(value) < 0) {
+                            return Promise.reject(new Error("收费比例不能小于0"));
+                          }
+                          return Promise.resolve();
+                        },
+                      },
+                    ]}
+                  >
+                    <Input type="number" step="0.01" max={1} min={0} placeholder="请输入收费比例(0-1)" />
+                  </Form.Item>
+                );
+              }
+              return null;
+            }}
           </Form.Item>
           <Form.Item
             name="stacked"

@@ -110,11 +110,11 @@ const ConfigList: React.FC = () => {
   };
 
   const columns = [
-    { title: "标题", dataIndex: "title", hideInSearch: true },
+    { title: "标题", dataIndex: "title", search: false },
     {
       title: "来源",
       dataIndex: "srcMsg",
-      renderFormItem: () => (
+      formItemRender: () => (
         <Select placeholder="请选择来源" allowClear>
           <Select.Option value={1}>注册</Select.Option>
           <Select.Option value={2}>积分兑换</Select.Option>
@@ -123,11 +123,11 @@ const ConfigList: React.FC = () => {
         </Select>
       ),
     },
-    { title: "优惠券类型", dataIndex: "typeMsg", hideInSearch: true },
+    { title: "优惠券类型", dataIndex: "typeMsg", search: false },
     {
       title: "使用范围",
       dataIndex: "usedForMsg",
-      renderFormItem: () => (
+      formItemRender: () => (
         <Select placeholder="请选择使用范围" allowClear>
           <Select.Option value={0}>所有途径</Select.Option>
           <Select.Option value={1}>运单</Select.Option>
@@ -135,11 +135,11 @@ const ConfigList: React.FC = () => {
         </Select>
       ),
     },
-    { title: "面额", dataIndex: "denomination" , hideInSearch: true},
-    { title: "折扣", dataIndex: "discount" , hideInSearch: true},
-    { title: "使用门槛", dataIndex: "thresholdAmount" , hideInSearch: true},
-    { title: "兑换所需积分", dataIndex: "exchangePoints", hideInSearch: true},
-    { title: "兑换码", dataIndex: "redemptionCode", hideInSearch: true },
+    { title: "面额", dataIndex: "denomination" , search: false},
+    { title: "折扣", dataIndex: "discount" , search: false},
+    { title: "使用门槛", dataIndex: "thresholdAmount" , search: false},
+    { title: "兑换所需积分", dataIndex: "exchangePoints", search: false},
+    { title: "兑换码", dataIndex: "redemptionCode", search: false },
     {
       title: "兑换数量",
       dataIndex: "redemptionCodeQuantity",
@@ -149,12 +149,12 @@ const ConfigList: React.FC = () => {
           {record.redemptionCodeQuantity}
         </span>
       ),
-      hideInSearch: true
+      search: false
     },
-    { title: "有效期", dataIndex: "expirationDate" , hideInSearch: true},
-    { title: "VIP等级", dataIndex: "vipLv" , hideInSearch: true},
-    { title: "备注", dataIndex: "remark" , hideInSearch: true},
-    { title: "更新时间", dataIndex: "updateTime" , hideInSearch: true},
+    { title: "有效期", dataIndex: "expirationDate" , search: false},
+    { title: "VIP等级", dataIndex: "vipLv" , search: false},
+    { title: "备注", dataIndex: "remark" , search: false},
+    { title: "更新时间", dataIndex: "updateTime" , search: false},
     {
       title: "操作",
       valueType: "option",
@@ -215,7 +215,7 @@ const ConfigList: React.FC = () => {
         onOk={handleSave}
         confirmLoading={loading}
         width={500}
-        destroyOnClose
+        destroyOnHidden
         centered
       >
         <Form

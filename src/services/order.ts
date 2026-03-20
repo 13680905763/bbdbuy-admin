@@ -112,6 +112,12 @@ export async function putInspection(data: any) {
     data,
   });
 }
+/** 获取采购信息  */
+export async function getInspectionPurchaseInfo(id: string | number) {
+  return request<any>(`/inbound-inspection/purchase/${id}`, {
+    method: "GET",
+  });
+}
 /** 获取验货单（包裹）信息 */
 export async function getInspectionScan(logisticsCode: string) {
   return request<API.RuleList>(

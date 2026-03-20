@@ -40,50 +40,49 @@ const TableList: React.FC = () => {
   };
 
   const columns: ProColumns<any>[] = [
-    // { title: "ID", dataIndex: "id", hideInSearch: true },
+    // { title: "ID", dataIndex: "id", search: false },
     { title: "客户名称", dataIndex: "name" },
     { title: "客户昵称", dataIndex: "nickName" },
    
     {
       title: "外币金额",
       dataIndex: "foreignCurrencyAmount",
-      hideInSearch: true,
+      search: false,
       render: (_, record) => `${record.foreignCurrencyAmount} ${record.foreignCurrencyCode}`,
     },
     {
       title: "汇率",
       dataIndex: "exchangeRate",
-      hideInSearch: true,
+      search: false,
     },
      {
       title: "提现金额 (CNY)",
       dataIndex: "amount",
-      hideInSearch: true,
+      search: false,
       valueType: "money",
     },
     {
       title: "手续费",
       dataIndex: "feeAmount",
-      hideInSearch: true,
+      search: false,
       valueType: "money",
     },
     {
       title: "支付金额",
       dataIndex: "payAmount",
-      hideInSearch: true,
+      search: false,
       valueType: "money",
     },
     {
       title: "备注",
       dataIndex: "remark",
-      hideInSearch: true,
+      search: false,
     },
     {
       title: "状态",
       dataIndex: "statusCode",
-      hideInSearch: false,
       render: (value: any) => renderStatusTag("withdrawal", value),
-      renderFormItem: () => {
+      formItemRender: () => {
         return (
           <Select
             placeholder="请选择状态"
@@ -93,7 +92,7 @@ const TableList: React.FC = () => {
         );
       },
     },
-    { title: "申请时间", dataIndex: "createTime", valueType: "dateTime", hideInSearch: true },
+    { title: "申请时间", dataIndex: "createTime", valueType: "dateTime", search: false },
     {
       title: "操作",
       valueType: "option",
@@ -150,9 +149,9 @@ const TableList: React.FC = () => {
   const onSubmitSearch = (values: any) => {
     const filterParams = {
       ...values,
-      status: values.statusCode, // 将 statusCode 映射为 status 字段
+      // status: values.statusCode, // 将 statusCode 映射为 status 字段
     };
-    delete filterParams.statusCode; // 删除 statusCode 字段
+    // delete filterParams.statusCode; // 删除 statusCode 字段
 
     // Remove empty values
     Object.keys(filterParams).forEach((key) => {

@@ -66,12 +66,12 @@ const TableList: React.FC = () => {
     {
       title: "服务名",
       dataIndex: "serviceName",
-      hideInSearch: true,
+      search: false,
     },
     {
       title: "拍照/视频",
       dataIndex: "fileList",
-      hideInSearch: true,
+      search: false,
       minWidth: 400,
       render: (_, record) => {
         if (!record.fileList || record.fileList.length === 0) return null;
@@ -84,7 +84,7 @@ const TableList: React.FC = () => {
       title: "拍照状态",
       dataIndex: "serviceStatus",
       render: (text: any) => renderStatusTag(text),
-      renderFormItem: (_, { type, defaultRender, ...rest }, form) => {
+      formItemRender: (_, { type, defaultRender, ...rest }, form) => {
         return (
           <Select
             placeholder="请选择拍照状态"
@@ -101,7 +101,7 @@ const TableList: React.FC = () => {
     {
       title: "拍照人",
       dataIndex: "updateUserName",
-      hideInSearch: true,
+      search: false,
     },
     {
       title: "拍照时间",
@@ -113,7 +113,7 @@ const TableList: React.FC = () => {
         }
         return "-";
       },
-      renderFormItem: (_, { type, defaultRender, ...rest }, form) => (
+      formItemRender: (_, { type, defaultRender, ...rest }, form) => (
         <RangePicker
           showTime
           format="YYYY-MM-DD HH:mm:ss"

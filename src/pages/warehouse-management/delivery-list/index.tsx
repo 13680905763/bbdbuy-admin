@@ -55,7 +55,7 @@ const TableList: React.FC = () => {
     {
       title: "快递公司",
       dataIndex: "logisticsCompany",
-      hideInSearch: true,
+      search: false,
     },
     {
       title: "快递单号",
@@ -64,13 +64,13 @@ const TableList: React.FC = () => {
     {
       title: "收货人",
       dataIndex: "userName",
-      hideInSearch: true,
+      search: false,
     },
     {
       title: "收货状态",
       dataIndex: "receiveStatusCode",
       render: (value: any) => renderStatusTag("receiving", value),
-      renderFormItem: (_, { type, defaultRender, ...rest }, form) => {
+      formItemRender: (_, { type, defaultRender, ...rest }, form) => {
         return (
           <Select
             placeholder="请选择收货状态"
@@ -86,7 +86,7 @@ const TableList: React.FC = () => {
       dataIndex: "createTime",
       valueType: "dateTimeRange",
       render: (_, record) => record?.createTime,
-      renderFormItem: () => (
+      formItemRender: () => (
         <RangePicker
           showTime
           format="YYYY-MM-DD HH:mm:ss"
@@ -104,7 +104,7 @@ const TableList: React.FC = () => {
         }
         return "-";
       },
-      renderFormItem: () => (
+      formItemRender: () => (
         <RangePicker
           showTime
           format="YYYY-MM-DD HH:mm:ss"

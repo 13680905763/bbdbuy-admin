@@ -105,13 +105,13 @@ const TableList: React.FC = () => {
     {
       title: "来源",
       dataIndex: "source",
-      hideInSearch: true,
+      search: false,
     },
 
     {
       title: "商品信息",
       dataIndex: "returnGoodsList",
-      hideInSearch: true,
+      search: false,
       render: (products: any = [], record: any) => {
         const preview = products?.slice(0, 3);
         const expanded = expandedRowKeys.includes(record?.orderId);
@@ -233,7 +233,7 @@ const TableList: React.FC = () => {
     {
       title: "操作",
       dataIndex: "action",
-      hideInSearch: true,
+      search: false,
       render: (_, record: any) => {
         return (
           <div style={{ display: "flex", gap: "2px" }}>

@@ -88,7 +88,7 @@ const ParticularPaper: React.FC = () => {
 
   const handleBatchPrint = () => {
     const printData = tableData.filter(
-      (item) => item.packageCode !== "UNKNOW_CODE" && item.logisticsCode !== "NO_LOGISTICS"
+      (item) => item.packageCode !== "UNKNOW_CODE" && item.logisticsCode !== "NO_LOGISTICS" && item.inspectionStatusCode !== "1033"
     );
 
     if (printData.length === 0) {
@@ -112,10 +112,15 @@ const ParticularPaper: React.FC = () => {
       )
       .join("");
 
-    const printWindow = window.open("", "", "width=600,height=800");
-    if (!printWindow) return;
+    // Create a hidden iframe
+    const iframe = document.createElement("iframe");
+    iframe.style.display = "none";
+    document.body.appendChild(iframe);
 
-    printWindow.document.write(`
+    const doc = iframe.contentWindow?.document;
+    if (!doc) return;
+
+    doc.write(`
     <html>
       <head>
         <title>打印条码</title>
@@ -169,19 +174,23 @@ const ParticularPaper: React.FC = () => {
       </head>
       <body>
         ${htmlContent}
-        <script>
-          window.onload = function () {
-            window.print();
-            window.onafterprint = function () {
-              window.close();
-            };
-          };
-        </script>
       </body>
     </html>
   `);
 
-    printWindow.document.close();
+    doc.close();
+
+    // Wait for images to load before printing
+    iframe.onload = () => {
+      setTimeout(() => {
+        iframe.contentWindow?.focus();
+        iframe.contentWindow?.print();
+        // Remove the iframe after printing (or when the print dialog is closed)
+        setTimeout(() => {
+          document.body.removeChild(iframe);
+        }, 1000);
+      }, 500); // Give it a small delay to ensure rendering
+    };
   };
 
   const handleSubmit = async () => {
@@ -274,10 +283,10 @@ const ParticularPaper: React.FC = () => {
       const res = await InspectionSubmit(data);
       if (res.success) {
         message.success("提交成功");
-        
+
         // 提交成功后自动触发打印
         handleBatchPrint();
-        
+
         setTableData([]);
         setScanValue("");
       }
@@ -588,11 +597,11 @@ const ParticularPaper: React.FC = () => {
         }
       `}</style>
       <Card
-        extra={
-          <Button type="primary" onClick={handleBatchPrint}>
-            打印条形码
-          </Button>
-        }
+      // extra={
+      //   <Button type="primary" onClick={handleBatchPrint}>
+      //     打印条形码
+      //   </Button>
+      // }
       >
         <div
           style={{
@@ -608,6 +617,11 @@ const ParticularPaper: React.FC = () => {
             <li>请使用扫码枪对准商品条码进行扫描</li>
             <li>扫码成功后商品将显示在下方列表</li>
             <li>请确保网络正常，避免扫码失败</li>
+            <li>
+              <span style={{ color: "#f0700c", fontWeight: "bold", fontSize: "16px" }}>
+                验货完成后会自动进行打印，无需手动打印包裹条码
+              </span>
+            </li>
           </ul>
         </div>
 

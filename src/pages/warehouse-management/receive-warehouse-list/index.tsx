@@ -71,25 +71,25 @@ const TableList: React.FC = () => {
       title: "识别结果",
       dataIndex: "scanMsg",
       render: (text: any) => renderStatusTag(text),
-      hideInSearch: true,
+      search: false,
     },
     {
       title: "签收状态",
       dataIndex: "signatureMsg",
       render: (text: any) => renderStatusTag(text),
-      hideInSearch: true,
+      search: false,
     },
     {
       title: "签收人",
       dataIndex: "userName",
-      hideInSearch: true,
+      search: false,
     },
     {
       title: "签收时间",
       dataIndex: "updateTime",
       valueType: "dateTimeRange",
       render: (_, record) => record?.updateTime,
-      renderFormItem: (_, { type, defaultRender, ...rest }, form) => (
+      formItemRender: (_, { type, defaultRender, ...rest }, form) => (
         <RangePicker
           showTime
           format="YYYY-MM-DD HH:mm:ss"

@@ -66,17 +66,17 @@ const TableList: React.FC = () => {
     {
       title: "用户名",
       dataIndex: "customerName",
-      hideInSearch: true,
+      search: false,
     },
     {
       title: "运费",
       dataIndex: "shippingFee",
-      hideInSearch: true,
+      search: false,
     },
     {
       title: "服务费",
       dataIndex: "serviceFee",
-      hideInSearch: true,
+      search: false,
     },
     {
       title: "总费用",
@@ -84,7 +84,7 @@ const TableList: React.FC = () => {
       formItemProps: {
         label: "出库包裹号",
       },
-      renderFormItem: () => {
+      formItemRender: () => {
         return <Input placeholder="请输入" />;
       },
     },
@@ -153,7 +153,7 @@ const TableList: React.FC = () => {
           </div>
         );
       },
-      renderFormItem: () => {
+      formItemRender: () => {
         return (
           <Select
             placeholder="请选择包裹状态"
@@ -164,7 +164,7 @@ const TableList: React.FC = () => {
       },
     },
 
-    { title: "备注", dataIndex: "remark", hideInSearch: true },
+    { title: "备注", dataIndex: "remark", search: false },
     {
       title: "下单时间",
       dataIndex: "createTime",
@@ -172,7 +172,7 @@ const TableList: React.FC = () => {
       render: (_, records: any) => {
         return records?.createTime;
       },
-      renderFormItem: () => (
+      formItemRender: () => (
         <RangePicker
           showTime
           format="YYYY-MM-DD HH:mm:ss"

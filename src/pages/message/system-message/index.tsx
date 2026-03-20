@@ -106,7 +106,7 @@ const TableList: React.FC = () => {
       title: "通知类型",
       dataIndex: "noticeTypeCode",
       render: (value: any) => renderStatusTag("noticeType", value),
-      renderFormItem: (_, { type, defaultRender, ...rest }, form) => {
+      formItemRender: (_, { type, defaultRender, ...rest }, form) => {
         return (
           <Select
             placeholder="请选择通知类型"
@@ -116,12 +116,12 @@ const TableList: React.FC = () => {
         );
       },
     },
-    { title: "接收人", dataIndex: "userName", hideInSearch: true },
+    { title: "接收人", dataIndex: "userName", search: false },
     {
       title: "状态",
       dataIndex: "statusCode",
       render: (value: any) => renderStatusTag("systemMessage", value),
-      renderFormItem: (_, { type, defaultRender, ...rest }, form) => {
+      formItemRender: (_, { type, defaultRender, ...rest }, form) => {
         return (
           <Select
             placeholder="请选择消息状态"
@@ -135,7 +135,7 @@ const TableList: React.FC = () => {
       title: "创建时间",
       dataIndex: "createTime",
       valueType: "dateTime",
-      renderFormItem: () => (
+      formItemRender: () => (
         <RangePicker
           showTime
           format="YYYY-MM-DD HH:mm:ss"

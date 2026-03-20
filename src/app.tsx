@@ -87,9 +87,9 @@ export const layout: RunTimeLayoutConfig = ({
         return <AvatarDropdown>{avatarChildren}</AvatarDropdown>;
       },
     },
-    waterMarkProps: {
-      content: initialState?.currentUser?.nickName,
-    },
+    // waterMarkProps: {
+    //   content: initialState?.currentUser?.nickName,
+    // },
     footerRender: () => {
       console.log("location.pathname", location.pathname);
 
@@ -136,10 +136,10 @@ export const layout: RunTimeLayoutConfig = ({
  */
 export const request: RequestConfig = {
   baseURL: isDev
-    ? "http://api.bbdtest.local:8080"
-    // ? "http://fe.bbdtest.local:8080"
-    :  "https://admin.bbdbuy1.com/api",
-    // : "https://dev.bbdbuy1.com/admin-api",
+    ? "http://api.bbdlocal.com:8080"
+    // ? "http://fe.bbdlocal.com:8080"
+    // :  "https://admin.bbdbuy1.com/api",
+    : "https://dev.bbdbuy1.com/admin-api",
   // baseURL: process.env.UMI_APP_BASE_API,
   withCredentials: true,
   timeout: 500000,

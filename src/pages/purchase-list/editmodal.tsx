@@ -38,8 +38,6 @@ const LOGISTICS_COMPANIES = [
 ];
 // 商品选择器组件
 const ProductQuantitySelector = ({ value, onChange, products }: any) => {
-  console.log("value", value);
-
   const list = Array.isArray(value) ? value : [];
   // 生成选项列表
   const selectOptions = (products || []).map((p: any) => {
@@ -50,12 +48,12 @@ const ProductQuantitySelector = ({ value, onChange, products }: any) => {
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <Image
             src={p.skuPicUrl || p.picUrl}
-            width={24}
-            height={24}
+            width={45}
+            height={45}
             preview={false}
             style={{ borderRadius: 2, flexShrink: 0 }}
           />
-          <Text style={{ maxWidth: 300 }} ellipsis={{ tooltip: spec }}>
+          <Text ellipsis={{ tooltip: spec }}>
             {spec}
           </Text>
         </div>
@@ -87,6 +85,7 @@ const ProductQuantitySelector = ({ value, onChange, products }: any) => {
     keysToAdd.forEach((key: string) => {
       newList.push({ value: key, quantity: 1 });
     });
+    console.log("newList", newList);
 
     onChange(newList);
   };
@@ -183,20 +182,18 @@ interface EditModalProps {
 
 const EditModal = forwardRef<EditModalRef, EditModalProps>(
   ({ products = [], value, onChange, remark, onRemarkChange }, ref) => {
-  const [localRemark, setLocalRemark] = useState(remark || "");
+    const [localRemark, setLocalRemark] = useState(remark || "");
 
-  // 同步外部 remark 变化
-  useEffect(() => {
-    setLocalRemark(remark || "");
-  }, [remark]);
+    // 同步外部 remark 变化
+    useEffect(() => {
+      setLocalRemark(remark || "");
+    }, [remark]);
 
-  const handleRemarkBlur = () => {
-    console.log("localRemark", localRemark);
-    
-    if (localRemark !== remark) {
-      onRemarkChange?.(localRemark);
-    }
-  };
+    const handleRemarkBlur = () => {
+      if (localRemark !== remark) {
+        onRemarkChange?.(localRemark);
+      }
+    };
     const [dataSource, setDataSource] = useState<any>([]);
     const [editableKeys, setEditableRowKeys] = useState<React.Key[]>([]);
 
@@ -242,7 +239,13 @@ const EditModal = forwardRef<EditModalRef, EditModalProps>(
             const maxQty = product.purchaseQuantity || product.quantity || 0;
             if (totalQty > maxQty) {
               message.error(
-                `商品 ${product.productTitle} 分配数量(${totalQty}) 超过采购总数(${maxQty})`
+                <div>
+                  <span>{product.productTitle} </span>
+                  <span style={{ color: 'red', fontWeight: 'bold' }}>
+                    分配数量({totalQty})
+                    超过采购总数({maxQty})
+                  </span>
+                </div >
               );
               return false;
             }
@@ -285,7 +288,7 @@ const EditModal = forwardRef<EditModalRef, EditModalProps>(
       console.log("表格的onchage触发了", newData);
 
       // 过滤掉 index 字段（如果存在），并移除 id
-      const cleanData = newData.map(({ index, id, ...rest }: any) => {
+      const cleanData = newData.map(({ index, ...rest }: any) => {
         // 转换 productList 结构以匹配后端需求
         const productList = rest.productList?.map((item: any) => ({
           id: item.value || item.id, // 兼容处理
@@ -298,28 +301,26 @@ const EditModal = forwardRef<EditModalRef, EditModalProps>(
         };
       });
       console.log("cleanData", cleanData);
+      console.log("表格的onchage触发了", newData);
 
       setDataSource(newData); // 内部状态保持完整（包含 id 等，用于编辑表格）
       onChange?.(cleanData); // 向上层传递清洗后的数据
     };
 
     // 辅助函数：根据ID获取商品显示内容（用于非编辑态）
-    const renderProductItem = (id: string, quantity: number) => {
+    const renderProductItem = (id: string, quantity: number, index: number) => {
       const product = products.find((p) => p.id == id);
-      console.log("id", id, product, products);
       if (!product)
         return (
           <Tag>
             {id} x {quantity}
           </Tag>
         );
-
       const spec = product.propAndValue?.propName_valueName || "";
-
       return (
         <Tooltip title={spec || product.productTitle} placement="topLeft">
           <Tag
-            key={id}
+            key={`${id}-${index}`}
             style={{
               display: "flex",
               alignItems: "center",
@@ -328,8 +329,8 @@ const EditModal = forwardRef<EditModalRef, EditModalProps>(
           >
             <Image
               src={product.skuPicUrl || product.picUrl}
-              width={24}
-              height={24}
+              width={40}
+              height={40}
               preview={false}
               style={{ borderRadius: 2, marginRight: 0, flexShrink: 0 }}
             />
@@ -345,10 +346,7 @@ const EditModal = forwardRef<EditModalRef, EditModalProps>(
         title: "快递公司",
         dataIndex: "logisticsCompany",
         width: "15%",
-        formItemProps: {
-          rules: [{ required: true, message: "请输入快递公司" }],
-        },
-        renderFormItem: () => {
+        formItemRender: () => {
           return (
             <AutoComplete
               options={LOGISTICS_COMPANIES.map((c) => ({ value: c }))}
@@ -364,26 +362,20 @@ const EditModal = forwardRef<EditModalRef, EditModalProps>(
         title: "快递单号",
         width: "15%",
         dataIndex: "logisticsCode",
-        formItemProps: {
-          rules: [{ required: true, message: "请输入快递单号" }],
-        },
       },
       {
         title: "商品信息",
         dataIndex: "productList",
         key: "productList",
         width: "55%",
-        formItemProps: {
-          rules: [{ required: true, message: "请选择商品" }],
-        },
-        renderFormItem: () => <ProductQuantitySelector products={products} />,
+        formItemRender: () => <ProductQuantitySelector products={products} />,
         render: (_: any, record: any) => {
           const list = record.productList || [];
           if (!Array.isArray(list) || list.length === 0) return "-";
           return (
             <Space size={8} wrap>
-              {list.map((item: any) =>
-                renderProductItem(item.value || item.id, item.quantity)
+              {list.map((item: any, index: number) =>
+                renderProductItem(item.value || item.id, item.quantity, index)
               )}
             </Space>
           );
@@ -405,10 +397,14 @@ const EditModal = forwardRef<EditModalRef, EditModalProps>(
           <a
             key="delete"
             onClick={() => {
+
               const newData = dataSource.filter(
                 (item: any) => item.id !== record.id
               );
+              console.log('dataSource', dataSource);
+              console.log('newData', newData);
               setDataSource(newData);
+              onChange?.(newData)
             }}
           >
             删除
@@ -416,7 +412,6 @@ const EditModal = forwardRef<EditModalRef, EditModalProps>(
         ],
       },
     ];
-    console.log("editmodal重新渲染");
     return (
       <>
         <EditableProTable
@@ -430,59 +425,12 @@ const EditModal = forwardRef<EditModalRef, EditModalProps>(
             }),
             creatorButtonText: "新增快递信息",
           }}
-          loading={false}
           columns={columns}
           value={dataSource}
           onChange={handleDataSourceChange}
           editable={{
             type: "multiple",
             editableKeys,
-            onSave: async (rowKey, data: any, row) => {
-              console.log("校验一下", data, row);
-
-              // 计算包含当前行在内的所有商品总数
-              const skuTotals: Record<string, number> = {};
-
-              // 1. 统计其他行的数量
-              const otherRows = dataSource.filter(
-                (item: any) => item.id !== rowKey
-              );
-              for (const r of otherRows) {
-                if (r.productList) {
-                  for (const item of r.productList) {
-                    const skuId = item.value || item.id;
-                    skuTotals[skuId] = (skuTotals[skuId] || 0) + item.quantity;
-                  }
-                }
-              }
-              console.log("skuTotals", skuTotals);
-
-              // 2. 统计当前正在保存的行的数量
-              if (data.productList) {
-                for (const item of data.productList) {
-                  const skuId = item.value || item.id;
-                  skuTotals[skuId] = (skuTotals[skuId] || 0) + item.quantity;
-                }
-              }
-
-              // 3. 校验总数是否超标
-              for (const [skuId, totalQty] of Object.entries(skuTotals)) {
-                const product = products.find((p: any) => p.id === skuId);
-                if (product) {
-                  const maxQty =
-                    product.purchaseQuantity || product.quantity || 0;
-                  if (totalQty > maxQty) {
-                    message.error(
-                      ` ${product.propAndValue?.propName_valueName} 分配数量(${totalQty}) 超过采购总数(${maxQty})`
-                    );
-                    // 抛出错误以阻止保存
-                    throw new Error(
-                      ` ${product.propAndValue?.propName_valueName} 分配数量超标`
-                    );
-                  }
-                }
-              }
-            },
             onChange: setEditableRowKeys,
           }}
         />

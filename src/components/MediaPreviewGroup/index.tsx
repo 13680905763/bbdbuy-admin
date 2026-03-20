@@ -1,3 +1,4 @@
+// 仓库拍照列表的图
 import {
   CloseOutlined,
   LeftOutlined,

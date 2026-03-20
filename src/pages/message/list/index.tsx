@@ -281,6 +281,17 @@ const MessageList: React.FC = () => {
             const isServer = msg.sender === "SERVER";
             const isCustomer = msg.sender === "CUSTOMER";
             const isImage = msg.type === "IMAGE";
+            const isOrder = msg.type === "ORDER";
+
+            // 解析 Order 内容
+            let orderData: any = null;
+            if (isOrder) {
+              try {
+                orderData = JSON.parse(msg.text);
+              } catch (e) {
+                console.error("解析订单消息失败", e);
+              }
+            }
 
             return (
               <>
@@ -306,9 +317,9 @@ const MessageList: React.FC = () => {
                   <div
                     style={{
                       background: isServer ? "#e6f7ff" : "#f5f5f5",
-                      padding: isImage ? 0 : "8px 12px",
+                      padding: isImage || isOrder ? 0 : "8px 12px",
                       borderRadius: 8,
-                      maxWidth: isImage ? "200px" : "60%",
+                      maxWidth: isImage ? "200px" : isOrder ? "300px" : "60%",
                       wordBreak: "break-word",
                     }}
                   >
@@ -323,6 +334,65 @@ const MessageList: React.FC = () => {
                           display: "block",
                         }}
                       />
+                    ) : isOrder && orderData ? (
+                      <Card
+                        size="small"
+                        title={`订单号：${orderData.orderCode}`}
+                        style={{ width: "100%", borderRadius: 8 }}
+                        bodyStyle={{ padding: "8px" }}
+                      >
+                        {orderData.products?.map((prod: any, idx: number) => (
+                          <div
+                            key={idx}
+                            style={{
+                              display: "flex",
+                              gap: 8,
+                              marginBottom: 8,
+                              borderBottom:
+                                idx < orderData.products.length - 1
+                                  ? "1px solid #f0f0f0"
+                                  : "none",
+                              paddingBottom: 8,
+                            }}
+                          >
+                            <Image
+                              src={prod.skuPicUrl || prod.picUrl}
+                              width={50}
+                              height={50}
+                              style={{ borderRadius: 4, objectFit: "cover" }}
+                              preview={false}
+                            />
+                            <div style={{ flex: 1, overflow: "hidden" }}>
+                              <div
+                                style={{
+                                  fontSize: 12,
+                                  fontWeight: "bold",
+                                  whiteSpace: "nowrap",
+                                  overflow: "hidden",
+                                  textOverflow: "ellipsis",
+                                }}
+                                title={prod.productTitle}
+                              >
+                                {prod.productTitle}
+                              </div>
+                              <div
+                                style={{
+                                  fontSize: 12,
+                                  color: "#666",
+                                  display: "flex",
+                                  justifyContent: "space-between",
+                                  marginTop: 4,
+                                }}
+                              >
+                                <span>x {prod.quantity}</span>
+                                <span style={{ color: "#f50" }}>
+                                  ¥{prod.price}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </Card>
                     ) : (
                       msg.text
                     )}

@@ -62,13 +62,13 @@ const TableList: React.FC = () => {
     {
       title: "商品",
       dataIndex: "productTitle",
-      hideInSearch: true,
+      search: false,
     },
     {
       title: "商品图片",
       dataIndex: "picUrl",
       key: "picUrl",
-      hideInSearch: true,
+      search: false,
 
       width: 100,
       render: (picUrl: any, row: any) => {
@@ -78,13 +78,13 @@ const TableList: React.FC = () => {
     {
       title: "价格",
       dataIndex: "price",
-      hideInSearch: true,
+      search: false,
     },
     {
       title: "sku",
       dataIndex: "propAndValue",
       key: "propAndValue",
-      hideInSearch: true,
+      search: false,
 
       width: 200,
       render: (propAndValue: any) => {
@@ -95,19 +95,19 @@ const TableList: React.FC = () => {
     {
       title: "数量",
       dataIndex: "quantity",
-      hideInSearch: true,
+      search: false,
     },
     {
       title: "退款金额",
       dataIndex: "refundAmount",
-      hideInSearch: true,
+      search: false,
     },
 
     {
       title: "状态",
       dataIndex: "statusCode",
       render: (value: any) => renderStatusTag("refund", value),
-      renderFormItem: () => {
+      formItemRender: () => {
         return (
           <Select
             placeholder="请选择采购状态"
@@ -117,11 +117,11 @@ const TableList: React.FC = () => {
         );
       },
     },
-    { title: "申请时间", dataIndex: "createTime", hideInSearch: true },
+    { title: "申请时间", dataIndex: "createTime", search: false },
     {
       title: "审核时间",
       dataIndex: "updateTime",
-      hideInSearch: true,
+      search: false,
 
       render: (_:any, record: any) => {
         const statusCode = record.statusCode;

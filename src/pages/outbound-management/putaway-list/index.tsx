@@ -74,12 +74,12 @@ const TableList: React.FC = () => {
       render: (location: any) => {
         return location?.locationCode;
       },
-      hideInSearch: true,
+      search: false,
     },
     {
       title: "上架人员",
       dataIndex: "location.offUserName",
-      hideInSearch: true,
+      search: false,
       render: (_, records: any) => {
         return records?.location?.onUserName;
       },
@@ -88,7 +88,7 @@ const TableList: React.FC = () => {
       title: "状态",
       dataIndex: "putawayStatusCode",
       render: (value: any) => renderStatusTag("putaway", value),
-      renderFormItem: () => {
+      formItemRender: () => {
         return (
           <Select
             placeholder="请选择上架状态"
@@ -101,7 +101,7 @@ const TableList: React.FC = () => {
     {
       title: "上架时间",
       dataIndex: "updateTime",
-      hideInSearch: true,
+      search: false,
       render: (_, record: any) => {
         const putawayStatusCode = record.putawayStatusCode;
         const updateTime = record.updateTime;
