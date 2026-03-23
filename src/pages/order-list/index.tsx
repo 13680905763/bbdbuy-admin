@@ -120,7 +120,7 @@ const TableList: React.FC = () => {
     {
       title: "商品信息",
       dataIndex: "products",
-      hideInForm: true,
+      search: false,
       render: (products: any = [], record) => {
         const preview = products?.slice(0, 3);
         const expanded = expandedRowKeys.includes(record.id);
@@ -178,7 +178,7 @@ const TableList: React.FC = () => {
     {
       title: "备注",
       dataIndex: "remark",
-      hideInForm: true,
+      search: false,
       ellipsis: true, // 超过宽度自动显示省略号
       width: 200, // 设置列宽
     },

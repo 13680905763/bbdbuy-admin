@@ -10,6 +10,7 @@ import {
 import { PageContainer, ProCard } from "@ant-design/pro-components";
 import { Line } from "@ant-design/plots";
 import { Col, Row, Progress, List, Avatar } from "antd";
+import MessageBubbleList from "@/components/MessageBubbleList";
 import React, { useEffect, useState } from "react";
 
 const Console: React.FC = () => {
@@ -255,55 +256,21 @@ const Console: React.FC = () => {
                 <MessageOutlined style={{ fontSize: 16, color: "rgb(40, 187, 156)", marginRight: 8 }} />
                 <span style={{ fontSize: 14, fontWeight: 'bold', color: '#333' }}>最新留言</span>
               </div>
-              <List
-                itemLayout="horizontal"
-                dataSource={data?.latestCustomerMessage || []}
-                renderItem={(item: any) => (
-                  <List.Item
-                    style={{ padding: "8px 0", cursor: "pointer" }}
-                  // onClick={() => {
-                  //   window.open("https://bbdbuy1.com/chat", "_blank");
-                  // }}
-                  >
-                    <List.Item.Meta
-                      avatar={
-                        <Avatar
-                          style={{ backgroundColor: "rgb(40, 187, 156)" }}
-                          size="small"
-                        >
-                          {item.customerName?.[0]?.toUpperCase() || "U"}
-                        </Avatar>
-                      }
-                      title={
-                        <div style={{ display: "flex", justifyContent: "space-between" }}>
-                          <span style={{ fontSize: 12, fontWeight: 500 }}>
-                            {item.customerName}
-                          </span>
-                          <span style={{ fontSize: 10, color: "#999" }}>
-                            {item.createTime?.split(" ")[1]?.slice(0, 5)}
-                          </span>
-                        </div>
-                      }
-                      description={
-                        
-                        <div
-                          style={{
-                            fontSize: 12,
-                            color: "#666",
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                            whiteSpace: "nowrap",
-                            maxWidth: 200,
-                          }}
-                          title={item.content}
-                        >
-                          {item.content}
-                        </div>
-                      }
-                    />
-                  </List.Item>
-                )}
-              />
+              <div style={{ display: "flex", flexDirection: "column", gap: 12, maxHeight: 380, overflowY: "auto", paddingRight: 8 }}>
+                <MessageBubbleList
+                  showCustomerName={true}
+                  messages={(data?.latestCustomerMessage || []).map(
+                    (item: any, index: number) => ({
+                      id: index,
+                      sender: "CUSTOMER",
+                      type: item.contentType,
+                      text: item.content,
+                      createTime: item.createTime,
+                      customerName: item.customerName,
+                    })
+                  )}
+                />
+              </div>
             </Col>
           </Row>
         </Col>

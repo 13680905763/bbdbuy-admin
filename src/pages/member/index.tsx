@@ -1,5 +1,5 @@
 import { getCouponList } from "@/services";
-import { disguiseMember, distributionCoupons, getMemberList, topUpMember, updateMember } from "@/services/member";
+import { disguiseMember, distributionCoupons, getMemberList, topUpMember, updateMember, toggleMemberConfinement } from "@/services/member";
 import { closeOrder, getOrderListByPage } from "@/services/order"; // 你的接口路径
 import { getStatusOptions, renderStatusTag } from "@/utils/status-render";
 import { DownOutlined, RightOutlined } from "@ant-design/icons";
@@ -29,6 +29,7 @@ import {
   Table,
   Tag,
   message,
+  Switch,
 } from "antd";
 import moment from "moment";
 import React, { useEffect, useRef, useState } from "react";
@@ -41,6 +42,7 @@ const TableList: React.FC = () => {
   const [dataSource, setDataSource] = useState<any[]>([]);
 
   const [loading, setLoading] = useState(false);
+  const [switchLoadingId, setSwitchLoadingId] = useState<React.Key | null>(null);
   const [expandedRowKeys, setExpandedRowKeys] = useState<React.Key[]>([]); // ✅ 展开行控制
   const [current, setCurrent] = useState(1);
   const [size, setSize] = useState(10);
@@ -165,7 +167,32 @@ const TableList: React.FC = () => {
       title: "操作",
       valueType: "option",
       render: (_, record) => (
-        <div style={{ display: "flex", gap: 8 }}>
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          {record.hasOwnProperty("confinement") && (
+            <Switch
+              checked={record.confinement}
+              checkedChildren="禁闭"
+              unCheckedChildren="解禁"
+              loading={switchLoadingId === record.id}
+              onChange={async (checked) => {
+                setSwitchLoadingId(record.id);
+                try {
+                  const res = await toggleMemberConfinement({
+                    id: record.id,
+                    confinement: checked,
+                  });
+                  if (res.success) {
+                    message.success(checked ? "已禁闭" : "已解禁");
+                    fetchData({ current, size, ...filters });
+                  }
+                } catch (error) {
+                  console.error(error);
+                } finally {
+                  setSwitchLoadingId(null);
+                }
+              }}
+            />
+          )}
           <Button
             type="primary"
             size="small"

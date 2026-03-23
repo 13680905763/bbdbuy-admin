@@ -13,6 +13,7 @@ import {
   Modal,
   Spin,
 } from "antd";
+import MessageBubbleList from "@/components/MessageBubbleList";
 import React, { useEffect, useRef, useState } from "react";
 
 const MessageList: React.FC = () => {
@@ -277,136 +278,11 @@ const MessageList: React.FC = () => {
             />
           )}
 
-          {messages.map((msg) => {
-            const isServer = msg.sender === "SERVER";
-            const isCustomer = msg.sender === "CUSTOMER";
-            const isImage = msg.type === "IMAGE";
-            const isOrder = msg.type === "ORDER";
-
-            // 解析 Order 内容
-            let orderData: any = null;
-            if (isOrder) {
-              try {
-                orderData = JSON.parse(msg.text);
-              } catch (e) {
-                console.error("解析订单消息失败", e);
-              }
-            }
-
-            return (
-              <>
-                <span style={{
-                  display: "flex",
-                  justifyContent: isServer ? "flex-end" : "flex-start",
-                  alignItems: "flex-end",
-                  gap: 8,
-                }}>
-                  {msg.createTime ?? msg.sendTime}
-                </span>
-                <div
-                  key={msg.id}
-                  style={{
-                    display: "flex",
-                    justifyContent: isServer ? "flex-end" : "flex-start",
-                    alignItems: "flex-end",
-                    gap: 8,
-                  }}
-                >
-                  {isCustomer && <Avatar src={activeUser?.avatar || null} />}
-
-                  <div
-                    style={{
-                      background: isServer ? "#e6f7ff" : "#f5f5f5",
-                      padding: isImage || isOrder ? 0 : "8px 12px",
-                      borderRadius: 8,
-                      maxWidth: isImage ? "200px" : isOrder ? "300px" : "60%",
-                      wordBreak: "break-word",
-                    }}
-                  >
-                    {isImage ? (
-                      <Image
-                        src={msg.text || undefined} // 图片地址存放在 msg.text
-                        alt="图片消息"
-                        style={{
-                          width: "200px",
-                          height: "auto",
-                          borderRadius: 8,
-                          display: "block",
-                        }}
-                      />
-                    ) : isOrder && orderData ? (
-                      <Card
-                        size="small"
-                        title={`订单号：${orderData.orderCode}`}
-                        style={{ width: "100%", borderRadius: 8 }}
-                        bodyStyle={{ padding: "8px" }}
-                      >
-                        {orderData.products?.map((prod: any, idx: number) => (
-                          <div
-                            key={idx}
-                            style={{
-                              display: "flex",
-                              gap: 8,
-                              marginBottom: 8,
-                              borderBottom:
-                                idx < orderData.products.length - 1
-                                  ? "1px solid #f0f0f0"
-                                  : "none",
-                              paddingBottom: 8,
-                            }}
-                          >
-                            <Image
-                              src={prod.skuPicUrl || prod.picUrl}
-                              width={50}
-                              height={50}
-                              style={{ borderRadius: 4, objectFit: "cover" }}
-                              preview={false}
-                            />
-                            <div style={{ flex: 1, overflow: "hidden" }}>
-                              <div
-                                style={{
-                                  fontSize: 12,
-                                  fontWeight: "bold",
-                                  whiteSpace: "nowrap",
-                                  overflow: "hidden",
-                                  textOverflow: "ellipsis",
-                                }}
-                                title={prod.productTitle}
-                              >
-                                {prod.productTitle}
-                              </div>
-                              <div
-                                style={{
-                                  fontSize: 12,
-                                  color: "#666",
-                                  display: "flex",
-                                  justifyContent: "space-between",
-                                  marginTop: 4,
-                                }}
-                              >
-                                <span>x {prod.quantity}</span>
-                                <span style={{ color: "#f50" }}>
-                                  ¥{prod.price}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </Card>
-                    ) : (
-                      msg.text
-                    )}
-                  </div>
-
-                  {isServer && (
-                    <Avatar src={currentUser?.avatarFilePath || null} />
-                  )}
-                </div>
-
-
-              </>
-            );
-          })}
+          <MessageBubbleList
+            messages={messages}
+            defaultCustomerAvatar={activeUser?.avatar || null}
+            serverAvatar={currentUser?.avatarFilePath || null}
+          />
 
           <div ref={chatEndRef} />
         </div>

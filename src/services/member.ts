@@ -38,3 +38,11 @@ export async function updateMember(data: { customerId: number; vipLv?: number; p
         data,
     });
 }
+
+/** 会员禁闭/解禁 POST /member/confinement */
+export async function toggleMemberConfinement(params: { id: string | number; confinement: boolean }) {
+    return request<any>("/member/confinement", {
+        method: "POST",
+        params,
+    });
+}
