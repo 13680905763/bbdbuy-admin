@@ -29,6 +29,14 @@ export async function finishWorkOrder(user: any) {
   });
 }
 
+// 已读客户消息
+export async function readChatMessages(messageIds: string[]) {
+  return request(`/service-chat/read`, {
+    method: "PUT",
+    data: messageIds,
+  });
+}
+
 /**
  * 上传聊天图片
  * @param file 要上传的文件
@@ -53,4 +61,12 @@ export async function uploadChatImage(file: File) {
     console.error("聊天图片上传失败:", error);
     throw error;
   }
+}
+
+// 更新设置（置顶、标签等）
+export async function receiveSettings(data: Record<string, { top?: boolean; label?: string[] }>) {
+  return request(`/service-chat/receiveSettings`, {
+    method: "POST",
+    data,
+  });
 }

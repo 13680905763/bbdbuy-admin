@@ -7,6 +7,14 @@ export async function getOrderListByPage(data: any) {
     data,
   });
 }
+
+/** 移除商品 PUT /remove/product */
+export async function removeProduct(orderProductId: any, reasonCode: any) {
+  return request("/orders/remove/product?orderProductId=" + orderProductId + "&reasonCode=" + reasonCode, {
+    method: "PUT",
+
+  });
+}
 /** 关闭订单 POST /orders/close */
 export async function closeOrder(orderId: any, reasonCode: any) {
   return request<API.RuleList>("/orders/close?orderId=" + orderId + "&reasonCode=" + reasonCode, {

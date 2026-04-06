@@ -3,7 +3,7 @@ import { getPackScan, PackSubmit } from "@/services";
 import { CheckCircleOutlined, CloseCircleOutlined } from "@ant-design/icons";
 import { PageContainer } from "@ant-design/pro-components";
 import ProTable, { ProColumns } from "@ant-design/pro-table";
-import { Button, Card, Input, message, Switch, Space } from "antd";
+import { Button, Card, Input, message, Switch, Space, Select } from "antd";
 import React, { useRef, useState } from "react";
 
 const ParticularPaper: React.FC = () => {
@@ -93,6 +93,7 @@ const ParticularPaper: React.FC = () => {
           length: item.length,
           width: item.width,
           height: item.height,
+          outerPackaging: item.outerPackaging || 1,
         })),
       };
 
@@ -214,6 +215,28 @@ const ParticularPaper: React.FC = () => {
               return updated;
             });
           }}
+        />
+      ),
+    },
+    {
+      title: "外包装",
+      dataIndex: "outerPackaging",
+      render: (text, record, index) => (
+        <Select
+          value={text || 1}
+          style={{ width: 100 }}
+          onChange={(value) => {
+            setTableData((prev) => {
+              const updated = [...prev];
+              updated[index].outerPackaging = value;
+              return updated;
+            });
+          }}
+          options={[
+            { value: 1, label: "纸箱" },
+            { value: 2, label: "泡沫箱" },
+            { value: 3, label: "袋子" },
+          ]}
         />
       ),
     },

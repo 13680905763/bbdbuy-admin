@@ -341,7 +341,7 @@ const TableList: React.FC = () => {
       dataIndex: "packingPackageCode",
     },
     {
-      title: "尺寸/重量",
+      title: "尺寸/重量/包材",
       dataIndex: "packing",
       minWidth: 200,
       search: false,
@@ -376,9 +376,21 @@ const TableList: React.FC = () => {
               </div>
             )}
             {record.location?.locationCode && (
-              <div style={{ color: "#999", marginRight: 4, marginTop: 8 }}>
+              <div style={{ color: "#999", marginRight: 4, }}>
                 <span >货位：</span>
                 <span>{record.location.locationCode}</span>
+              </div>
+            )}
+            {(row.outerPackaging || record.outerPackaging) && (
+              <div style={{ color: "#999", marginRight: 4, }}>
+                <span>外包装：</span>
+                <span>
+                  {
+                    { 1: "纸箱", 2: "泡沫箱", 3: "袋子" }[
+                    (row.outerPackaging || record.outerPackaging) as string | number
+                    ] || (row.outerPackaging || record.outerPackaging)
+                  }
+                </span>
               </div>
             )}
           </div>

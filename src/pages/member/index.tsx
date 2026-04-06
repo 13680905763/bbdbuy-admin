@@ -1,8 +1,5 @@
 import { getCouponList } from "@/services";
-import { disguiseMember, distributionCoupons, getMemberList, topUpMember, updateMember, toggleMemberConfinement } from "@/services/member";
-import { closeOrder, getOrderListByPage } from "@/services/order"; // 你的接口路径
-import { getStatusOptions, renderStatusTag } from "@/utils/status-render";
-import { DownOutlined, RightOutlined } from "@ant-design/icons";
+import { disguiseMember, distributionCoupons, getMemberList, topUpMember, updateMember, toggleMemberConfinement, toggleNoPromotionReward } from "@/services/member";
 import type {
   ActionType,
   ProColumns,
@@ -19,31 +16,24 @@ import {
   ProTable,
 } from "@ant-design/pro-components";
 import {
-  AutoComplete,
   Button,
-  DatePicker,
   Image,
-  Modal,
   Pagination,
-  Select,
-  Table,
-  Tag,
   message,
   Switch,
 } from "antd";
-import moment from "moment";
 import React, { useEffect, useRef, useState } from "react";
 
-const { RangePicker } = DatePicker;
 
 const TableList: React.FC = () => {
   const actionRef = useRef<ActionType | null>(null);
   const formRef = useRef<ProFormInstance | undefined>(undefined);
+  const modalFormRef = useRef<ProFormInstance | undefined>(undefined);
   const [dataSource, setDataSource] = useState<any[]>([]);
 
   const [loading, setLoading] = useState(false);
   const [switchLoadingId, setSwitchLoadingId] = useState<React.Key | null>(null);
-  const [expandedRowKeys, setExpandedRowKeys] = useState<React.Key[]>([]); // ✅ 展开行控制
+  const [rewardLoadingId, setRewardLoadingId] = useState<React.Key | null>(null);
   const [current, setCurrent] = useState(1);
   const [size, setSize] = useState(10);
   const [total, setTotal] = useState(0);
@@ -73,58 +63,6 @@ const TableList: React.FC = () => {
     }
   };
 
-  // // ✅ 切换展开状态
-  // const handleExpand = (record: any) => {
-  //   setExpandedRowKeys((prev) =>
-  //     prev.includes(record.id)
-  //       ? prev.filter((k) => k !== record.id)
-  //       : [...prev, record.id]
-  //   );
-  // };
-  // /** 操作 */
-  // const handleClose = (record: any) => {
-  //   let reasonCode = ""; // 默认原因
-
-  //   Modal.confirm({
-  //     title: "关闭订单",
-  //     content: (
-  //       <div style={{ marginTop: 12 }}>
-  //         <div style={{ marginBottom: 8 }}>确认关闭订单吗？</div>
-  //         <Select
-  //           style={{ width: "100%" }}
-  //           placeholder="请选择关闭原因"
-  //           defaultValue={reasonCode}
-  //           onChange={(value) => {
-  //             reasonCode = value;
-  //           }}
-  //           options={[
-  //             { value: "INSUFFICIENT_STOCK", label: "库存不足" },
-  //             { value: "EXPIRED_GOODS", label: "失效商品" },
-  //             { value: "SCAM", label: "骗货" },
-  //             { value: "BLACKLIST", label: "黑名单" },
-  //             { value: "FALSE_SHIPMENT", label: "虚假发货" },
-  //             { value: "OTHER", label: "其他" },
-  //           ]}
-  //         />
-
-  //       </div>
-  //     ),
-  //     okButtonProps: {
-  //       type: "primary",
-  //       style: {
-  //         backgroundColor: "#f0700c",
-  //         borderColor: "#f0700c",
-  //       },
-  //     },
-  //     onOk: async () => {
-  //       const res = await closeOrder(record.id, reasonCode);
-  //       if (res.success) {
-  //         message.success("关闭成功");
-  //         fetchData();
-  //       }
-  //     }, // ✅ 确认后继续
-  //   });
-  // };
   const columns: ProColumns<any>[] = [
     {
       title: "头像",
@@ -164,15 +102,15 @@ const TableList: React.FC = () => {
       search: false,
     },
     {
-      title: "操作",
+      title: "禁闭/推广奖励",
       valueType: "option",
       render: (_, record) => (
-        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
           {record.hasOwnProperty("confinement") && (
             <Switch
               checked={record.confinement}
               checkedChildren="禁闭"
-              unCheckedChildren="解禁"
+              unCheckedChildren="正常"
               loading={switchLoadingId === record.id}
               onChange={async (checked) => {
                 setSwitchLoadingId(record.id);
@@ -193,6 +131,39 @@ const TableList: React.FC = () => {
               }}
             />
           )}
+          {record.hasOwnProperty("noPromotionReward") && (
+            <Switch
+              checked={record.noPromotionReward === 'true' || record.noPromotionReward === true}
+              checkedChildren="无奖"
+              unCheckedChildren="有奖"
+              loading={rewardLoadingId === record.id}
+              onChange={async (checked) => {
+                setRewardLoadingId(record.id);
+                try {
+                  const res = await toggleNoPromotionReward({
+                    id: record.id,
+                    noPromotionReward: checked ? 'true' : 'false',
+                  });
+                  if (res.success) {
+                    message.success(checked ? "已设为无推广奖励" : "已恢复推广奖励");
+                    fetchData({ current, size, ...filters });
+                  }
+                } catch (error) {
+                  console.error(error);
+                } finally {
+                  setRewardLoadingId(null);
+                }
+              }}
+            />
+          )}
+        </div>
+      ),
+    },
+    {
+      title: "操作",
+      valueType: "option",
+      render: (_, record) => (
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           <Button
             type="primary"
             size="small"
@@ -201,11 +172,9 @@ const TableList: React.FC = () => {
                 const res = await disguiseMember(record.id);
                 if (res.success) {
                   message.success("登录成功");
-                  const currentDomain = window.location.hostname;
-                  let targetUrl = "https://bbdbuy1.com/dashboard";
-                  if (currentDomain === "dev.bbdbuy1.com") {
-                    targetUrl = "https://dev.bbdbuy1.com/dashboard";
-                  }
+                  const isDev = window.location.hostname.includes('dev');
+                  const baseHost = isDev ? 'dev.bbdbuy1.com' : 'bbdbuy1.com';
+                  const targetUrl = `https://${baseHost}/dashboard`;
                   window.open(targetUrl, "_blank");
                 }
               } catch (error) {
@@ -285,6 +254,7 @@ const TableList: React.FC = () => {
             initialValues={{
               vipLv: record.vipLv,
               points: record.myPoints,
+              inviteCode: record.inviteCode,
             }}
           >
             <ProFormDigit
@@ -300,6 +270,11 @@ const TableList: React.FC = () => {
               placeholder="请输入可用积分"
               min={0}
               fieldProps={{ precision: 0 }}
+            />
+            <ProFormText
+              name="inviteCode"
+              label="邀请码"
+              placeholder="请输入邀请码"
             />
           </ModalForm>
         </div >
@@ -374,12 +349,13 @@ const TableList: React.FC = () => {
           <ModalForm
             key="coupon"
             title="发放优惠券"
+            formRef={modalFormRef}
             trigger={
               <Button type="primary" disabled={selectedRowKeys.length === 0}>
                 发放优惠券
               </Button>
             }
-            width={600}
+            width={850}
             onFinish={async (values) => {
               const couponInfo: any = {};
               // 处理 ProFormList 的数据
@@ -392,8 +368,8 @@ const TableList: React.FC = () => {
               }
 
               if (Object.keys(couponInfo).length === 0) {
-                 message.error("请至少选择一张优惠券并填写数量");
-                 return false;
+                message.error("请至少选择一张优惠券并填写数量");
+                return false;
               }
 
               try {
@@ -421,31 +397,57 @@ const TableList: React.FC = () => {
               min={1}
               copyIconProps={false} // 禁用复制按钮
             >
-              <ProFormGroup key="group">
-                <ProFormSelect
-                  name="couponId"
-                  label="选择优惠券"
-                  placeholder="请选择优惠券"
-                  width="md"
-                  rules={[{ required: true, message: "请选择优惠券" }]}
-                  request={async () => {
-                    const res = await getCouponList({ src: 3 }); // 仅获取后台发放优惠券
-                    return (res.data || []).map((item: any) => ({
-                      label: item.title, // 使用 title
-                      value: item.id,
-                    }));
-                  }}
-                />
-                <ProFormDigit
-                  name="count"
-                  label="数量"
-                  placeholder="请输入发放数量"
-                  width="xs"
-                  min={1}
-                  initialValue={1}
-                  rules={[{ required: true, message: "请输入数量" }]}
-                />
-              </ProFormGroup>
+              {(meta, index, action, count) => {
+                return (
+                  <ProFormGroup key="group">
+                    <ProFormSelect
+                      name="src"
+                      label="优惠券来源"
+                      initialValue={3}
+                      placeholder="请选择来源"
+                      width="xs"
+                      options={[
+                        { label: '注册', value: 1 },
+                        { label: '积分兑换', value: 2 },
+                        { label: '后台发放', value: 3 },
+                        { label: '兑换码', value: 4 },
+                      ]}
+                      rules={[{ required: true, message: "请选择来源" }]}
+                      fieldProps={{
+                        onChange: () => {
+                          modalFormRef.current?.setFieldValue(['coupons', index, 'couponId'], undefined);
+                        }
+                      }}
+                    />
+                    <ProFormSelect
+                      name="couponId"
+                      label="选择优惠券"
+                      placeholder="请选择优惠券"
+                      width="md"
+                      dependencies={['src']}
+                      rules={[{ required: true, message: "请选择优惠券" }]}
+                      request={async (params) => {
+                        const src = params?.src;
+                        if (!src) return [];
+                        const res = await getCouponList({ src });
+                        return (res.data || []).map((item: any) => ({
+                          label: item.title, // 使用 title
+                          value: item.id,
+                        }));
+                      }}
+                    />
+                    <ProFormDigit
+                      name="count"
+                      label="数量"
+                      placeholder="请输入发放数量"
+                      width="xs"
+                      min={1}
+                      initialValue={1}
+                      rules={[{ required: true, message: "请输入数量" }]}
+                    />
+                  </ProFormGroup>
+                );
+              }}
             </ProFormList>
           </ModalForm>,
         ]}

@@ -3,7 +3,6 @@ import { renderStatusTag } from "@/utils/status-render";
 import { SearchOutlined } from "@ant-design/icons";
 import { PageContainer } from "@ant-design/pro-components";
 import ProTable, { ActionType } from "@ant-design/pro-table";
-import { history } from "@umijs/max";
 import { Card, Image, Input, message, Tabs } from "antd";
 import React, { useRef, useState } from "react";
 

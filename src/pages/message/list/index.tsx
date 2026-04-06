@@ -1,4 +1,4 @@
-import { finishWorkOrder, uploadChatImage } from "@/services";
+import { finishWorkOrder, uploadChatImage, receiveSettings } from "@/services";
 import data from "@emoji-mart/data";
 import Picker from "@emoji-mart/react";
 import { useModel } from "@umijs/max";
@@ -12,6 +12,9 @@ import {
   List,
   Modal,
   Spin,
+  Space,
+  Select,
+  Tag,
 } from "antd";
 import MessageBubbleList from "@/components/MessageBubbleList";
 import React, { useEffect, useRef, useState } from "react";
@@ -27,6 +30,7 @@ const MessageList: React.FC = () => {
     messagesMap,
     sendMessage,
     setActiveUser,
+    setRepliedUsers,
     firstLoadRef,
   } = useModel("chat");
   const { initialState } = useModel("@@initialState");
@@ -36,8 +40,33 @@ const MessageList: React.FC = () => {
   // 是否在加载历史
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [isLabelModalVisible, setIsLabelModalVisible] = useState(false);
+  const [currentLabels, setCurrentLabels] = useState<string[]>([]);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const chatListRef = useRef<HTMLDivElement>(null);
+
+  const handleUpdateSettings = async (top: boolean, labels: string[]) => {
+    if (!activeUser) return;
+    try {
+      await receiveSettings({
+        [activeUser.id]: {
+          top,
+          label: labels,
+        },
+      });
+      setActiveUser({ ...activeUser, top, label: labels });
+      setRepliedUsers((prev) =>
+        prev.map((u) =>
+          String(u.id) === String(activeUser.id)
+            ? { ...u, top, label: labels }
+            : u
+        )
+      );
+      AntMessage.success("操作成功");
+    } catch (e) {
+      AntMessage.error("操作失败");
+    }
+  };
 
   useEffect(() => {
     console.log("messages变化", messages);
@@ -105,6 +134,7 @@ const MessageList: React.FC = () => {
       }
     }
   };
+  console.log('repliedUsers', repliedUsers);
 
   return (
     <div style={{ display: "flex", height: "calc(100vh - 120px)", gap: 16 }}>
@@ -115,16 +145,18 @@ const MessageList: React.FC = () => {
           display: "flex",
           flexDirection: "column",
           gap: 16,
+          minHeight: 0,
         }}
       >
         <Card
           title="已回复消息"
-          style={{ flex: 1, display: "flex", flexDirection: "column" }}
+          style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}
+          styles={{ body: { flex: 1, overflowY: "auto", padding: 0 } }}
         >
-          <div style={{ flex: 1, overflowY: "auto" }}>
+          <div style={{ padding: "0 12px" }}>
             <List
               itemLayout="horizontal"
-              dataSource={repliedUsers}
+              dataSource={[...repliedUsers].sort((a, b) => (b.top ? 1 : 0) - (a.top ? 1 : 0))}
               renderItem={(item) => (
                 <List.Item
                   onClick={() => {
@@ -133,6 +165,8 @@ const MessageList: React.FC = () => {
                   }}
                   style={{
                     cursor: "pointer",
+                    padding: "12px",
+                    borderRadius: "8px",
                     background:
                       activeUser?.id === item.id ? "#f0f5ff" : "transparent",
                   }}
@@ -146,16 +180,34 @@ const MessageList: React.FC = () => {
                           justifyContent: "space-between",
                         }}
                       >
-                        <span>{item.user}</span>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                          {item.top && <Tag color="blue" style={{ margin: 0, padding: '0 4px', fontSize: 10, lineHeight: '16px' }}>置顶</Tag>}
+                          {item.user}
+                        </span>
                         {item.unread ? (
                           <span style={{ color: "red" }}>({item.unread})</span>
                         ) : null}
                       </div>
                     }
                     description={
-                      item?.msgtype === "IMAGE"
-                        ? "[图片]"
-                        : item.lastMessage || item.email || ""
+                      <div>
+                        {item.label && item.label.length > 0 && (
+                          <div style={{ marginBottom: 4 }}>
+                            {item.label.map(tag => (
+                              <Tag key={tag} style={{ margin: '0 4px 0 0', padding: '0 4px', fontSize: 10, lineHeight: '16px' }}>{tag}</Tag>
+                            ))}
+                          </div>
+                        )}
+                        <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {item?.msgtype === "IMAGE"
+                            ? "[图片]"
+                            : item?.msgtype === "ORDER"
+                              ? "[订单]"
+                              : item?.msgtype === "WAYBILL"
+                                ? "[包裹]"
+                                : item.lastMessage || item.email || ""}
+                        </div>
+                      </div>
                     }
                   />
                 </List.Item>
@@ -166,25 +218,46 @@ const MessageList: React.FC = () => {
 
         <Card
           title="大厅未接待"
-          style={{ flex: 1, display: "flex", flexDirection: "column" }}
+          style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minHeight: 0 }}
+          styles={{ body: { flex: 1, overflowY: "auto", padding: 0 } }}
         >
-          <div style={{ flex: 1, overflowY: "auto" }}>
+          <div style={{ padding: "0 12px" }}>
             <List
               itemLayout="horizontal"
-              dataSource={pendingUsers}
+              dataSource={[...pendingUsers].sort((a, b) => (b.top ? 1 : 0) - (a.top ? 1 : 0))}
               renderItem={(item) => (
                 <List.Item
                   onClick={() => handleAcceptUser(item)}
                   style={{
                     cursor: "pointer",
+                    padding: "12px",
+                    borderRadius: "8px",
                     background:
                       activeUser?.id === item.id ? "#f0f5ff" : "transparent",
                   }}
                 >
                   <List.Item.Meta
                     avatar={<Avatar src={item.avatar} />}
-                    title={item.user}
-                    description={item.email || ""}
+                    title={
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                        {item.top && <Tag color="blue" style={{ margin: 0, padding: '0 4px', fontSize: 10, lineHeight: '16px' }}>置顶</Tag>}
+                        {item.user}
+                      </span>
+                    }
+                    description={
+                      <div>
+                        {item.label && item.label.length > 0 && (
+                          <div style={{ marginBottom: 4 }}>
+                            {item.label.map(tag => (
+                              <Tag key={tag} style={{ margin: '0 4px 0 0', padding: '0 4px', fontSize: 10, lineHeight: '16px' }}>{tag}</Tag>
+                            ))}
+                          </div>
+                        )}
+                        <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {item.email || ""}
+                        </div>
+                      </div>
+                    }
                   />
                 </List.Item>
               )}
@@ -201,6 +274,7 @@ const MessageList: React.FC = () => {
           flexDirection: "column",
           border: "1px solid #f0f0f0",
           borderRadius: 8,
+          minHeight: 0,
         }}
       >
         {/* 顶部 */}
@@ -217,9 +291,26 @@ const MessageList: React.FC = () => {
         >
           {activeUser ? `与 ${activeUser.user} 的对话` : "请选择一个客户"}
           {activeUser && (
-            <Button
-              danger
-              size="small"
+            <Space>
+              <Button
+                size="small"
+                type={activeUser.top ? "primary" : "default"}
+                onClick={() => handleUpdateSettings(!activeUser.top, activeUser.label || [])}
+              >
+                {activeUser.top ? "取消置顶" : "置顶"}
+              </Button>
+              <Button
+                size="small"
+                onClick={() => {
+                  setCurrentLabels(activeUser.label || []);
+                  setIsLabelModalVisible(true);
+                }}
+              >
+                设置标签
+              </Button>
+              <Button
+                danger
+                size="small"
               onClick={() => {
                 Modal.confirm({
                   title: "确认结束会话吗？",
@@ -254,6 +345,7 @@ const MessageList: React.FC = () => {
             >
               结束会话
             </Button>
+            </Space>
           )}
         </div>
 
@@ -432,6 +524,29 @@ const MessageList: React.FC = () => {
           </div>
         )}
       </div>
+
+      <Modal
+        title="设置标签"
+        open={isLabelModalVisible}
+        onOk={() => {
+          handleUpdateSettings(!!activeUser?.top, currentLabels);
+          setIsLabelModalVisible(false);
+        }}
+        onCancel={() => setIsLabelModalVisible(false)}
+      >
+        <Select
+          mode="tags"
+          style={{ width: "100%" }}
+          placeholder="请输入或选择标签"
+          value={currentLabels}
+          onChange={(val) => setCurrentLabels(val)}
+          options={[
+            { value: '重要', label: '重要' },
+            { value: '非常重要', label: '非常重要' },
+            { value: '等待处理', label: '等待处理' },
+          ]}
+        />
+      </Modal>
     </div>
   );
 };

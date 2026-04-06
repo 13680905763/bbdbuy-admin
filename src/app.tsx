@@ -4,7 +4,6 @@ import { SettingDrawer } from "@ant-design/pro-components";
 import "@ant-design/v5-patch-for-react-19";
 import type { RequestConfig, RunTimeLayoutConfig } from "@umijs/max";
 import { history } from "@umijs/max";
-import { List, Modal, Typography } from "antd";
 import { useEffect } from "react";
 import defaultSettings from "../config/defaultSettings";
 import { errorConfig } from "./requestErrorConfig";
@@ -18,9 +17,9 @@ const loginPath = "/login";
  * */
 export async function getInitialState(): Promise<{
   settings?: Partial<LayoutSettings>;
-  currentUser?: API.CurrentUser;
+  currentUser?: any;
   loading?: boolean;
-  fetchUserInfo?: () => Promise<API.CurrentUser | undefined>;
+  fetchUserInfo?: () => Promise<any>;
 }> {
   const fetchUserInfo = async () => {
     try {
@@ -32,13 +31,7 @@ export async function getInitialState(): Promise<{
     return undefined;
   };
   const currentUser = await fetchUserInfo();
-  // console.log(
-  //   "currentUser",
-  //   currentUser,
-  //   location.pathname,
-  //   loginPath,
-  //   location.pathname === loginPath
-  // );
+
 
   // ✅ 如果已经登录但仍在登录页，跳转首页
   if (location.pathname === loginPath && currentUser) {
@@ -134,47 +127,11 @@ export const layout: RunTimeLayoutConfig = ({
  * 它基于 axios 和 ahooks 的 useRequest 提供了一套统一的网络请求和错误处理方案。
  * @doc https://umijs.org/docs/max/request#配置
  */
+console.log('process.env.UMI_APP_BASE_API', process.env.UMI_APP_BASE_API);
+
 export const request: RequestConfig = {
-  baseURL: isDev
-    ? "http://api.bbdlocal.com:8080"
-    // ? "http://fe.bbdlocal.com:8080"
-    // :  "https://admin.bbdbuy1.com/api",
-    : "https://dev.bbdbuy1.com/admin-api",
-  // baseURL: process.env.UMI_APP_BASE_API,
+  baseURL: process.env.UMI_APP_BASE_API,
   withCredentials: true,
   timeout: 500000,
   ...errorConfig,
-  // responseInterceptors: [
-  //   ...(errorConfig.responseInterceptors || []),
-  //   (response) => {
-  //     const { data } = response as any;
-  //     if ( data?.type === "panel") {
-  //       Modal.info({
-  //         title: data.msg || "提示",
-  //         content: (
-  //           <div style={{ maxHeight: "60vh", overflowY: "auto" }}>
-  //             <List
-  //               bordered
-  //               size="small"
-  //               dataSource={Array.isArray(data.data) ? data.data : []}
-  //               renderItem={(item: any) => (
-  //                 <List.Item>
-  //                   <Typography.Text type="danger">
-  //                     {typeof item === "object"
-  //                       ? item.msg || item.message || JSON.stringify(item)
-  //                       : item}
-  //                   </Typography.Text>
-  //                 </List.Item>
-  //               )}
-  //             />
-  //           </div>
-  //         ),
-  //         width: 600,
-  //         okText: "关闭",
-  //         maskClosable: true,
-  //       });
-  //     }
-  //     return response;
-  //   },
-  // ],
 };

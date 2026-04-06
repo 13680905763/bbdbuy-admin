@@ -108,12 +108,10 @@ const TableList: React.FC = () => {
     }, {
       title: "平台支付单号",
       dataIndex: "paymentReferenceId",
-      search: false,
     },
     {
       title: "钱包流水号",
       dataIndex: "bizReference",
-      search: false,
     },
 
     {
@@ -155,6 +153,8 @@ const TableList: React.FC = () => {
     const filterParams = {
       nickName: values.nickName,
       paymentMethod: values.paymentMethod,
+      paymentReferenceId: values.paymentReferenceId,
+      bizReference: values.bizReference,
     };
     setFilters(filterParams);
     setCurrent(1);

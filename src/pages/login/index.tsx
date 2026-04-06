@@ -1,5 +1,5 @@
 import { Footer } from "@/components";
-import { login } from "@/services/ant-design-pro/api";
+import { getPublicKey, login } from "@/services/user";
 import { connectWS } from "@/utils/ws";
 import { LockOutlined, PhoneFilled } from "@ant-design/icons";
 import { LoginForm, ProFormText } from "@ant-design/pro-components";
@@ -8,6 +8,7 @@ import { App } from "antd";
 import { createStyles } from "antd-style";
 import React from "react";
 import { flushSync } from "react-dom";
+import JSEncrypt from 'jsencrypt'
 const useStyles = createStyles(({ token }) => {
   return {
     action: {
@@ -60,14 +61,44 @@ const Login: React.FC = () => {
       });
     }
   };
-  const handleSubmit = async (values: API.LoginParams) => {
+  const handleSubmit = async (values: any) => {
     try {
-      // 登录
-      const msg = await login({
-        ...values,
-      });
-      console.log("msg", msg);
+      // 1. 从后端获取公钥
+      const publicKeyRes = await getPublicKey();
+      console.log("获取到公钥响应:", publicKeyRes);
 
+      const finalValues = { ...values };
+
+      // 2. 用公钥加密密码和账号
+      if (publicKeyRes?.success && publicKeyRes?.data) {
+        const encrypt = new JSEncrypt();
+        // 处理公钥格式：补全 PEM 头部并确保换行正确
+        let key = publicKeyRes.data;
+        encrypt.setPublicKey(key);
+
+        // 加密密码
+        const encryptedPassword = encrypt.encrypt(values.password);
+        if (encryptedPassword) {
+          finalValues.password = encryptedPassword;
+        } else {
+          message.error("密码加密失败，请联系管理员");
+          return;
+        }
+
+        // 加密账号
+        const encryptedMobile = encrypt.encrypt(values.mobile);
+        if (encryptedMobile) {
+          finalValues.mobile = encryptedMobile;
+        } else {
+          message.error("账号加密失败，请联系管理员");
+          return;
+        }
+      }
+
+      // 3. 提交加密后的数据到登录接口
+      const msg = await login({
+        ...finalValues,
+      });
       if (msg.success) {
         message.success("登录成功！");
         connectWS(); // ✅ 登录后再建立 WS 连接
@@ -75,9 +106,11 @@ const Login: React.FC = () => {
         history.replace("/");
         return;
       }
-      console.log(msg);
-      // 如果失败去设置用户错误信息
-    } catch (error) {}
+      // 如果失败，通常由 requestErrorConfig 统一提示，此处可记录日志
+      console.error("登录失败:", msg);
+    } catch (error) {
+      console.error("提交异常:", error);
+    }
   };
 
   return (
@@ -108,7 +141,7 @@ const Login: React.FC = () => {
           title={<img src="/logo.png" alt="BBDBUY" style={{ height: 40 }} />}
           subTitle={"BBD 后台管理系统"}
           onFinish={async (values) => {
-            await handleSubmit(values as API.LoginParams);
+            await handleSubmit(values as any);
           }}
         >
           <>

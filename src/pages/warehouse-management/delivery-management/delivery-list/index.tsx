@@ -6,7 +6,7 @@ import type {
   ProFormInstance,
 } from "@ant-design/pro-components";
 import { PageContainer, ProTable } from "@ant-design/pro-components";
-import { DatePicker, Pagination, Select, message } from "antd";
+import { DatePicker, Pagination, Select, message, Typography } from "antd";
 import moment from "moment";
 import React, { useEffect, useRef, useState } from "react";
 const { RangePicker } = DatePicker;
@@ -48,8 +48,28 @@ const TableList: React.FC = () => {
       dataIndex: "orderCode",
     },
     {
-      title: "采购编号",
+      title: "来源/平台订单号",
       dataIndex: "purchaseCode",
+      formItemProps: {
+        label: '平台订单号',
+      },
+      render: (_, record) => {
+        const { source, sourceOrderId } = record?.purchase || {};
+        return (
+          <div>
+            <div>{source || "-"}</div>
+            <div style={{ color: "#999", fontSize: "14px" }}>
+              {sourceOrderId ? (
+                <Typography.Text copyable style={{ color: "#999", fontSize: "14px" }}>
+                  {sourceOrderId}
+                </Typography.Text>
+              ) : (
+                "-"
+              )}
+            </div>
+          </div>
+        );
+      },
     },
 
     {
@@ -120,8 +140,8 @@ const TableList: React.FC = () => {
     const [createStartTime, createEndTime] = values.createTime || [];
     const [updateStartTime, updateEndTime] = values.updateTime || [];
     const filterParams = {
+      sourceOrderId: values?.purchaseCode,
       orderCode: values.orderCode,
-      purchaseCode: values.purchaseCode,
       logisticsCode: values.logisticsCode,
       receiveStatusCode: values.receiveStatusCode,
       createTimeFrom: createStartTime

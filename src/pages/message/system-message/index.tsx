@@ -1,7 +1,5 @@
 import { messageApi } from "@/services/message";
-import { closeOrder, getOrderListByPage } from "@/services/order"; // 你的接口路径
 import { getStatusOptions, renderStatusTag } from "@/utils/status-render";
-import { CopyOutlined, DownOutlined, RightOutlined } from "@ant-design/icons";
 import type {
   ActionType,
   ProColumns,
@@ -9,15 +7,9 @@ import type {
 } from "@ant-design/pro-components";
 import { PageContainer, ProTable } from "@ant-design/pro-components";
 import {
-  AutoComplete,
-  Button,
   DatePicker,
-  Image,
-  Modal,
   Pagination,
   Select,
-  Table,
-  Tag,
   message,
   Typography,
 } from "antd";

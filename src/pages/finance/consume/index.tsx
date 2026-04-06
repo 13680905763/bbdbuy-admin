@@ -114,7 +114,6 @@ const TableList: React.FC = () => {
     {
       title: "业务单号",
       dataIndex: "bizReference",
-      search: false,
     },
 
     {
@@ -157,6 +156,7 @@ const TableList: React.FC = () => {
     const filterParams = {
       nickName: values.nickName,
       paymentMethod: values.paymentMethod,
+      bizReference: values.bizReference,
     };
     setFilters(filterParams);
     setCurrent(1);

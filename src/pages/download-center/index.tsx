@@ -29,10 +29,14 @@ const softwareList: SoftwareItem[] = [
         style={{ width: 48, height: 48, borderRadius: 8, objectFit: "cover" }}
       />
     ),
-    version: "v1.2.2",
+    version: "v1.2.5",
     description: "专为仓库管理人员设计的辅助工具，提升入库、出库效率。",
-    updateTime: "2026-01-22",
+    updateTime: "2026-04-07",
     updateLog: [
+      "2026-04-07 更新：",
+      "1. **",
+      "2026-03-31 更新：",
+      "1. 拍照上传加载动画",
       "2026-01-22 更新：",
       "1. 支持连续扫码",
       "2026-01-19 更新：",

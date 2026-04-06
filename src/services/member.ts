@@ -46,3 +46,12 @@ export async function toggleMemberConfinement(params: { id: string | number; con
         params,
     });
 }
+
+/** 切换是否无推广奖励 POST /member/noPromotionReward */
+export async function toggleNoPromotionReward(params: { id: string | number; noPromotionReward: string | boolean }) {
+    return request<any>("/member/noPromotionReward", {
+        method: "POST",
+        params,
+    });
+}
+

@@ -36,13 +36,10 @@ let wsConnecting = false;
  * 获取 WebSocket 地址
  */
 function getWsUrl() {
-  if (process.env.NODE_ENV === "development") {
-    // return "ws://fe.bbdtest.local:8080/ws";
-    return "ws://api.bbdlocal.com:8080/ws";
-
-  }
-  // return "wss://admin.bbdbuy1.com/api/ws";
-  return "wss://dev.bbdbuy1.com/admin-api/ws";
+  return (process.env.UMI_APP_WS_URL || "")
+    .replace(/^["']|["']$/g, "")
+    .replace(/^ws:\/\//, "ws://")
+    .replace(/^wss:\/\//, "wss://");
 }
 
 /**http://api.bbdlocal.com:8080

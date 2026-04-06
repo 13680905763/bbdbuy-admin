@@ -1,4 +1,4 @@
-import { closeOrder, getOrderListByPage } from "@/services/order"; // 你的接口路径
+import { closeOrder, getOrderListByPage, removeProduct } from "@/services/order"; // 你的接口路径
 import { getStatusOptions, renderStatusTag } from "@/utils/status-render";
 import { DownOutlined, RightOutlined } from "@ant-design/icons";
 import type {
@@ -109,6 +109,53 @@ const TableList: React.FC = () => {
       }, // ✅ 确认后继续
     });
   };
+
+  const handleRemoveProduct = (record: any) => {
+    let reasonCode = ""; // 默认原因
+
+    Modal.confirm({
+      title: "移除商品",
+      content: (
+        <div style={{ marginTop: 12 }}>
+          <div style={{ marginBottom: 8 }}>确认移除该商品吗？</div>
+          <Select
+            style={{ width: "100%" }}
+            placeholder="请选择移除原因"
+            defaultValue={reasonCode}
+            onChange={(value) => {
+              reasonCode = value;
+            }}
+            options={[
+              { value: "INSUFFICIENT_STOCK", label: "库存不足" },
+              { value: "EXPIRED_GOODS", label: "失效商品" },
+              { value: "SCAM", label: "骗货" },
+              { value: "BLACKLIST", label: "黑名单" },
+              { value: "FALSE_SHIPMENT", label: "虚假发货" },
+              { value: "OTHER", label: "其他" },
+            ]}
+          />
+        </div>
+      ),
+      cancelButtonProps: {
+        style: { borderColor: "#f0700c", color: "#f0700c" },
+      },
+      okButtonProps: {
+        style: { backgroundColor: "#f0700c" },
+      },
+      onOk: async () => {
+        if (!reasonCode) {
+          message.warning("请选择移除原因");
+          return Promise.reject(new Error("请选择移除原因"));
+        }
+        const res: any = await removeProduct(record.id, reasonCode);
+        if (res?.success) {
+          message.success("移除成功");
+          fetchData();
+        }
+      },
+    });
+  };
+
   const columns: ProColumns<any>[] = [
     { title: "订单号", dataIndex: "orderCode" },
     { title: "客户昵称", dataIndex: "customerName", },
@@ -364,13 +411,25 @@ const TableList: React.FC = () => {
                 },
                 {
                   dataIndex: "remark",
-                  render: (remark) => (
-                    <span style={{ color: "#1f2937", fontWeight: 500 }}>
-                      <span style={{ color: "#6b7280", fontWeight: 400 }}>
-                        备注：
+                  render: (remark, subRecord: any) => (
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <span style={{ color: "#1f2937", fontWeight: 500 }}>
+                        <span style={{ color: "#6b7280", fontWeight: 400 }}>
+                          备注：
+                        </span>
+                        {remark || "-"}
                       </span>
-                      {remark || "-"}
-                    </span>
+                      {subRecord?.removeFlag === true && (
+                        <Button
+                          type="link"
+                          danger
+                          size="small"
+                          onClick={() => handleRemoveProduct(subRecord)}
+                        >
+                          移除商品
+                        </Button>
+                      )}
+                    </div>
                   ),
                 },
               ]}

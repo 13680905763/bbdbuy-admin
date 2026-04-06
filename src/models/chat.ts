@@ -1,6 +1,7 @@
 import {
   acceptUser,
   fetchChatHistory as apiFetchChatHistory,
+  readChatMessages,
 } from "@/services";
 import {
   addReconnectListener,
@@ -21,6 +22,8 @@ export interface ChatUser {
   lastMessage?: string;
   unread?: number;
   msgtype?: string;
+  top?: boolean;
+  label?: string[];
 }
 
 export interface ChatMessage {
@@ -220,6 +223,8 @@ export default function useChatModel() {
         avatar: u.avatarUrl || u.avatar || "",
         lastMessage: "",
         unread: 0,
+        top: !!u.top,
+        label: Array.isArray(u.label) ? u.label : [],
       }));
       if (raw.type === "HALL") setPendingUsers(mapped);
       if (raw.type === "RECEIVE") setRepliedUsers(mapped);
@@ -239,6 +244,16 @@ export default function useChatModel() {
     };
 
     if (activeUserRef?.current?.id) {
+      if (
+        String(activeUserRef.current.id) === uid &&
+        raw.sender === "CUSTOMER" &&
+        raw.id
+      ) {
+        readChatMessages([String(raw.id)]).catch((err) =>
+          console.error("调用已读接口失败", err)
+        );
+      }
+
       setMessagesMap((prev) => {
         const oldList = prev[uid]?.list || [];
         const merged = [...oldList, chatMsg];
@@ -280,6 +295,8 @@ export default function useChatModel() {
           avatar: raw.avatar || "",
           lastMessage: chatMsg.text,
           unread: String(activeUserRef.current?.id) !== uid ? 1 : 0,
+          top: !!raw.top,
+          label: Array.isArray(raw.label) ? raw.label : [],
         };
         return [newU, ...prev];
       }

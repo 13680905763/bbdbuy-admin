@@ -4,7 +4,7 @@ import {
   putOrderRefundGoodsSend,
   putOrderRefundGoodsUpdate,
 } from "@/services/refund";
-import { renderStatusTag } from "@/utils/status-render";
+import { renderStatusTag, getStatusOptions } from "@/utils/status-render";
 import { DownOutlined, RightOutlined } from "@ant-design/icons";
 import type {
   ActionType,
@@ -153,8 +153,23 @@ const TableList: React.FC = () => {
       },
     },
     {
+      title: "物流单号",
+      dataIndex: "logisticsCode",
+      hideInTable: true,
+    },
+    {
+      title: "状态",
+      dataIndex: "statusCode",
+      hideInTable: true,
+      valueType: "select",
+      fieldProps: {
+        options: getStatusOptions("refundGoods"),
+      },
+    },
+    {
       title: "物流单号/状态",
       dataIndex: "logistics",
+      search: false,
       width: 240,
       render: (logisticsList, record) => {
         if (
@@ -601,7 +616,8 @@ const TableList: React.FC = () => {
     const filterParams = Object.fromEntries(
       Object.entries({
         orderCode: values.orderCode,
-        logisticsCode: values.logistics,
+        logisticsCode: values.logisticsCode,
+        statusCode: values.statusCode,
       }).filter(([_, v]) => v !== undefined && v !== null && v !== "")
     );
     setFilters(filterParams);
