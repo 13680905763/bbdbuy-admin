@@ -1,42 +1,17 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+# 1. 依赖包 (由 pnpm install 自动生成，禁止上传)
+node_modules/
 
-# dependencies
-**/node_modules
-# roadhog-api-doc ignore
-/src/utils/request-temp.js
-_roadhog-api-doc
+# 2. 编译产物 (由 max build 生成的生产环境代码)
+/dist/
+*.zip
 
-# production
-/dist
-/deploy.sh
-*dist.zip
+# 3. Umi 4 框架临时目录 (开发与打包时的缓存，由 max setup 生成)
+.umi/
+.umi-production/
 
-# misc
-.DS_Store
+# 4. 编辑器相关 (防止个人 VS Code 配置污染仓库)
+.vscode/
+.history/
+
+# 5. 日志文件 (仅记录本地运行错误)
 npm-debug.log*
-yarn-error.log
-
-/coverage
-.idea
-yarn.lock
-package-lock.json
-*bak
-.vscode
-
-
-# visual studio code
-.history
-*.log
-functions/*
-.temp/**
-
-# umi
-.umi
-.umi-production
-.umi-test
-
-# screenshot
-screenshot
-.firebase
-
-build

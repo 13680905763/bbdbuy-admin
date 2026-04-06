@@ -16,7 +16,7 @@ const Settings: ProLayoutProps & {
   fixSiderbar: true,
   colorWeak: false,
   title: " ",
-  pwa: true,
+  pwa: false,
   logo: "/logo.png",
   iconfontUrl: "",
   token: {
