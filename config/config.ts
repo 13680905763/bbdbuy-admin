@@ -7,12 +7,26 @@ import proxy from "./proxy";
 import routes from "./routes";
 const { REACT_APP_ENV = "dev" } = process.env;
 
+// 环境配置：根据 REACT_APP_ENV 区分（cross-env 设置，不会被 Umi dotenv 覆盖）
+const ENV_CONFIG: Record<string, { BASE_API: string; WS_URL: string }> = {
+  dev: {
+    BASE_API: "/admin-api",
+    WS_URL: "/admin-api/ws",
+  },
+  prod: {
+    BASE_API: "https://admin.bbdbuy1.com/api",
+    WS_URL: "wss://admin.bbdbuy1.com/api/ws",
+  },
+};
+const currentEnv = ENV_CONFIG[REACT_APP_ENV] || ENV_CONFIG.dev;
+
 /**
  * @name 使用公共路径
  * @description 部署时的路径，如果部署在非根目录下，需要配置这个变量
  * @doc https://umijs.org/docs/api/config#publicpath
- */
-const PUBLIC_PATH: string = "/";
+*/
+const PUBLIC_PATH: string = REACT_APP_ENV === "dev" ? "/admin/" : "/";
+console.log(`[${REACT_APP_ENV}] BASE_API:`, currentEnv.BASE_API, "WS_URL:", currentEnv.WS_URL, "PUBLIC_PATH:", PUBLIC_PATH);
 
 export default defineConfig({
   /**
@@ -95,28 +109,16 @@ export default defineConfig({
 
   //================ pro 插件配置 =================
   presets: ["umi-presets-pro"],
-  openAPI: [
-    {
-      requestLibPath: "import { request } from '@umijs/max'",
-      schemaPath: join(__dirname, "oneapi.json"),
-      mock: false,
-    },
-    {
-      requestLibPath: "import { request } from '@umijs/max'",
-      schemaPath: "https://gw.alipayobjects.com/os/antfincdn/CA1dOm%2631B/openapi.json",
-      projectName: "swagger",
-    },
-  ],
-  mock: {
-    include: ["mock/**/*", "src/pages/**/_mock.ts"],
-  },
-  mako: {},
+
+
+  // Mako dev server 不支持 WS 代理，开发时用 webpack，打包时用 Mako
+  ...(process.env.NODE_ENV === 'production' ? { mako: {} } : {}),
   esbuildMinifyIIFE: true,
   requestRecord: {},
   exportStatic: {},
 
   define: {
-    'process.env.UMI_APP_BASE_API': JSON.stringify(process.env.UMI_APP_BASE_API || '/admin-api'),
-    'process.env.UMI_APP_WS_URL': JSON.stringify(process.env.UMI_APP_WS_URL),
+    'process.env.UMI_APP_BASE_API': JSON.stringify(currentEnv.BASE_API),
+    'process.env.UMI_APP_WS_URL': JSON.stringify(currentEnv.WS_URL),
   },
 });

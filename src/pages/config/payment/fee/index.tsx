@@ -1,5 +1,4 @@
-import { PageContainer } from "@ant-design/pro-components";
-import ProTable, { ActionType } from "@ant-design/pro-table";
+import { PageContainer, ProTable, ActionType } from "@ant-design/pro-components";
 import {
   Button,
   Form,

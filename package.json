@@ -4,8 +4,9 @@
   "private": true,
   "description": "BBD Buy 后台管理系统",
   "scripts": {
-    "dev": "max dev",
-    "build": "pnpm lint && max build",
+    "dev": "cross-env NODE_ENV=development max dev",
+    "build:dev": "cross-env REACT_APP_ENV=dev max build",
+    "build:pro": "cross-env REACT_APP_ENV=prod max build",
     "postinstall": "max setup",
     "lint": "biome lint . && tsc --noEmit"
   },

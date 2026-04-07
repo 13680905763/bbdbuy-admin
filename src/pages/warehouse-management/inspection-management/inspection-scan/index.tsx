@@ -2,8 +2,7 @@
 import { CopyOutlined } from "@ant-design/icons";
 import { getGoodsType } from "@/services";
 import { getInspectionScan, InspectionSubmit } from "@/services/order";
-import { PageContainer } from "@ant-design/pro-components";
-import ProTable, { ProColumns } from "@ant-design/pro-table";
+import { PageContainer, ProTable, ProColumns } from "@ant-design/pro-components";
 import { Button, Card, Image, Input, InputNumber, Modal, message, Select } from "antd";
 import React, { useEffect, useRef, useState } from "react";
 const inspectionStatusCode: any = [

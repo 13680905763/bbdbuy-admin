@@ -32,7 +32,6 @@ export async function getInitialState(): Promise<{
   };
   const currentUser = await fetchUserInfo();
 
-
   // ✅ 如果已经登录但仍在登录页，跳转首页
   if (location.pathname === loginPath && currentUser) {
     history.replace("/");
@@ -127,8 +126,6 @@ export const layout: RunTimeLayoutConfig = ({
  * 它基于 axios 和 ahooks 的 useRequest 提供了一套统一的网络请求和错误处理方案。
  * @doc https://umijs.org/docs/max/request#配置
  */
-console.log('process.env.UMI_APP_BASE_API', process.env.UMI_APP_BASE_API);
-
 export const request: RequestConfig = {
   baseURL: process.env.UMI_APP_BASE_API,
   withCredentials: true,

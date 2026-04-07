@@ -1,8 +1,7 @@
 // src/pages/inventory/ScanIn/index.tsx
 import { getGoodsType } from "@/services";
 import { getInboundReceiveScan, getInspectionScan, inboundReceiveSubmit, InspectionSubmit } from "@/services/order";
-import { PageContainer } from "@ant-design/pro-components";
-import ProTable, { ProColumns } from "@ant-design/pro-table";
+import { PageContainer, ProTable, ProColumns } from "@ant-design/pro-components";
 import { Button, Card, Image, Input, message, Select } from "antd";
 import React, { useEffect, useRef, useState } from "react";
 
@@ -55,10 +54,10 @@ const ParticularPaper: React.FC = () => {
       if (res.data === "WMS_RECEIVE_SCAN_UNKNOWN_LOGISTICS_CODE") {
         message.warning("未知物流");
         setTableData((prev) => [
-          { 
-            logisticsCompany: "未知物流", 
-            logisticsCode: logisticsCode, 
-            type: 0 
+          {
+            logisticsCompany: "未知物流",
+            logisticsCode: logisticsCode,
+            type: 0
           },
           ...prev,
         ]);
@@ -78,7 +77,7 @@ const ParticularPaper: React.FC = () => {
       } else {
         message.error("未查询到物流信息");
       }
-      
+
       setScanValue(""); // 扫码成功后清空
     } catch (error: any) {
       console.error("扫码请求出错:", error);
@@ -101,7 +100,7 @@ const ParticularPaper: React.FC = () => {
 
 
 
-      const res = await inboundReceiveSubmit({logisticsCodeList:data});
+      const res = await inboundReceiveSubmit({ logisticsCodeList: data });
       if (res.success) {
         message.success("提交成功");
         setTableData([]);

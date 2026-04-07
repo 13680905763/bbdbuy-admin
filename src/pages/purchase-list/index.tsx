@@ -28,10 +28,12 @@ import {
   Table,
   Tag,
 } from "antd";
-import moment from "moment";
 import React, { useEffect, useRef, useState } from "react";
 import EditModal, { EditModalRef } from "./editmodal";
 import DiyDetailModal from "./DiyDetailModal";
+import OrderChatModal from "./OrderChatModal"; // 仅导入
+import { contactCustomer } from "@/services/chat"; // 仅导入
+import { history, useModel } from "@umijs/max";
 const { RangePicker } = DatePicker;
 export interface ProcureStatusItem {
   label: string; // 显示文字
@@ -67,6 +69,10 @@ const TableList: React.FC = () => {
   const [diyModalOpen, setDiyModalOpen] = useState(false);
   const [diyModalData, setDiyModalData] = useState<any>(null);
   const [diyModalLoading, setDiyModalLoading] = useState(false);
+
+  // 1. 新增聊天弹窗控制状态 (仅增加这两行)
+  const [chatModalOpen, setChatModalOpen] = useState(false);
+  const [chatParams, setChatParams] = useState({ id: "", name: "", orderCode: "" });
 
   const handleDiyDetail = async (orderId: string) => {
     setDiyModalOpen(true);
@@ -127,6 +133,35 @@ const TableList: React.FC = () => {
     {
       title: "客户昵称",
       dataIndex: "customerName",
+      render: (name: any, record: any) => (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 2, alignItems: 'flex-start' }}>
+          <span>{name}</span>
+          <Button
+            type="link"
+            size="small"
+            style={{ padding: 0, height: 'auto', fontSize: '12px' }}
+            onClick={async (e) => {
+              e.stopPropagation();
+              const cid = record.buyUserId || record.customerId;
+              if (!cid) return message.error("缺少客户ID");
+              const bizCode = record.orderCode || "";
+              try {
+                await contactCustomer({ customerId: String(cid), bizCode });
+                setChatParams({
+                  id: String(cid),
+                  name: record.customerName || "未知客户",
+                  orderCode: bizCode
+                });
+                setChatModalOpen(true);
+              } catch (err) {
+                console.error("开启对话失败", err);
+              }
+            }}
+          >
+            联系客户
+          </Button>
+        </div>
+      )
     },
     {
       title: "商品信息",
@@ -456,8 +491,8 @@ const TableList: React.FC = () => {
         const valid = await editModalRef.current?.validate();
         if (!valid) return;
 
-        console.log('editModalData',editModalData);
-        
+        console.log('editModalData', editModalData);
+
         values.packageList = editModalData.map((item) => ({
           logisticsCompany: item.logisticsCompany,
           logisticsCode: item.logisticsCode,
@@ -578,22 +613,22 @@ const TableList: React.FC = () => {
       logisticsCode: values.packages,
       statusCode: values.statusCode,
       purchaseTimeFrom: purchaseStartTime
-        ? moment(purchaseStartTime).format("YYYY-MM-DD HH:mm:ss")
+        ? purchaseStartTime
         : undefined,
       purchaseTimeTo: purchaseEndTime
-        ? moment(purchaseEndTime).format("YYYY-MM-DD HH:mm:ss")
+        ? purchaseEndTime
         : undefined,
       payTimeFrom: payStartTime
-        ? moment(payStartTime).format("YYYY-MM-DD HH:mm:ss")
+        ? payStartTime
         : undefined,
       payTimeTo: payEndTime
-        ? moment(payEndTime).format("YYYY-MM-DD HH:mm:ss")
+        ? payEndTime
         : undefined,
       sendTimeFrom: sendStartTime
-        ? moment(sendStartTime).format("YYYY-MM-DD HH:mm:ss")
+        ? sendStartTime
         : undefined,
       sendTimeTo: sendEndTime
-        ? moment(sendEndTime).format("YYYY-MM-DD HH:mm:ss")
+        ? sendEndTime
         : undefined,
     };
     setFilters(filterParams);
@@ -902,12 +937,17 @@ const TableList: React.FC = () => {
 
       <DiyDetailModal
         open={diyModalOpen}
-        onCancel={() => {
-          setDiyModalOpen(false);
-          setDiyModalData(null);
-        }}
+        onCancel={() => setDiyModalOpen(false)}
         data={diyModalData}
         loading={diyModalLoading}
+      />
+      {/* 仅在此处挂载聊天弹窗 */}
+      <OrderChatModal
+        open={chatModalOpen}
+        onCancel={() => setChatModalOpen(false)}
+        customerId={chatParams.id}
+        customerName={chatParams.name}
+        bizCode={chatParams.orderCode}
       />
     </PageContainer>
   );

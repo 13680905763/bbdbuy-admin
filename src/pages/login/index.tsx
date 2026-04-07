@@ -65,7 +65,7 @@ const Login: React.FC = () => {
     try {
       // 1. 从后端获取公钥
       const publicKeyRes = await getPublicKey();
-      console.log("获取到公钥响应:", publicKeyRes);
+      // console.log("获取到公钥响应:", publicKeyRes);
 
       const finalValues = { ...values };
 

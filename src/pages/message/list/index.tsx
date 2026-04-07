@@ -1,4 +1,4 @@
-import { finishWorkOrder, uploadChatImage, receiveSettings } from "@/services";
+import { uploadChatImage } from "@/services";
 import data from "@emoji-mart/data";
 import Picker from "@emoji-mart/react";
 import { useModel } from "@umijs/max";
@@ -7,7 +7,6 @@ import {
   Avatar,
   Button,
   Card,
-  Image,
   Input,
   List,
   Modal,
@@ -18,6 +17,7 @@ import {
 } from "antd";
 import MessageBubbleList from "@/components/MessageBubbleList";
 import React, { useEffect, useRef, useState } from "react";
+import type { RepliedUser, LobbyUser, ChatUser } from "@/models/chat";
 
 const MessageList: React.FC = () => {
   const {
@@ -29,53 +29,28 @@ const MessageList: React.FC = () => {
     loadHistory,
     messagesMap,
     sendMessage,
-    setActiveUser,
-    setRepliedUsers,
     firstLoadRef,
+    // 来自 Model 的业务方法
+    updateSettingsAsync,
+    finishWorkOrderAsync,
   } = useModel("chat");
+
   const { initialState } = useModel("@@initialState");
   const { currentUser } = initialState || {};
   const [inputValue, setInputValue] = useState("");
 
-  // 是否在加载历史
+  // UI 交互状态
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [isLabelModalVisible, setIsLabelModalVisible] = useState(false);
   const [currentLabels, setCurrentLabels] = useState<string[]>([]);
+
   const chatEndRef = useRef<HTMLDivElement>(null);
   const chatListRef = useRef<HTMLDivElement>(null);
 
-  const handleUpdateSettings = async (top: boolean, labels: string[]) => {
-    if (!activeUser) return;
-    try {
-      await receiveSettings({
-        [activeUser.id]: {
-          top,
-          label: labels,
-        },
-      });
-      setActiveUser({ ...activeUser, top, label: labels });
-      setRepliedUsers((prev) =>
-        prev.map((u) =>
-          String(u.id) === String(activeUser.id)
-            ? { ...u, top, label: labels }
-            : u
-        )
-      );
-      AntMessage.success("操作成功");
-    } catch (e) {
-      AntMessage.error("操作失败");
-    }
-  };
-
-  useEffect(() => {
-    console.log("messages变化", messages);
-  }, [messages]);
-  useEffect(() => {
-    console.log("activeUser变化", activeUser);
-  }, [activeUser]);
-
-  /** 发送消息 */
+  /** 
+   * 发送消息 
+   */
   const handleSend = () => {
     if (!inputValue.trim()) return;
     if (!activeUser) return AntMessage.warning("请先选择一个客户");
@@ -83,49 +58,31 @@ const MessageList: React.FC = () => {
     setInputValue("");
   };
 
-  /** 接待/切换用户 */
-  const handleAcceptUser = async (user: any) => {
+  /** 
+   * 接待/切换用户 
+   */
+  const handleAcceptUser = async (user: ChatUser) => {
     try {
       await setActiveUserAsync(user);
     } catch (err) {
       console.error("接待用户失败", err);
-      AntMessage.error("接待用户失败");
     }
   };
 
-  // 等消息真正渲染出来再滚动
-  useEffect(() => {
-    if (
-      firstLoadRef.current &&
-      messagesMap[String(activeUser?.id)]?.list?.length > 0
-    ) {
-      console.log("激活/切换用户 滚动到底部");
-      requestAnimationFrame(() => {
-        chatEndRef.current?.scrollIntoView({ behavior: "auto" });
-        firstLoadRef.current = false;
-      });
-    }
-  }, [messagesMap, activeUser]);
-
-  // 上拉加载历史
+  /** 
+   * 上拉加载历史逻辑
+   */
   const handleScroll = async (e: React.UIEvent<HTMLDivElement>) => {
     if (!activeUser || loadingHistory) return;
-
     const target = e.currentTarget;
-
     if (target.scrollTop <= 10) {
       const key = String(activeUser.id);
       const page = messagesMap[key]?.page || 1;
-
       if (messagesMap[key]?.hasMore) {
-        console.log("上拉加载历史中");
         setLoadingHistory(true);
-
         const scrollHeightBefore = target.scrollHeight;
         const scrollTopBefore = target.scrollTop;
-
         await loadHistory(activeUser.id, page + 1);
-
         requestAnimationFrame(() => {
           const scrollDiff = target.scrollHeight - scrollHeightBefore;
           target.scrollTop = scrollTopBefore + scrollDiff;
@@ -134,330 +91,203 @@ const MessageList: React.FC = () => {
       }
     }
   };
-  console.log('repliedUsers', repliedUsers);
+
+  /**
+   * 自动滚动到底部 
+   */
+  useEffect(() => {
+    if (firstLoadRef.current && messagesMap[String(activeUser?.id)]?.list?.length > 0) {
+      requestAnimationFrame(() => {
+        chatEndRef.current?.scrollIntoView({ behavior: "auto" });
+        firstLoadRef.current = false;
+      });
+    }
+  }, [messagesMap, activeUser, firstLoadRef]);
 
   return (
-    <div style={{ display: "flex", height: "calc(100vh - 120px)", gap: 16 }}>
-      {/* 左侧：用户列表 */}
-      <div
-        style={{
-          width: "33%",
-          display: "flex",
-          flexDirection: "column",
-          gap: 16,
-          minHeight: 0,
-        }}
-      >
+    <div style={{ display: "flex", height: "calc(100vh - 220px)", gap: 16 }}>
+      {/* 左侧：列表导航栏 */}
+      <div style={{ width: "350px", display: "flex", flexDirection: "column", gap: 16, minHeight: 0 }}>
+        {/* 1. 已接待列表 (消息列表) */}
         <Card
-          title="已回复消息"
-          style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}
+          title="消息列表"
+          style={{ flex: 2, display: "flex", flexDirection: "column", overflow: "hidden" }}
           styles={{ body: { flex: 1, overflowY: "auto", padding: 0 } }}
         >
-          <div style={{ padding: "0 12px" }}>
-            <List
-              itemLayout="horizontal"
-              dataSource={[...repliedUsers].sort((a, b) => (b.top ? 1 : 0) - (a.top ? 1 : 0))}
-              renderItem={(item) => (
-                <List.Item
-                  onClick={() => {
-                    handleAcceptUser(item);
-                    // firstLoadRef.current = true;
-                  }}
-                  style={{
-                    cursor: "pointer",
-                    padding: "12px",
-                    borderRadius: "8px",
-                    background:
-                      activeUser?.id === item.id ? "#f0f5ff" : "transparent",
-                  }}
-                >
-                  <List.Item.Meta
-                    avatar={<Avatar src={item.avatar || null} />}
-                    title={
-                      <div
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                        }}
-                      >
-                        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                          {item.top && <Tag color="blue" style={{ margin: 0, padding: '0 4px', fontSize: 10, lineHeight: '16px' }}>置顶</Tag>}
-                          {item.user}
-                        </span>
-                        {item.unread ? (
-                          <span style={{ color: "red" }}>({item.unread})</span>
-                        ) : null}
-                      </div>
-                    }
-                    description={
-                      <div>
-                        {item.label && item.label.length > 0 && (
-                          <div style={{ marginBottom: 4 }}>
-                            {item.label.map(tag => (
-                              <Tag key={tag} style={{ margin: '0 4px 0 0', padding: '0 4px', fontSize: 10, lineHeight: '16px' }}>{tag}</Tag>
-                            ))}
-                          </div>
-                        )}
-                        <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {item?.msgtype === "IMAGE"
-                            ? "[图片]"
-                            : item?.msgtype === "ORDER"
-                              ? "[订单]"
-                              : item?.msgtype === "WAYBILL"
-                                ? "[包裹]"
-                                : item.lastMessage || item.email || ""}
+          <List
+            itemLayout="horizontal"
+            dataSource={repliedUsers}
+            renderItem={(item: RepliedUser) => (
+              <List.Item
+                onClick={() => handleAcceptUser(item)}
+                style={{
+                  cursor: "pointer",
+                  padding: "12px",
+                  borderRadius: "8px",
+                  background: activeUser?.id === item.id ? "#f0f5ff" : "transparent",
+                }}
+              >
+                <List.Item.Meta
+                  avatar={<Avatar src={item.avatarUrl || null} />}
+                  title={
+                    <div style={{ display: "flex", justifyContent: "space-between" }}>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                        {item.top && <Tag color="blue" style={{ margin: 0, padding: '0 4px', fontSize: 10 }}>置顶</Tag>}
+                        {item.nickName}
+                      </span>
+                      {item.unread ? <span style={{ color: "red" }}>({item.unread})</span> : null}
+                    </div>
+                  }
+                  description={
+                    <div>
+                      {item.label && item.label.length > 0 && (
+                        <div style={{ marginBottom: 4 }}>
+                          {item.label.map(tag => (
+                            <Tag key={tag} style={{ margin: '0 4px 0 0', fontSize: 10 }}>{tag}</Tag>
+                          ))}
                         </div>
+                      )}
+                      <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: 12, color: '#999' }}>
+                        {item?.msgtype === "IMAGE" ? "[图片]" :
+                          item?.msgtype === "ORDER" ? "[订单]" :
+                            item?.msgtype === "WAYBILL" ? "[包裹]" :
+                              item.lastMessage || item.email || ""}
                       </div>
-                    }
-                  />
-                </List.Item>
-              )}
-            />
-          </div>
+                    </div>
+                  }
+                />
+              </List.Item>
+            )}
+          />
         </Card>
 
+        {/* 2. 大厅列表 (未接待) */}
         <Card
-          title="大厅未接待"
+          title="大厅"
           style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minHeight: 0 }}
           styles={{ body: { flex: 1, overflowY: "auto", padding: 0 } }}
         >
-          <div style={{ padding: "0 12px" }}>
-            <List
-              itemLayout="horizontal"
-              dataSource={[...pendingUsers].sort((a, b) => (b.top ? 1 : 0) - (a.top ? 1 : 0))}
-              renderItem={(item) => (
-                <List.Item
-                  onClick={() => handleAcceptUser(item)}
-                  style={{
-                    cursor: "pointer",
-                    padding: "12px",
-                    borderRadius: "8px",
-                    background:
-                      activeUser?.id === item.id ? "#f0f5ff" : "transparent",
-                  }}
-                >
-                  <List.Item.Meta
-                    avatar={<Avatar src={item.avatar} />}
-                    title={
-                      <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                        {item.top && <Tag color="blue" style={{ margin: 0, padding: '0 4px', fontSize: 10, lineHeight: '16px' }}>置顶</Tag>}
-                        {item.user}
-                      </span>
-                    }
-                    description={
-                      <div>
-                        {item.label && item.label.length > 0 && (
-                          <div style={{ marginBottom: 4 }}>
-                            {item.label.map(tag => (
-                              <Tag key={tag} style={{ margin: '0 4px 0 0', padding: '0 4px', fontSize: 10, lineHeight: '16px' }}>{tag}</Tag>
-                            ))}
-                          </div>
-                        )}
-                        <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {item.email || ""}
-                        </div>
-                      </div>
-                    }
-                  />
-                </List.Item>
-              )}
-            />
-          </div>
+          <List
+            itemLayout="horizontal"
+            dataSource={pendingUsers}
+            renderItem={(item: LobbyUser) => (
+              <List.Item
+                onClick={() => handleAcceptUser(item)}
+                style={{
+                  cursor: "pointer",
+                  padding: "12px",
+                  borderRadius: "8px",
+                  background: activeUser?.id === item.id ? "#f0f5ff" : "transparent",
+                }}
+              >
+                <List.Item.Meta
+                  avatar={<Avatar src={item.avatarUrl || null} />}
+                  title={<span>{item.nickName}</span>}
+                  description={<div style={{ fontSize: 12, color: '#999' }}>{item.email}</div>}
+                />
+              </List.Item>
+            )}
+          />
         </Card>
       </div>
 
-      {/* 右侧：聊天窗口 */}
-      <div
-        style={{
-          flex: 1,
-          display: "flex",
-          flexDirection: "column",
-          border: "1px solid #f0f0f0",
-          borderRadius: 8,
-          minHeight: 0,
-        }}
-      >
-        {/* 顶部 */}
-        <div
-          style={{
-            borderBottom: "1px solid #f0f0f0",
-            padding: "8px 12px",
-            fontWeight: "bold",
-            background: "#fafafa",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-          }}
-        >
-          {activeUser ? `与 ${activeUser.user} 的对话` : "请选择一个客户"}
+      {/* 右侧：聊天窗口界面 */}
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", border: "1px solid #f0f0f0", borderRadius: 8, overflow: "hidden", background: "#fff" }}>
+        {/* 头部：客户信息与操作 */}
+        <div style={{ borderBottom: "1px solid #f0f0f0", padding: "12px 16px", fontWeight: "bold", background: "#fafafa", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          {activeUser ? `与 ${activeUser.nickName} 的对话` : "请选择一个客户"}
           {activeUser && (
             <Space>
-              <Button
-                size="small"
-                type={activeUser.top ? "primary" : "default"}
-                onClick={() => handleUpdateSettings(!activeUser.top, activeUser.label || [])}
-              >
-                {activeUser.top ? "取消置顶" : "置顶"}
-              </Button>
-              <Button
-                size="small"
-                onClick={() => {
-                  setCurrentLabels(activeUser.label || []);
-                  setIsLabelModalVisible(true);
-                }}
-              >
-                设置标签
-              </Button>
+              {'top' in activeUser && (
+                <>
+                  <Button
+                    size="small"
+                    type={activeUser.top ? "primary" : "default"}
+                    onClick={() => updateSettingsAsync(!activeUser.top, activeUser.label || [])}
+                  >
+                    {activeUser.top ? "取消置顶" : "置顶"}
+                  </Button>
+                  <Button
+                    size="small"
+                    onClick={() => {
+                      setCurrentLabels(activeUser.label || []);
+                      setIsLabelModalVisible(true);
+                    }}
+                  >
+                    设置标签
+                  </Button>
+                </>
+              )}
               <Button
                 danger
                 size="small"
-              onClick={() => {
-                Modal.confirm({
-                  title: "确认结束会话吗？",
-                  content: `结束本次与 ${activeUser.user} 的会话`,
-                  okText: "确认",
-                  cancelText: "取消",
-                  cancelButtonProps: {
-                    style: { borderColor: "#f0700c", color: "#f0700c" },
-                  },
-                  okButtonProps: {
-                    style: { backgroundColor: "#f0700c" },
-                  },
-                  onOk: async () => {
-                    console.log("activeUser", activeUser);
-
-                    try {
-                      await finishWorkOrder({
-                        avatarUrl: activeUser.avatar,
-                        email: activeUser.email,
-                        id: activeUser.id,
-                        name: activeUser.user,
-                      });
-                      AntMessage.success("已结束会话");
-                      setActiveUser(null);
-                    } catch (err) {
-                      console.error(err);
-                      AntMessage.error("结束会话失败");
-                    }
-                  },
-                });
-              }}
-            >
-              结束会话
-            </Button>
+                onClick={() => {
+                  Modal.confirm({
+                    title: "确认结束会话吗？",
+                    content: `结束本次与 ${activeUser.nickName} 的会话`,
+                    okText: "确认",
+                    cancelText: "取消",
+                    onOk: async () => {
+                      // 这里直接调用 Model 业务函数，副作用已在内部处理
+                      await finishWorkOrderAsync();
+                    },
+                  });
+                }}
+              >
+                结束会话
+              </Button>
             </Space>
           )}
         </div>
 
-        {/* 消息列表 */}
+        {/* 中间：消息展示滚动区 */}
         <div
           ref={chatListRef}
-          style={{
-            flex: 1,
-            overflowY: "auto",
-            padding: "12px",
-            display: "flex",
-            flexDirection: "column",
-            gap: 12,
-            background: "#fff",
-          }}
+          style={{ flex: 1, overflowY: "auto", padding: "20px", display: "flex", flexDirection: "column", gap: 16, background: "#fdfdfd" }}
           onScroll={handleScroll}
         >
-          {loadingHistory && (
-            <Spin
-              style={{ textAlign: "center", marginBottom: 12 }}
-              spinning={true}
-            />
-          )}
-
+          {loadingHistory && <Spin style={{ margin: '10px auto' }} />}
           <MessageBubbleList
             messages={messages}
-            defaultCustomerAvatar={activeUser?.avatar || null}
+            defaultCustomerAvatar={activeUser?.avatarUrl || null}
             serverAvatar={currentUser?.avatarFilePath || null}
           />
-
           <div ref={chatEndRef} />
         </div>
 
-        {/* 输入框 */}
+        {/* 底部：消息输入操作区 */}
         {activeUser && (
-          <div
-            style={{
-              borderTop: "1px solid #f0f0f0",
-              padding: 8,
-              background: "#fff",
-              display: "flex",
-              flexDirection: "column",
-              gap: 8,
-            }}
-          >
-            {/* 输入框 */}
+          <div style={{ borderTop: "1px solid #f0f0f0", padding: 16, background: "#fff" }}>
             <Input.TextArea
               rows={3}
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
-              placeholder="请输入回复内容..."
+              placeholder="请输入回复内容... (回车发送)"
               onKeyDown={(e) => {
-                // ✅ 按下 Enter 且没有按 Shift 时发送消息
                 if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault(); // 阻止换行
+                  e.preventDefault();
                   handleSend();
                 }
               }}
+              style={{ marginBottom: 12, borderRadius: 6 }}
             />
-
-            {/* 下方工具栏 */}
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-              }}
-            >
-              {/* 左侧：表情 + 图片 */}
-              <div style={{ display: "flex", gap: 8 }}>
-                <Button
-                  icon={
-                    <span role="img" aria-label="emoji">
-                      😊
-                    </span>
-                  }
-                  onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                >
-                  表情
-                </Button>
-                {/* 表情选择器弹出层 */}
-                {showEmojiPicker && (
-                  <div
-                    style={{
-                      position: "absolute",
-                      bottom: "45px",
-                      left: 0,
-                      zIndex: 1000,
-                    }}
-                  >
-                    <Picker
-                      data={data}
-                      onEmojiSelect={(emoji: any) => {
-                        setInputValue((prev) => prev + emoji.native);
-                        setShowEmojiPicker(false);
-                      }}
-                    />
-                  </div>
-                )}
-                <Button
-                  icon={
-                    <span role="img" aria-label="image">
-                      🖼️
-                    </span>
-                  }
-                  onClick={() => {
-                    document.getElementById("uploadInput")?.click();
-                  }}
-                >
-                  图片
-                </Button>
-
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <Space>
+                <div style={{ position: 'relative' }}>
+                  <Button onClick={() => setShowEmojiPicker(!showEmojiPicker)}>😊 表情</Button>
+                  {showEmojiPicker && (
+                    <div style={{ position: "absolute", bottom: "45px", left: 0, zIndex: 1000 }}>
+                      <Picker
+                        data={data}
+                        onEmojiSelect={(emoji: any) => {
+                          setInputValue((prev) => prev + emoji.native);
+                          setShowEmojiPicker(false);
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
+                <Button onClick={() => document.getElementById("uploadInput")?.click()}>🖼️ 图片</Button>
                 <input
                   id="uploadInput"
                   type="file"
@@ -466,70 +296,30 @@ const MessageList: React.FC = () => {
                   onChange={async (e) => {
                     const file = e.target.files?.[0];
                     if (file) {
-                      console.log("选中图片：", file);
                       try {
-                        const url: any = await uploadChatImage(file);
-
-                        if (url.data) {
-                          console.log("url", url.data);
-                          sendMessage(url.data, "IMAGE");
-                          // const socket = socketRef.current;
-                          // if (socket && socket.readyState === WebSocket.OPEN) {
-                          //   const payload: any = {
-                          //     sender: "CUSTOMER",
-                          //     type: "IMAGE",
-                          //     content: url,
-                          //     sendTime: new Date().toISOString(),
-                          //   };
-                          //   if (receiverIdRef.current)
-                          //     payload.receiverId = receiverIdRef.current;
-                          //   socket.send(JSON.stringify(payload));
-                          // }
-                          // setMessages((prev) =>
-                          //   prev.map((msg) =>
-                          //     msg.id === tempId
-                          //       ? { ...msg, sending: false, text: url }
-                          //       : msg
-                          //   )
-                          // );
-                        }
+                        const urlRes: any = await uploadChatImage(file);
+                        if (urlRes.data) sendMessage(urlRes.data, "IMAGE");
                       } catch (err) {
-                        console.error("图片上传失败", err);
-                        // setMessages((prev) =>
-                        //   prev.map((msg) =>
-                        //     msg.id === tempId
-                        //       ? {
-                        //           ...msg,
-                        //           sending: false,
-                        //           text: "[图片发送失败]",
-                        //         }
-                        //       : msg
-                        //   )
-                        // );
-                      } finally {
-                        // URL.revokeObjectURL(tempUrl);
-                        // if (fileInputRef.current)
-                        //   fileInputRef.current.value = "";
+                        AntMessage.error("图片上传失败");
                       }
                     }
                   }}
                 />
-              </div>
-
-              {/* 右侧：发送按钮 */}
-              <Button type="primary" onClick={handleSend}>
-                发送
-              </Button>
+              </Space>
+              <Button type="primary" onClick={handleSend} size="large" style={{ minWidth: 100 }}>发送</Button>
             </div>
           </div>
         )}
       </div>
 
+      {/* 弹窗：标签设置 */}
       <Modal
         title="设置标签"
         open={isLabelModalVisible}
-        onOk={() => {
-          handleUpdateSettings(!!activeUser?.top, currentLabels);
+        onOk={async () => {
+          if (activeUser && 'top' in activeUser) {
+            await updateSettingsAsync(activeUser.top, currentLabels);
+          }
           setIsLabelModalVisible(false);
         }}
         onCancel={() => setIsLabelModalVisible(false)}

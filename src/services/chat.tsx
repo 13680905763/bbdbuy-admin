@@ -70,3 +70,15 @@ export async function receiveSettings(data: Record<string, { top?: boolean; labe
     data,
   });
 }
+
+/**
+ * 采购单/订单 联系客户
+ * @param customerId 客户ID
+ * @param bizCode 业务单号 (订单号)
+ */
+export async function contactCustomer(params: { customerId: string; bizCode: string }) {
+  return request(`/service-chat/contactCustomer`, {
+    method: "get",
+    params,
+  });
+}

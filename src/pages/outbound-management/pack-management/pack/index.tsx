@@ -1,8 +1,7 @@
 // src/pages/inventory/ScanIn/index.tsx
 import { getPackScan, PackSubmit } from "@/services";
 import { CheckCircleOutlined, CloseCircleOutlined } from "@ant-design/icons";
-import { PageContainer } from "@ant-design/pro-components";
-import ProTable, { ProColumns } from "@ant-design/pro-table";
+import { PageContainer, ProColumns, ProTable } from "@ant-design/pro-components";
 import { Button, Card, Input, message, Switch, Space, Select } from "antd";
 import React, { useRef, useState } from "react";
 
@@ -52,9 +51,9 @@ const ParticularPaper: React.FC = () => {
 
       // 如果 items 中所有包裹都已打包，则整个记录状态为已打包
       const allPacked = newItems?.every((item: any) => item.status === "已打包");
-      
-      return { 
-        ...record, 
+
+      return {
+        ...record,
         items: newItems,
         status: allPacked ? "已打包" : record.status // 更新主记录状态
       };
@@ -74,7 +73,7 @@ const ParticularPaper: React.FC = () => {
       message.warning("没有数据可提交");
       return;
     }
-    
+
     // 严格模式下才校验包裹状态
     if (isStrictPackingMode) {
       const hasUnpacked = tableData.some((item) => item.status !== "已打包");
@@ -311,7 +310,7 @@ const ParticularPaper: React.FC = () => {
             }}
           />
         </div>
-        
+
         {isStrictPackingMode && (
           <div style={{ marginBottom: 24 }}>
             <Input

@@ -29,13 +29,13 @@ export default [
   {
     path: "/purchase-list",
     name: "采购列表",
-    icon: "table",
+    icon: "ShoppingOutlined",
     component: "./purchase-list",
   },
   {
     path: "/warehouse-management",
     name: "入库管理",
-    icon: "BankOutlined",
+    icon: "ImportOutlined",
     access: "canAdmin",
     routes: [
       {
@@ -99,7 +99,7 @@ export default [
   {
     path: "/outbound-management",
     name: "出库管理",
-    icon: "table",
+    icon: "ExportOutlined",
     access: "canAdmin",
     routes: [
       {
@@ -153,7 +153,7 @@ export default [
   {
     path: "/finance",
     name: "财务管理",
-    icon: "table",
+    icon: "DollarOutlined",
     routes: [
       {
         path: "/finance",
@@ -180,13 +180,13 @@ export default [
   {
     path: "/member",
     name: "会员管理",
-    icon: "ShoppingCartOutlined",
+    icon: "TeamOutlined",
     component: "./member",
   },
   {
     path: "/config",
     name: "配置管理",
-    icon: "BankOutlined",
+    icon: "SettingOutlined",
     access: "canAdmin",
     routes: [
       {
@@ -271,7 +271,7 @@ export default [
   {
     path: "/message",
     name: "消息管理",
-    icon: "BankOutlined",
+    icon: "BellOutlined",
     access: "canAdmin",
     routes: [
       {
@@ -298,7 +298,7 @@ export default [
   {
     path: "/refund",
     name: "退款管理",
-    icon: "BankOutlined",
+    icon: "RollbackOutlined",
     access: "canAdmin",
     routes: [
       {
@@ -342,7 +342,7 @@ export default [
   {
     path: "/mock-list",
     name: "测试数据模拟",
-    icon: "ShoppingCartOutlined",
+    icon: "ExperimentOutlined",
     component: "./mock-list",
   },
 

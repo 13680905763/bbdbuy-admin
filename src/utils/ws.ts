@@ -36,10 +36,16 @@ let wsConnecting = false;
  * 获取 WebSocket 地址
  */
 function getWsUrl() {
-  return (process.env.UMI_APP_WS_URL || "")
-    .replace(/^["']|["']$/g, "")
-    .replace(/^ws:\/\//, "ws://")
-    .replace(/^wss:\/\//, "wss://");
+  let envUrl = (process.env.UMI_APP_WS_URL || "").replace(/^["']|["']$/g, "");
+
+  // 完整地址（如 wss://dev.bbdbuy1.com/admin-api/ws）直接使用，不走代理
+  if (envUrl.startsWith('ws://') || envUrl.startsWith('wss://')) {
+    return envUrl;
+  }
+
+  // 相对路径（如 /ws）则拼接当前 host，走代理
+  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+  return `${protocol}//${window.location.host}${envUrl || '/ws'}`;
 }
 
 /**http://api.bbdlocal.com:8080
@@ -101,7 +107,7 @@ export function connectWS() {
   };
 
   ws.onclose = (e) => {
-    console.log("❌ WS 关闭", e.reason);
+    console.log("❌ WS 关闭", "code:", e.code, "reason:", e.reason);
     ws = null;
     wsConnecting = false;
 
