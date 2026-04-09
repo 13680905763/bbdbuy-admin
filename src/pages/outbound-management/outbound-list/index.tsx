@@ -17,7 +17,6 @@ import {
   Table,
   message,
 } from "antd";
-import moment from "moment";
 import React, { useEffect, useRef, useState } from "react";
 import { printPickingList } from "./pre";
 
@@ -190,10 +189,10 @@ const TableList: React.FC = () => {
       packingPackageCode: values.totalFee,
       statusCode: values.packing,
       createTimeFrom: startTime
-        ? moment(startTime).format("YYYY-MM-DD HH:mm:ss")
+        ? startTime
         : undefined,
       createTimeTo: endTime
-        ? moment(endTime).format("YYYY-MM-DD HH:mm:ss")
+        ? endTime
         : undefined,
     };
     setFilters(filterParams);
@@ -256,7 +255,7 @@ const TableList: React.FC = () => {
                       return {
                         packingPackageCode: item?.packingPackageCode,
                         customerName: item?.customerName,
-                        methodName: item?.shipping?.methodName,
+                        lineName: item?.shipping?.lineName,
                         remark: packing?.remark,
                         services: item?.services.map((service: any) => {
                           return service?.serviceName;

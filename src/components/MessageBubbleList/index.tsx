@@ -1,5 +1,6 @@
 import React from "react";
-import { Avatar, Card, Image, Typography } from "antd";
+import { Avatar, Card, Image, Typography, Spin } from "antd";
+import { LoadingOutlined } from "@ant-design/icons";
 const { Paragraph, Title, Text } = Typography;
 export interface MessageItem {
   id: string | number;
@@ -14,7 +15,7 @@ export interface MessageItem {
 }
 
 export interface MessageBubbleListProps {
-  messages: MessageItem[];
+  messages: any[];
   defaultCustomerAvatar?: string | null;
   serverAvatar?: string | null;
   showCustomerName?: boolean;
@@ -230,6 +231,11 @@ const MessageBubbleList: React.FC<MessageBubbleListProps> = ({
                     </Text>
                   )}
                 </div>
+                {isServer && msg.status === 'sending' && (
+                  <div style={{ marginRight: 8, fontSize: 12, color: "#1890ff" }}>
+                    <LoadingOutlined spin /> 发送中...
+                  </div>
+                )}
               </div>
 
               {isServer && <Avatar src={serverAvatar || null} />}

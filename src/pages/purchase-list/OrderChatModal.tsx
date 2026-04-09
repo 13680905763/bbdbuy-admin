@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Modal, Input, Button, List, Avatar, Spin, message as AntMessage } from 'antd';
 import { useModel } from '@umijs/max';
 import MessageBubbleList from '@/components/MessageBubbleList';
+import { contactCustomer } from "@/services/chat";
 
 interface OrderChatModalProps {
   open: boolean;
@@ -33,9 +34,18 @@ const OrderChatModal: React.FC<OrderChatModalProps> = ({
   useEffect(() => {
     if (open && customerId) {
       setLoading(true);
-      loadHistory(customerId, 1).finally(() => setLoading(false));
+      // 先调用联系客户接口，确保后端建立业务关联
+      contactCustomer({ customerId: String(customerId), bizCode })
+        .then(() => {
+          // 关联成功后加载历史记录
+          return loadHistory(customerId, 1, bizCode);
+        })
+        .catch((err) => {
+          console.error("开启对话或拉取历史失败:", err);
+        })
+        .finally(() => setLoading(false));
     }
-  }, [open, customerId, loadHistory]);
+  }, [open, customerId, bizCode, loadHistory]);
 
   // 自动滚动
   useEffect(() => {
@@ -56,7 +66,7 @@ const OrderChatModal: React.FC<OrderChatModalProps> = ({
 
   return (
     <Modal
-      title={`与客户 ${customerName} 的沟通 (订单: ${bizCode})`}
+      title={`与 ${customerName} 的沟通 (订单号: ${bizCode})`}
       open={open}
       onCancel={onCancel}
       footer={null} // 我们自定义底部的输入框

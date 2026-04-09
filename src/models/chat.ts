@@ -43,12 +43,13 @@ export type ChatUser = RepliedUser | LobbyUser;
 
 /** 消息记录结构 */
 export interface ChatMessage {
-  id: string | number;
+  id?: string | number;
+  tempId?: string;
   sender: "SERVER" | "CUSTOMER";
   text: string;
   sendTime?: string;
-  createTime?: string;
   type?: string;
+  status?: 'sending' | 'success' | 'error'; // 新增状态
 }
 
 /** 分页消息结构 */
@@ -61,61 +62,46 @@ export interface PaginatedMessages {
 export default function useChatModel() {
   const { initialState } = useModel("@@initialState");
   const isLogin = !!initialState?.currentUser;
-
   // 1. 状态定义
   const [pendingUsers, setPendingUsers] = useState<LobbyUser[]>([]);
   const [repliedUsers, setRepliedUsers] = useState<RepliedUser[]>([]);
   const [messagesMap, setMessagesMap] = useState<Record<string, PaginatedMessages>>({});
   const [activeUser, setActiveUserState] = useState<ChatUser | null>(null);
-
+  const [sendMessageLoading, setSendMessageLoading] = useState(false);
   // 2. 引用定义 (用于解决闭包陷阱)
   const firstLoadRef = useRef(false);
   const activeUserRef = useRef<ChatUser | null>(null);
-
   // 3. 辅助函数
   const keyOf = (id: number | string | undefined) => (id === undefined ? "" : String(id));
-
-  const formatLocalDateTime = (date = new Date()) => {
-    const pad = (n: number) => String(n).padStart(2, '0');
-    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
-  };
-
   /** 获取当前活跃用户的消息列表 */
   const messages = activeUser ? messagesMap[keyOf(activeUser.id)]?.list || [] : [];
-
   // 同步 Ref
   useEffect(() => {
     activeUserRef.current = activeUser;
   }, [activeUser]);
-
   // ------------------------------------------------------------------------------
   // 4. 业务逻辑函数 (Action)
   // ------------------------------------------------------------------------------
-
   /** 
    * 拉取历史记录分析 
    */
-  const loadHistory = useCallback(async (userId: string | number, page: number) => {
+  const loadHistory = useCallback(async (userId: string | number, page: number, bizCode?: string) => {
     try {
-      const res: any = await apiFetchChatHistory(userId, page);
+      const res: any = await apiFetchChatHistory(userId, page, bizCode);
       const records: any[] = res.data.records || [];
       const lastPage: number = res.data.pages;
-
       const converted: ChatMessage[] = records.reverse().map((it) => ({
         id: it.id ?? `srv-${Math.random()}`,
         sender: it.sender,
         text: it.content ?? it.text ?? "",
-        sendTime: it.sendTime ?? it.createTime ?? "",
-        createTime: it.createTime ?? "",
+        sendTime: it.sendTime ?? "",
         type: it.contentType ?? "TEXT",
       }));
-
       setMessagesMap((prev) => {
         const k = keyOf(userId);
-        const oldList = prev[k]?.list || [];
+        const oldList = page === 1 ? [] : (prev[k]?.list || []);
         const merged = [...converted, ...oldList];
         const deduped = merged.filter((v, i, a) => a.findIndex((x) => x.id === v.id) === i);
-
         return {
           ...prev,
           [k]: { list: deduped, page, hasMore: page < lastPage },
@@ -134,30 +120,38 @@ export default function useChatModel() {
       setActiveUserState(null);
       return;
     }
+    // 1. 先设置状态，让 UI 立刻渲染聊天窗口
+    setActiveUserState(user);
+    // 清除该用户的未读状态
+    setRepliedUsers((prev) =>
+      prev.map((u) => (String(u.id) === String(user.id) ? { ...u, unread: 0 } : u)),
+    );
+
     try {
-      // 告诉后端开始接待
+      // 2. 告诉后端开始接待
       await acceptUser(user.id);
-      setActiveUserState(user);
-      // 初始加载第一页历史
+      // 3. 加载第一页历史
       await loadHistory(user.id, 1);
       firstLoadRef.current = true;
     } catch (err) {
       message.error("接管用户失败");
     }
   }, [loadHistory]);
-
   /**
    * 发送消息 
    */
   const sendMessage = useCallback((content: string, type = "TEXT") => {
     const user = activeUserRef.current;
     if (!user) return;
-
-    const sendTime = formatLocalDateTime();
-    const payload = { sender: "SERVER", type, content, receiverId: user.id, sendTime };
-
-    // 乐观更新本地 UI
-    const newMsg: ChatMessage = { id: `local-${Date.now()}`, sender: "SERVER", text: content, sendTime, type };
+    const tempId = `temp-${Date.now()}`;
+    // 1. 以 'sending' 状态将消息加入列表
+    const newMsg: ChatMessage = {
+      tempId: tempId,
+      sender: "SERVER",
+      text: content,
+      type,
+      status: 'sending'
+    };
     setMessagesMap((prev) => {
       const k = keyOf(user.id);
       const old = prev[k]?.list || [];
@@ -166,14 +160,16 @@ export default function useChatModel() {
         [k]: { ...prev[k], list: [...old, newMsg] },
       };
     });
-
+    // 2. 发送 WS
+    const payload = {
+      sender: "SERVER",
+      type,
+      content,
+      receiverId: user.id,
+      tempId // 把临时 ID 传给后端，以便回显时对应
+    };
     sendWS(payload);
     firstLoadRef.current = true;
-
-    // 更新左侧列表的最后一条简述
-    setRepliedUsers((prev) =>
-      prev.map((u) => String(u.id) === String(user.id) ? { ...u, lastMessage: content, msgtype: type } : u)
-    );
   }, []);
 
   /**
@@ -182,7 +178,6 @@ export default function useChatModel() {
   const updateSettingsAsync = useCallback(async (top: boolean, labels: string[]) => {
     const user = activeUserRef.current;
     if (!user || !('top' in user)) return;
-
     try {
       await receiveSettings({
         [user.id]: { top, label: labels }
@@ -201,7 +196,6 @@ export default function useChatModel() {
   const finishWorkOrderAsync = useCallback(async () => {
     const user = activeUserRef.current as RepliedUser;
     if (!user) return;
-
     try {
       await finishWorkOrder({ id: user.id, });
       message.success("会话已结束");
@@ -218,7 +212,6 @@ export default function useChatModel() {
 
   const handleIncoming = useCallback((raw: any) => {
     if (!raw) return;
-
     // A. 列表同步消息
     if (raw.type === "HALL" || raw.type === "RECEIVE") {
       const list = Array.isArray(raw.content) ? raw.content : [];
@@ -242,8 +235,7 @@ export default function useChatModel() {
           msgtype: u.msgtype || "TEXT",
         }));
         setRepliedUsers(mappedList);
-
-        // 同步活跃用户状态
+        // 同步活跃用户状态（置顶、标签）
         const currentActive = activeUserRef.current;
         if (currentActive) {
           const newest = mappedList.find((u) => String(u.id) === String(currentActive.id));
@@ -252,32 +244,54 @@ export default function useChatModel() {
       }
       return;
     }
-
     // B. 单条聊天消息
-    const uid = keyOf(raw.senderId);
+    // 如果是服务器回显，归属人为接收者 ID (因为是在跟该接收者聊天)
+    const uid = raw.sender === "SERVER" ? keyOf(raw.receiverId) : keyOf(raw.senderId);
     if (!uid) return;
 
     const chatMsg: ChatMessage = {
-      id: raw.id ?? `srv-${Date.now()}`,
-      sender: raw.sender === "CUSTOMER" ? "CUSTOMER" : "SERVER",
-      text: raw.content ?? "",
-      sendTime: raw.sendTime ?? formatLocalDateTime(),
-      type: raw.type ?? "TEXT",
+      id: raw.id,
+      sender: (raw.sender as "SERVER" | "CUSTOMER") || "SERVER",
+      text: raw.content,
+      sendTime: raw.sendTime,
+      type: raw.type,
     };
-
     // 如果处于当前聊天窗口
     if (String(activeUserRef.current?.id) === uid) {
       if (raw.sender === "CUSTOMER" && raw.id) readChatMessages([String(raw.id)]).catch(() => { });
 
       setMessagesMap((prev) => {
         const oldList = prev[uid]?.list || [];
-        const deduped = [...oldList, chatMsg].filter((v, i, a) => a.findIndex((x) => x.id === v.id) === i);
+
+        // 如果是 SERVER 回显，尝试匹配并替换 tempId 消息
+        if (raw.sender === "SERVER") {
+          const existingIdx = oldList.findIndex((m) =>
+            (raw.tempId && m.tempId === raw.tempId) ||
+            (m.status === 'sending' && m.text === (raw.content ?? ""))
+          );
+
+          if (existingIdx > -1) {
+            const newList = [...oldList];
+            newList[existingIdx] = {
+              ...newList[existingIdx],
+              id: raw.id,
+              status: 'success',
+              sendTime: raw.sendTime || newList[existingIdx].sendTime,
+            };
+            return { ...prev, [uid]: { ...prev[uid], list: newList } };
+          }
+        }
+
+        // 通用合并去重逻辑 (针对客户消息或未匹配的回显)
+        const deduped = [...oldList, chatMsg].filter(
+          (v, i, a) => a.findIndex((x) => (x.id && x.id === v.id) || (x.tempId && x.tempId === v.tempId)) === i
+        );
         return { ...prev, [uid]: { ...prev[uid], list: deduped } };
       });
       firstLoadRef.current = true;
     }
 
-    // 更新列表摘要和未读
+    // 更新列表摘要和未读 (红点逻辑依据)
     setRepliedUsers((prev) => {
       const exists = prev.find((u) => String(u.id) === uid);
       if (exists) {
@@ -288,7 +302,7 @@ export default function useChatModel() {
           unread: String(activeUserRef.current?.id) !== uid ? (u.unread ?? 0) + 1 : 0,
         } : u);
       }
-      return prev; // 如果列表里没有，通常会在下一波 RECEIVE 推送中处理
+      return prev;
     });
   }, []);
 
@@ -315,40 +329,17 @@ export default function useChatModel() {
    */
   const sendDirectMessage = useCallback((params: { customerId: string; bizCode: string; content: string; type?: string }) => {
     const { customerId, bizCode, content, type = "TEXT" } = params;
-    const sendTime = formatLocalDateTime();
-    
     const payload = {
       sender: "SERVER",
       type,
       content,
       receiverId: customerId,
       bizCode, // 携带业务单号
-      sendTime,
     };
-
+    setSendMessageLoading(true);
     sendWS(payload);
-
-    // 同时也更新一下本地的 messagesMap，以便弹窗内能立刻看到（采用乐观更新）
-    const newMsg: ChatMessage = {
-      id: `direct-${Date.now()}`,
-      sender: "SERVER",
-      text: content,
-      sendTime,
-      type,
-    };
-
-    setMessagesMap((prev) => {
-      const k = keyOf(customerId);
-      const old = prev[k]?.list || [];
-      return {
-        ...prev,
-        [k]: {
-          list: [...old, newMsg],
-          page: prev[k]?.page || 1,
-          hasMore: prev[k]?.hasMore ?? true,
-        },
-      };
-    });
+    // 等待回显或超时重置
+    setTimeout(() => setSendMessageLoading(false), 800);
   }, []);
 
   return {
@@ -363,6 +354,7 @@ export default function useChatModel() {
     setActiveUser: setActiveUserState,
     sendMessage,
     sendDirectMessage, // 导出新方法
+    sendMessageLoading,
     loadHistory,
     updateSettingsAsync,
     finishWorkOrderAsync,

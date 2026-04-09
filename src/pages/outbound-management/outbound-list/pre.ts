@@ -9,7 +9,7 @@ interface PickItem {
 interface PickListOptions {
   packingPackageCode: string;
   customerName: string;
-  methodName: string;
+  lineName: string;
   remark?: string;
   services: string[];
   items: PickItem[];
@@ -106,7 +106,7 @@ export async function printPickingList(list: PickListOptions[]) {
             <svg id="barcode-${pageIndex}" style="max-width: 60%"></svg>
             <div class="barcode-label" >${opt.packingPackageCode}</div>
             <div class="info">用户名：${opt.customerName}</div>
-            <div class="info">邮寄方式：${opt.methodName}</div>
+            <div class="info">邮寄方式：${opt.lineName}</div>
             <div class="info">备注：${opt.remark ?? "-"}</div>
             <div class="info info-service">
               <span class="label">运单服务：</span>
@@ -176,7 +176,7 @@ export async function printPickingList(list: PickListOptions[]) {
     setTimeout(() => {
       iframe.contentWindow?.focus();
       iframe.contentWindow?.print();
-      
+
       // Clean up after printing
       setTimeout(() => {
         document.body.removeChild(iframe);

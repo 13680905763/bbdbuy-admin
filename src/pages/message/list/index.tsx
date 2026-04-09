@@ -1,4 +1,4 @@
-import { uploadChatImage } from "@/services";
+import { uploadChatImage, fetchCustomerChatContextList, deleteCustomerChatContext } from "@/services/chat";
 import data from "@emoji-mart/data";
 import Picker from "@emoji-mart/react";
 import { useModel } from "@umijs/max";
@@ -14,6 +14,7 @@ import {
   Space,
   Select,
   Tag,
+  Badge,
 } from "antd";
 import MessageBubbleList from "@/components/MessageBubbleList";
 import React, { useEffect, useRef, useState } from "react";
@@ -44,6 +45,49 @@ const MessageList: React.FC = () => {
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [isLabelModalVisible, setIsLabelModalVisible] = useState(false);
   const [currentLabels, setCurrentLabels] = useState<string[]>([]);
+  const [activeBizCode, setActiveBizCode] = useState<string | undefined>(undefined);
+
+  // 上下文列表状态
+  const [contextList, setContextList] = useState<any[]>([]);
+  const [loadingContext, setLoadingContext] = useState(false);
+
+  // 监听活跃用户变化，拉取聊天列表项
+  useEffect(() => {
+    if (activeUser?.id) {
+      setLoadingContext(true);
+      setActiveBizCode(undefined); // 切换用户时清空业务单号过滤
+      fetchCustomerChatContextList(String(activeUser.id))
+        .then((res: any) => {
+          // 根据实际返回结构调整
+          const data = res?.data || res || [];
+          setContextList(Array.isArray(data) ? data : []);
+        })
+        .catch(err => console.error("获取聊天上下文失败", err))
+        .finally(() => setLoadingContext(false));
+    } else {
+      setContextList([]);
+      setActiveBizCode(undefined);
+    }
+  }, [activeUser?.id]);
+
+  /**
+   * 删除上下文项
+   */
+  const handleDeleteContext = async (bizCode: string) => {
+    if (!bizCode) return;
+    try {
+      const res: any = await deleteCustomerChatContext(bizCode);
+      if (res.success || res.code === 200 || res.data) { // 兼容下各种成功状态
+        AntMessage.success("删除成功");
+        setContextList(prev => prev.filter(item => item.bizCode !== bizCode));
+      } else {
+        AntMessage.error(res?.message || res?.msg || "删除失败");
+      }
+    } catch (err) {
+      console.error("删除业务会话失败", err);
+      AntMessage.error("删除失败");
+    }
+  };
 
   const chatEndRef = useRef<HTMLDivElement>(null);
   const chatListRef = useRef<HTMLDivElement>(null);
@@ -82,7 +126,7 @@ const MessageList: React.FC = () => {
         setLoadingHistory(true);
         const scrollHeightBefore = target.scrollHeight;
         const scrollTopBefore = target.scrollTop;
-        await loadHistory(activeUser.id, page + 1);
+        await loadHistory(activeUser.id, page + 1, activeBizCode);
         requestAnimationFrame(() => {
           const scrollDiff = target.scrollHeight - scrollHeightBefore;
           target.scrollTop = scrollTopBefore + scrollDiff;
@@ -128,14 +172,17 @@ const MessageList: React.FC = () => {
                 }}
               >
                 <List.Item.Meta
-                  avatar={<Avatar src={item.avatarUrl || null} />}
+                  avatar={
+                    <Badge dot={!!item.unread}>
+                      <Avatar src={item.avatarUrl || null} />
+                    </Badge>
+                  }
                   title={
                     <div style={{ display: "flex", justifyContent: "space-between" }}>
                       <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                         {item.top && <Tag color="blue" style={{ margin: 0, padding: '0 4px', fontSize: 10 }}>置顶</Tag>}
                         {item.nickName}
                       </span>
-                      {item.unread ? <span style={{ color: "red" }}>({item.unread})</span> : null}
                     </div>
                   }
                   description={
@@ -239,6 +286,39 @@ const MessageList: React.FC = () => {
             </Space>
           )}
         </div>
+
+        {/* 动态渲染：聊天列表项上下文 (基于该客户) */}
+        {activeUser && (loadingContext || contextList.length > 0) && (
+          <div style={{ padding: "8px 16px", background: "#fdfdfd", borderBottom: "1px solid #f0f0f0", display: "flex", gap: 8, overflowX: "auto", flexWrap: "wrap" }}>
+            <span style={{ color: "#888", fontSize: 13, lineHeight: "24px", whiteSpace: "nowrap" }}>查看业务聊天:</span>
+            {loadingContext ? (
+              <Spin size="small" style={{ marginLeft: 8, marginTop: 4 }} />
+            ) : (
+              contextList.map((item, idx) => (
+                <Tag
+                  key={item.id || idx}
+                  color={activeBizCode === item.bizCode ? "orange" : "processing"} // 选中时变色
+                  closable={!!item.bizCode}
+                  onClose={(e) => {
+                    e.preventDefault(); // 阻止默认的UI移除
+                    handleDeleteContext(item.bizCode);
+                  }}
+                  style={{ cursor: "pointer", display: "flex", alignItems: "center" }}
+                  onClick={() => {
+                    if (!activeUser) return;
+                    // 如果已经是当前选中的，再次点击则取消过滤
+                    const nextBizCode = activeBizCode === item.bizCode ? undefined : item.bizCode;
+                    setActiveBizCode(nextBizCode);
+                    setLoadingHistory(true);
+                    loadHistory(activeUser.id, 1, nextBizCode).finally(() => setLoadingHistory(false));
+                  }}
+                >
+                  {item.bizCode ? `业务单号: ${item.bizCode}` : (item.name || `关联项 ${idx + 1}`)}
+                </Tag>
+              ))
+            )}
+          </div>
+        )}
 
         {/* 中间：消息展示滚动区 */}
         <div

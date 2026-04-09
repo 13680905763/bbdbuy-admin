@@ -72,7 +72,7 @@ const TableList: React.FC = () => {
 
   // 1. 新增聊天弹窗控制状态 (仅增加这两行)
   const [chatModalOpen, setChatModalOpen] = useState(false);
-  const [chatParams, setChatParams] = useState({ id: "", name: "", orderCode: "" });
+  const [chatParams, setChatParams] = useState({ id: "", customerName: "", orderCode: "" });
 
   const handleDiyDetail = async (orderId: string) => {
     setDiyModalOpen(true);
@@ -140,22 +140,17 @@ const TableList: React.FC = () => {
             type="link"
             size="small"
             style={{ padding: 0, height: 'auto', fontSize: '12px' }}
-            onClick={async (e) => {
+            onClick={(e) => {
               e.stopPropagation();
-              const cid = record.buyUserId || record.customerId;
+              const cid = record.products[0]?.customerId;
               if (!cid) return message.error("缺少客户ID");
               const bizCode = record.orderCode || "";
-              try {
-                await contactCustomer({ customerId: String(cid), bizCode });
-                setChatParams({
-                  id: String(cid),
-                  name: record.customerName || "未知客户",
-                  orderCode: bizCode
-                });
-                setChatModalOpen(true);
-              } catch (err) {
-                console.error("开启对话失败", err);
-              }
+              setChatParams({
+                id: String(cid),
+                customerName: record.customerName || "未知客户",
+                orderCode: bizCode
+              });
+              setChatModalOpen(true);
             }}
           >
             联系客户
@@ -946,7 +941,7 @@ const TableList: React.FC = () => {
         open={chatModalOpen}
         onCancel={() => setChatModalOpen(false)}
         customerId={chatParams.id}
-        customerName={chatParams.name}
+        customerName={chatParams.customerName}
         bizCode={chatParams.orderCode}
       />
     </PageContainer>
